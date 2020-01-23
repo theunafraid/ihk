@@ -114,7 +114,7 @@ int main(int argc, char **argv)
 		}
 		usleep(1000000);
 	}
-	
+
 	OKNG(0, "ihk_os_get_status");
 	goto status_skip;
  status_ok:
