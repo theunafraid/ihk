@@ -2,12 +2,177 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <sys/types.h>
 #include <getopt.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/mman.h>
 #include <ihk/ihklib.h>
 #include "util.h"
+#include "okng.h"
+#include "init_fini.h"
+#include "input_vector.h"
 
 #define DEBUG
+
+static int query_and_check(struct cpu_expected *expected)
+{
+	int ret;
+	struct cpus cpus;
+	int ncpus;
+	
+	ret = ihk_get_num_reserved_cpus(0);
+	INTERR(ret < 0, "ihk_get_num_reserved_cpus returned %d\n",
+	       ret);
+	ncpus = ret;
+	INFO("# of reserved cpus: %d\n", ncpus);
+	
+	cpus.cpus = mmap(0, MAX_NUM_CPUS * sizeof(int),
+			 PROT_READ | PROT_WRITE,
+			 MAP_ANONYMOUS | MAP_PRIVATE,
+			 -1, 0);
+	INTERR(cpus.cpus == MAP_FAILED,
+	       "mmap cpus.cpus failed\n");
+	
+	ret = ihk_query_cpu(0, cpus.cpus, ncpus);
+	INTERR(ret < 0, "ihk_query_cpu returned %d\n",
+	       ret);
+		
+	ret = cpus_compare(&cpus, expected->cpus);
+	if (ret) {
+		INFO("actual reservation:\n");
+		cpus_dump(&cpus);
+		INFO("expected reservation:\n");
+		cpus_dump(expected->cpus);
+	}
+	OKNG(ret == 0, "ihk_reserve_cpu: comparing reservation result\n");
+}
+
+static int device_existence(void)
+{
+	/* Generate test vector */
+	struct cpus cpu_inputs[2];
+
+	/* Set of lscpu and plus/minus one element */
+	for (i = 1; i < 4; i++) { 
+		ret = cpus_ls(&cpu_inputs[i]);
+		INTERR(ret, "cpus_ls returned %d\n", ret);
+
+		/* Spare two cpus for Linux */
+		ret = cpus_unshift(&cpu_inputs[i], 2);
+		INTERR(ret, "cpus_unshift returned %d\n", ret);
+	}
+	
+	struct cpu_expected cpu_expected[2] = 
+		{
+		 [0] =
+		 {
+		  .ret = -EINVAL,
+		  .cpus = NULL, /* don't care */
+		 },
+		 [1] =
+		 {
+		  .ret = 0,
+		  .cpus = &cpu_inputs[1],
+		 },
+		};
+
+	/* Call the target */
+	struct cpus cpus;
+	int ncpus;
+	
+	for (i = 0; i < 2; i++) {
+		ret = ihk_reserve_cpu(0, cpu_inputs[i].cpus, cpu_inputs[i].ncpus);
+		OKNG(ret == cpu_expected[i].ret,
+		     "ihk_reserve_cpu: return value: %d, expected: %d\n",
+		     ret, cpu_expected[i].ret);
+		
+		if (i == 1) {
+			ret = query_and_check(&cpu_expected);
+			OKNG(ret == 0, "ihk_reserve_cpu: query_and_check\n");
+		}
+		
+		if (i == 0) {
+			ret = insmod(uid, gid);
+			NG(ret == 0, "insmod returned %d\n", ret);
+		}
+	}
+}
+
+static int reserve_cpu(void)
+{
+	/* Generate test vector */
+#define CPUS_VLEN 5
+
+	/* Prepare one having NULL and clear others */
+	struct cpus cpu_inputs[CPUS_VLEN] = 
+		{
+		 [0] =
+		 {
+		  .cpus = NULL,
+		  .ncpus = 1,
+		 },
+		 [2] = { 0 },
+		 [3] = { 0 },
+		 [4] = { 0 },
+		};
+
+	/* All cpus */
+	for (i = 1; i < 4; i++) { 
+		ret = cpus_ls(&cpu_inputs[i]);
+		INTERR(ret, "cpus_ls returned %d\n", ret);
+	}
+
+	ret = cpus_push(&cpu_inputs[2]);
+	INTERR(ret, "cpus_push returned %d\n", ret);
+
+	ret = cpus_pop(&cpu_inputs[3]);
+	INTERR(ret, "cpus_pop returned %d\n", ret);
+
+	for (i = 1; i < 4; i++) {
+		/* Spare two cpus for Linux */
+		ret = cpus_unshift(&cpu_inputs[i], 2);
+		INTERR(ret, "cpus_unshift returned %d\n", ret);
+	}
+	
+	struct cpu_expected cpu_expected[CPUS_VLEN] = 
+		{
+		 [0] =
+		 {
+		  .ret = -EFAULT,
+		  .cpus = NULL, /* don't care */
+		 },
+		 [1] =
+		 {
+		  .ret = 0,
+		  .cpus = &cpu_inputs[1],
+		 },
+		 [2] =
+		 {
+		  .ret = -EINVAL,
+		  .cpus = NULL,
+		 },
+		 [3] =
+		 {
+		  .ret = 0,
+		  .cpus = &cpu_inputs[3],
+		 },
+		};
+
+	/* Call the target */
+	for (i = 0; i < CPUS_VLEN; i++) {
+		if (i == 1) {
+			cpus_dump(&cpu_inputs[i]);
+		}
+
+		ret = ihk_reserve_cpu(0, cpu_inputs[i].cpus, cpu_inputs[i].ncpus);
+		OKNG(ret == cpu_expected[i].ret,
+		     "ihk_reserve_cpu: return value: %d, expected: %d\n",
+		     ret, cpu_expected[i].ret);
+
+		ret = query_and_check(&cpu_expected[i]);
+		OKNG(ret == 0, "ihk_reserve_cpu: query_and_check\n");
+	}
+}
 
 int main(int argc, char **argv)
 {
@@ -42,6 +207,8 @@ int main(int argc, char **argv)
 	gid_t gid;
 	int opt;
 
+	int i;
+	
 	while ((opt = getopt(argc, argv, "bxmu:g:")) != -1) {
 		switch (opt) {
 		case 'b':
@@ -65,15 +232,16 @@ int main(int argc, char **argv)
 		}
 	}
 
-	/* Test error handling */
+	/* device file existent / non-existent case */
+	ret = device_existence();
+	OKNG(ret == 0, "ihk_reserve_cpu: device non-existent case\n");
 
-	// reserve cpu
-	cpus[0] = 3;
-	cpus[2] = 1;
-	num_cpus = 2;
-	ret = ihk_reserve_cpu(0, cpus, num_cpus);
-	OKNG(ret != 0, "ihk_reserve_cpu (1)\n");
-
+	
+	ret = reserve_cpu();
+	NG(ret == 0, "reserve_cpu returned %d\n", ret);
+	
+	exit(0);
+	
 	// get # of reserved cpus
 	num_cpus = ihk_get_num_reserved_cpus(0);
 	//printf("num_cpus=%d\n", num_cpus);
@@ -89,77 +257,9 @@ int main(int argc, char **argv)
 	ret = ihk_release_cpu(0, cpus, num_cpus);
 	OKNG(ret != 0, "ihk_release_cpu (1)\n");
 
-	// reserve mem 128m@0,64m@0: expected to fail
-	num_mem_chunks = 2;
-	mem_chunks[0].size = 128*1024*1024ULL;
-	mem_chunks[0].numa_node_number = 0;
-	mem_chunks[1].size = 64*1024*1024ULL;
-	mem_chunks[1].numa_node_number = 0;
-	ret = ihk_reserve_mem(0, mem_chunks, num_mem_chunks);
-	OKNG(ret != 0, "ihk_reserve_mem w/o /dev/mcd0\n");
-
-	// get # of reserved mem chunks: exptected to fail
-	num_mem_chunks = ihk_get_num_reserved_mem_chunks(0);
-	OKNG(num_mem_chunks < 0,
-	     "ihk_get_num_reserved_mem_chunks w/o /dev/mcd0\n");
-
-	// get reserved mem chunks: exptected to fail
-	ret = ihk_query_mem(0, mem_chunks, 1);
-	OKNG(ret != 0, "ihk_query_mem (1)\n");
-
-	// release mem 128m@0: expected to fail
-	num_mem_chunks = 1;
-	mem_chunks[0].size = 128*1024*1024ULL;
-	mem_chunks[0].numa_node_number = 0;
-	ret = ihk_release_mem(0, mem_chunks, num_mem_chunks);
-	OKNG(ret != 0, "ihk_release_mem w/o /dev/mcd0\n");
-
-	// create
-	ret = ihk_create_os(0);
-	OKNG(ret != 0, "ihk_create_os (1)\n");
-
-	// get # of OS instances
-	num_os_instances = ihk_get_num_os_instances(0);
-	//printf("num_os_instances=%d\n", num_os_instances);
-	OKNG(num_os_instances < 0, "ihk_get_num_os_instances (1)\n");
-
-	// get OS instances
-	ret = ihk_get_os_instances(0, indices, 1);
-	OKNG(ret != 0, "ihk_get_os_instances (1)\n");
-
-	// get os_instances
-	sprintf(cmd, "%s/sbin/ihkconfig 0 get os_instances", QUOTE(WITH_MCK));
-	fp = popen(cmd, "r");
-	nread = fread(buf, 1, sizeof(buf), fp);
-	buf[nread] = 0;
-	OKNG(strstr(buf, "0") == NULL,
-	     "ihkconfig 0 get os_instances (1) returned:\n%s\n", buf);
-
-	// destroy
-	ret = ihk_destroy_os(0, 0);
-	OKNG(ret != 0, "ihk_destroy_os (1)\n");
-
 	/* Expected to succeed */
-
-	sprintf(cmd, "insmod %s/kmod/ihk.ko", QUOTE(WITH_MCK));
-	printf("%s\n", cmd);
-	status = system(cmd);
-	CHKANDJUMP(WEXITSTATUS(status) != 0, -1, "system");
-
-	sprintf(cmd,
-		"insmod %s/kmod/ihk-%s.ko ihk_start_irq=240 ihk_ikc_irq_core=0",
-		QUOTE(WITH_MCK), QUOTE(BUILD_TARGET));
-	status = system(cmd);
-	CHKANDJUMP(WEXITSTATUS(status) != 0, -1, "system");
-
-	sprintf(cmd, "chown %d:%d /dev/mcd*\n", uid, gid);
-	printf("%s\n", cmd);
-	status = system(cmd);
-	CHKANDJUMP(WEXITSTATUS(status) != 0, -1, "system");
-
-	sprintf(cmd, "insmod %s/kmod/mcctrl.ko", QUOTE(WITH_MCK));
-	status = system(cmd);
-	CHKANDJUMP(WEXITSTATUS(status) != 0, -1, "system");
+	ret = insmod(uid, gid);
+	NG(ret == 0, "insmod returned %d\n", ret);
 
 	// reserve cpu
 	cpus[0] = 3;
@@ -209,550 +309,6 @@ int main(int argc, char **argv)
 	     cpus[0] == 1 &&
 	     cpus[1] == 3, "ihk_query_cpu (4)\n");
 
-	// reserve mem 128m@0,64m@0
-	num_mem_chunks = 2;
-	mem_chunks[0].size = 128*1024*1024ULL;
-	mem_chunks[0].numa_node_number = 0;
-	mem_chunks[1].size = 64*1024*1024ULL;
-	mem_chunks[1].numa_node_number = 0;
-	ret = ihk_reserve_mem(0, mem_chunks, num_mem_chunks);
-	OKNG(ret == 0, "ihk_reserve_mem\n");
-
-	// get # of reserved mem chunks
-	num_mem_chunks = ihk_get_num_reserved_mem_chunks(0);
-	OKNG(num_mem_chunks == 2, "ihk_get_num_reserved_mem_chunks\n");
-
-	// get reserved mem chunks
-	ret = ihk_query_mem(0, mem_chunks, num_mem_chunks);
-	OKNG(ret == 0 &&
-	     ((mem_chunks[0].size == 128*1024*1024ULL &&
-	       mem_chunks[0].numa_node_number == 0 &&
-	       mem_chunks[1].size == 64*1024*1024ULL &&
-	       mem_chunks[1].numa_node_number == 0) ||
-	      (mem_chunks[0].size == 64*1024*1024ULL &&
-	       mem_chunks[0].numa_node_number == 0 &&
-	       mem_chunks[1].size == 128*1024*1024ULL &&
-	       mem_chunks[1].numa_node_number == 0)), "ihk_query_mem (2)\n");
-
-	// release mem 128m@0
-	num_mem_chunks = 1;
-	mem_chunks[0].size = 128*1024*1024ULL;
-	mem_chunks[0].numa_node_number = 0;
-	ret = ihk_release_mem(0, mem_chunks, num_mem_chunks);
-	OKNG(ret == 0, "ihk_release_mem w/o /dev/mcd0\n");
-
-	// get # of reserved mem chunks
-	num_mem_chunks = ihk_get_num_reserved_mem_chunks(0);
-	OKNG(num_mem_chunks == 1, "ihk_get_num_reserved_mem_chunks\n");
-
-	// get reserved mem chunks
-	ret = ihk_query_mem(0, mem_chunks, num_mem_chunks);
-	OKNG(ret == 0 &&
-	     mem_chunks[0].size == 64*1024*1024ULL &&
-	     mem_chunks[0].numa_node_number == 0, "ihk_query_mem (3)\n");
-
-	// reserve mem 128m@0
-	num_mem_chunks = 1;
-	mem_chunks[0].size = 128*1024*1024ULL;
-	mem_chunks[0].numa_node_number = 0;
-	ret = ihk_reserve_mem(0, mem_chunks, num_mem_chunks);
-	OKNG(ret == 0, "ihk_reserve_mem\n");
-
-	// get # of reserved mem chunks
-	num_mem_chunks = ihk_get_num_reserved_mem_chunks(0);
-	OKNG(num_mem_chunks == 2, "ihk_get_num_reserved_mem_chunks\n");
-
-	// get reserved mem chunks
-	ret = ihk_query_mem(0, mem_chunks, num_mem_chunks);
-	OKNG(ret == 0 &&
-	     ((mem_chunks[0].size == 128*1024*1024ULL &&
-	       mem_chunks[0].numa_node_number == 0 &&
-	       mem_chunks[1].size == 64*1024*1024ULL &&
-	       mem_chunks[1].numa_node_number == 0) ||
-	      (mem_chunks[0].size == 64*1024*1024ULL &&
-	       mem_chunks[0].numa_node_number == 0 &&
-	       mem_chunks[1].size == 128*1024*1024ULL &&
-	       mem_chunks[1].numa_node_number == 0)), "ihk_query_mem (3)\n");
-
-	/* Test error handling */
-
-	// assign cpu 3,1
-	num_cpus = 2;
-	cpus[0] = 3;
-	cpus[1] = 1;
-	ret = ihk_os_assign_cpu(0, cpus, num_cpus);
-	OKNG(ret != 0, "ihk_os_assign_cpu\n");
-
-	// get # of assigned cpus
-	num_cpus = ihk_os_get_num_assigned_cpus(0);
-	OKNG(num_cpus < 0, "ihk_os_get_num_assigned_cpus\n");
-
-	// get assigned cpus
-	ret = ihk_os_query_cpu(0, cpus, 2);
-	OKNG(ret != 0, "ihk_os_query_cpu (4)\n");
-
-	// release cpu
-	num_cpus = 1;
-	cpus[0] = 1;
-	ret = ihk_os_release_cpu(0, cpus, num_cpus);
-	OKNG(ret != 0, "ihk_os_release_cpu (1)\n");
-
-	// assign mem 128m@0,64m@0
-	num_mem_chunks = 2;
-	mem_chunks[0].size = 128*1024*1024ULL;
-	mem_chunks[0].numa_node_number = 0;
-	mem_chunks[1].size = 64*1024*1024ULL;
-	mem_chunks[1].numa_node_number = 0;
-	ret = ihk_os_assign_mem(0, mem_chunks, num_mem_chunks);
-	OKNG(ret != 0, "ihk_os_assign_mem (1)\n");
-
-	// get # of assigned mem chunks
-	num_mem_chunks = ihk_os_get_num_assigned_mem_chunks(0);
-	OKNG(num_mem_chunks < 0, "ihk_os_get_num_assigned_mem_chunks\n");
-
-	// get assigned mem chunks
-	ret = ihk_os_query_mem(0, mem_chunks, num_mem_chunks);
-	OKNG(ret != 0, "ihk_os_query_mem (1)\n");
-
-	// release mem chunks
-	num_mem_chunks = 1;
-	mem_chunks[0].size = 64*1024*1024ULL;
-	mem_chunks[0].numa_node_number = 0;
-	ret = ihk_os_release_mem(0, mem_chunks, num_mem_chunks);
-	OKNG(ret != 0, "ihk_os_release_mem\n");
-
-	if (ikc_map_by_func) {
-		// set ikc_map
-		ikc_map[0].src_cpu = 3;
-		ikc_map[0].dst_cpu = 0;
-		ikc_map[0].src_cpu = 1;
-		ikc_map[0].dst_cpu = 2;
-		ret = ihk_os_set_ikc_map(0, ikc_map, 2);
-		OKNG(ret != 0, "ihk_os_set_ikc_map\n");
-
-		// get ikc_map
-		ret = ihk_os_get_ikc_map(0, ikc_map, 2);
-		OKNG(ret != 0, "ihk_os_get_ikc_map (1)\n");
-	} else {
-		// set ikc_map
-		sprintf(cmd, "%s/sbin/ihkosctl 0 set ikc_map 3:0+1:2 2>&1",
-			QUOTE(WITH_MCK));
-		fp = popen(cmd, "r");
-		nread = fread(buf, 1, sizeof(buf), fp);
-		buf[nread] = 0;
-		OKNG(strstr(buf, "rror") != NULL,
-		     "ihkconfig 0 set ikc_map (1)\n");
-
-		// get ikc_map
-		sprintf(cmd, "%s/sbin/ihkosctl 0 get ikc_map 2>&1",
-			QUOTE(WITH_MCK));
-		fp = popen(cmd, "r");
-		nread = fread(buf, 1, sizeof(buf), fp);
-		buf[nread] = 0;
-		OKNG(strstr(buf, "3:0+1:2") == NULL,
-		     "ihkconfig 0 get ikc_map (1) returned:\n%s\n", buf);
-	}
-
-	// load
-	sprintf(fn, "%s/%s/kernel/mckernel.img",
-		QUOTE(WITH_MCK), QUOTE(TARGET));
-	ret = ihk_os_load(0, fn);
-	OKNG(ret != 0, "ihk_os_load\n");
-
-	// kargs
-	sprintf(kargs, "hidos ksyslogd=0");
-	ret = ihk_os_kargs(0, kargs);
-	OKNG(ret != 0, "ihk_os_kargs\n");
-
-	// boot
-	ret = ihk_os_boot(0);
-	OKNG(ret != 0, "ihk_os_boot\n");
-
-	// get status
-	ret = ihk_os_get_status(0);
-	OKNG(ret < 0, "ihk_os_get_status (1)\n");
-
-	// get status
-	sprintf(cmd, "%s//sbin/ihkosctl 0 get status 2>&1", QUOTE(WITH_MCK));
-	fp = popen(cmd, "r");
-	nread = fread(buf, 1, sizeof(buf), fp);
-	buf[nread] = 0;
-	OKNG(strstr(buf, "rror") != NULL,
-	     "ihkconfig 0 get status (1) returned:\n%s\n", buf);
-
-	// kmsg size
-	kmsg_size = ihk_os_get_kmsg_size(0);
-	OKNG(kmsg_size < 0, "ihk_os_get_kmsg_size\n");
-
-	// get kmsg
-	ret = ihk_os_kmsg(0, buf, 256);
-	OKNG(ret != 0, "ihk_os_kmsg returns %d\n", ret);
-
-	// clear kmsg
-	ret = ihk_os_clear_kmsg(0);
-	OKNG(ret != 0, "ihk_os_clear_kmsg\n");
-
-	// get # of NUMA nodes
-	num_numa_nodes = ihk_os_get_num_numa_nodes(0);
-	OKNG(num_numa_nodes < 0, "ihk_os_get_num_numa_nodes\n");
-
-	// query_free_mem
-	ret = ihk_os_query_free_mem(0, memfree, num_numa_nodes);
-	OKNG(ret != 0, "ihk_os_query_free_mem\n");
-
-	// get # of page sizes
-	num_pgsizes = ihk_os_get_num_pagesizes(0);
-	OKNG(num_pgsizes < 0, "ihk_os_get_num_pagesizes\n");
-
-	// get page sizes
-	ret = ihk_os_get_pagesizes(0, pgsizes, num_pgsizes);
-	OKNG(ret != 0, "ihk_os_get_pagesizes\n");
-
-	// get rusage
-	ret = ihk_os_getrusage(0, &rusage, sizeof(rusage));
-	OKNG(ret != 0, "ihk_os_getrusage\n");
-
-	// shutdown
-	ret = ihk_os_shutdown(0);
-	OKNG(ret != 0, "ihk_os_shutdown (1)\n");
-
-	// destroy os
-	ret = ihk_destroy_os(0, 0);
-	OKNG(ret != 0, "ihk_destroy_os (2)\n");
-
-	/* Expected to succeed */
-
-	// create 0
-	ret = ihk_create_os(0);
-	OKNG(ret == 0, "ihk_create_os (2)\n");
-#if 0
-	// create 1
-	ret = ihk_create_os(0);
-	OKNG(ret == 1, "ihk_create_os (3)\n");
-
-	// get # of OS instances
-	num_os_instances = ihk_get_num_os_instances(0);
-	OKNG(num_os_instances == 2, "ihk_get_num_os_instances (2)\n");
-
-	// get OS instances. Note that the index of the youngest OS
-	// instance resides in [0].
-	ret = ihk_get_os_instances(0, indices, num_os_instances);
-	OKNG(ret == 0 &&
-	     indices[0] == 1 &&
-	     indices[1] == 0, "ihk_get_os_instances (2)\n");
-
-	// get os_instances
-	sprintf(cmd, "%s//sbin/ihkconfig 0 get os_instances", QUOTE(WITH_MCK));
-	fp = popen(cmd, "r");
-	nread = fread(buf, 1, sizeof(buf), fp);
-	buf[nread] = 0;
-	OKNG(strstr(buf, "0") != NULL && strstr(buf, "1") != NULL,
-	     "ihkconfig 0 get os_instances (2) returned:\n%s\n", buf);
-
-	// destroy one of them
-	ret = ihk_destroy_os(0, 1);
-	OKNG(ret == 0, "ihk_destroy_os (3)\n");
-
-#else
-	// get # of OS instances
-	num_os_instances = ihk_get_num_os_instances(0);
-	OKNG(num_os_instances == 1, "ihk_get_num_os_instances (2)\n");
-
-	// get OS instances. Note that the index of the youngest OS
-	// instance resides in [0].
-	ret = ihk_get_os_instances(0, indices, num_os_instances);
-	OKNG(ret == 0 &&
-	     indices[0] == 0, "ihk_get_os_instances (2)\n");
-
-	// get os_instances
-	sprintf(cmd, "%s//sbin/ihkconfig 0 get os_instances", QUOTE(WITH_MCK));
-	fp = popen(cmd, "r");
-	nread = fread(buf, 1, sizeof(buf), fp);
-	buf[nread] = 0;
-	OKNG(strstr(buf, "0") != NULL,
-	     "ihkconfig 0 get os_instances (3) returned:\n%s\n", buf);
-#endif
-
-	// get status
-	ret = ihk_os_get_status(0);
-	OKNG(ret == IHK_STATUS_INACTIVE, "ihk_os_get_status (2)\n");
-
-	// get status
-	sprintf(cmd, "%s/sbin/ihkosctl 0 get status 2>&1", QUOTE(WITH_MCK));
-	fp = popen(cmd, "r");
-	nread = fread(buf, 1, sizeof(buf), fp);
-	buf[nread] = 0;
-	OKNG(strstr(buf, "INACTIVE") != NULL,
-	     "ihkconfig 0 get status (2) returned:\n%s\n", buf);
-
-	sprintf(cmd, "chown %s:%s /dev/mcos*\n", uid, gid);
-	status = system(cmd);
-	CHKANDJUMP(WEXITSTATUS(status) != 0, -1, "system");
-
-	// assign cpu 3,1
-	num_cpus = 2;
-	cpus[0] = 3;
-	cpus[1] = 1;
-	ret = ihk_os_assign_cpu(0, cpus, num_cpus);
-	OKNG(ret == 0, "ihk_os_assign_cpu\n");
-
-	// get # of assigned cpus
-	num_cpus = ihk_os_get_num_assigned_cpus(0);
-	OKNG(num_cpus == 2, "ihk_os_get_num_assigned_cpus\n");
-
-	// get assigned cpus
-	ret = ihk_os_query_cpu(0, cpus, num_cpus);
-	OKNG(ret == 0 &&
-	     cpus[0] == 3 &&
-	     cpus[1] == 1, "ihk_os_query_cpu (5)\n");
-
-	// release cpu
-	num_cpus = 1;
-	cpus[0] = 3;
-	ret = ihk_os_release_cpu(0, cpus, num_cpus);
-	OKNG(ret == 0, "ihk_os_release_cpu (2)\n");
-
-	// get # of assigned cpus
-	num_cpus = ihk_os_get_num_assigned_cpus(0);
-	OKNG(num_cpus == 1, "ihk_os_get_num_assigned_cpus\n");
-
-	// get assigned cpus
-	ret = ihk_os_query_cpu(0, cpus, num_cpus);
-	OKNG(ret == 0 &&
-	     cpus[0] == 1, "ihk_os_query_cpu (6)\n");
-
-	// release cpu
-	num_cpus = 1;
-	cpus[0] = 1;
-	ret = ihk_os_release_cpu(0, cpus, num_cpus);
-	OKNG(ret == 0, "ihk_os_release_cpu (3)\n");
-
-	// assign cpu 3,1
-	num_cpus = 2;
-	cpus[0] = 3;
-	cpus[1] = 1;
-	ret = ihk_os_assign_cpu(0, cpus, num_cpus);
-	OKNG(ret == 0, "ihk_os_assign_cpu\n");
-
-	if (ikc_map_by_func) {
-		// set ikc_map
-		ikc_map[0].src_cpu = 3;
-		ikc_map[0].dst_cpu = 0;
-		ikc_map[1].src_cpu = 1;
-		ikc_map[1].dst_cpu = 2;
-		ret = ihk_os_set_ikc_map(0, ikc_map, num_cpus);
-		OKNG(ret == 0, "ihk_os_set_ikc_map\n");
-
-		// get ikc_map
-		ret = ihk_os_get_ikc_map(0, ikc_map, num_cpus);
-		OKNG(ret == 0 &&
-			((ikc_map[0].src_cpu == 1 && ikc_map[0].dst_cpu == 2 &&
-			ikc_map[1].src_cpu == 3 && ikc_map[1].dst_cpu == 0) ||
-			(ikc_map[0].src_cpu == 3 && ikc_map[0].dst_cpu == 0 &&
-			ikc_map[1].src_cpu == 1 && ikc_map[1].dst_cpu == 2)),
-			"ihk_os_get_ikc_map (2)\n");
-	} else {
-		// set ikc_map
-		sprintf(cmd, "%s/sbin/ihkosctl 0 set ikc_map 3:0+1:2 2>&1",
-			QUOTE(WITH_MCK));
-		fp = popen(cmd, "r");
-		nread = fread(buf, 1, sizeof(buf), fp);
-		buf[nread] = 0;
-		OKNG(strstr(buf, "rror") == NULL,
-		     "ihkconfig 0 set ikc_map (2)\n");
-
-		// get ikc_map
-		sprintf(cmd, "%s/sbin/ihkosctl 0 get ikc_map 2>&1",
-			QUOTE(WITH_MCK));
-		fp = popen(cmd, "r");
-		nread = fread(buf, 1, sizeof(buf), fp);
-		buf[nread] = 0;
-		OKNG(strstr(buf, "3:0+1:2") != NULL,
-		     "ihkconfig 0 get ikc_map (2) returned:\n%s\n", buf);
-	}
-
-	// assign mem 128m@0,64m@0
-	num_mem_chunks = 2;
-	mem_chunks[0].size = 128*1024*1024ULL;
-	mem_chunks[0].numa_node_number = 0;
-	mem_chunks[1].size = 64*1024*1024ULL;
-	mem_chunks[1].numa_node_number = 0;
-	ret = ihk_os_assign_mem(0, mem_chunks, num_mem_chunks);
-	OKNG(ret == 0, "ihk_os_assign_mem (2)\n");
-
-	// get # of assigned mem chunks
-	num_mem_chunks = ihk_os_get_num_assigned_mem_chunks(0);
-	OKNG(num_mem_chunks == 2, "ihk_os_get_num_assigned_mem_chunks\n");
-
-	// get assigned mem chunks
-	ret = ihk_os_query_mem(0, mem_chunks, num_mem_chunks);
-	OKNG(ret == 0 &&
-	     ((mem_chunks[0].size == 128*1024*1024ULL &&
-	       mem_chunks[0].numa_node_number == 0 &&
-	       mem_chunks[1].size == 64*1024*1024ULL &&
-	       mem_chunks[1].numa_node_number == 0) ||
-	      (mem_chunks[0].size == 64*1024*1024ULL &&
-	       mem_chunks[0].numa_node_number == 0 &&
-	       mem_chunks[1].size == 128*1024*1024ULL &&
-	       mem_chunks[1].numa_node_number == 0)), "ihk_os_query_mem (2)\n");
-
-	// release mem chunks
-	num_mem_chunks = 1;
-	mem_chunks[0].size = 64*1024*1024ULL;
-	mem_chunks[0].numa_node_number = 0;
-	ret = ihk_os_release_mem(0, mem_chunks, num_mem_chunks);
-	OKNG(ret == 0, "ihk_os_release_mem\n");
-
-	// get # of assigned mem chunks
-	num_mem_chunks = ihk_os_get_num_assigned_mem_chunks(0);
-	OKNG(num_mem_chunks == 1, "ihk_os_get_num_assigned_mem_chunks\n");
-
-	// get assigned mem chunks
-	ret = ihk_os_query_mem(0, mem_chunks, num_mem_chunks);
-	OKNG(ret == 0 &&
-	     mem_chunks[0].size == 128*1024*1024ULL &&
-	     mem_chunks[0].numa_node_number == 0, "ihk_os_query_mem (3)\n");
-
-	// assign mem 64m@0
-	num_mem_chunks = 1;
-	mem_chunks[0].size = 64*1024*1024ULL;
-	mem_chunks[0].numa_node_number = 0;
-	ret = ihk_os_assign_mem(0, mem_chunks, num_mem_chunks);
-	OKNG(ret == 0, "ihk_os_assign_mem (3)\n");
-
-	// get # of assigned mem chunks
-	num_mem_chunks = ihk_os_get_num_assigned_mem_chunks(0);
-	OKNG(num_mem_chunks == 2, "ihk_os_get_num_assigned_mem_chunks\n");
-
-	// get assigned mem chunks
-	ret = ihk_os_query_mem(0, mem_chunks, num_mem_chunks);
-	OKNG(ret == 0 &&
-	     ((mem_chunks[0].size == 128*1024*1024ULL &&
-	       mem_chunks[0].numa_node_number == 0 &&
-	       mem_chunks[1].size == 64*1024*1024ULL &&
-	       mem_chunks[1].numa_node_number == 0) ||
-	      (mem_chunks[0].size == 64*1024*1024ULL &&
-	       mem_chunks[0].numa_node_number == 0 &&
-	       mem_chunks[1].size == 128*1024*1024ULL &&
-	       mem_chunks[1].numa_node_number == 0)),
-	     "ihk_os_query_mem (4)\n");
-
-	// load
-	sprintf(fn, "%s/%s/kernel/mckernel.img",
-		QUOTE(WITH_MCK), QUOTE(TARGET));
-	ret = ihk_os_load(0, fn);
-	OKNG(ret == 0, "ihk_os_load\n");
-
-	// kargs
-	sprintf(kargs, "hidos ksyslogd=0");
-	ret = ihk_os_kargs(0, kargs);
-	OKNG(ret == 0, "ihk_os_kargs\n");
-
-	// boot
-	ret = ihk_os_boot(0);
-	OKNG(ret == 0, "ihk_os_boot\n");
-	if (boot_shutdown) { /* #898 */
-		goto shutdown;
-	}
-
-	// get status
-	ret = ihk_os_get_status(0);
-	OKNG(ret == IHK_STATUS_BOOTING ||
-	     ret == IHK_STATUS_RUNNING, "ihk_os_get_status (3)\n");
-
-	// get status
-	sprintf(cmd, "%s/sbin/ihkosctl 0 get status 2>&1", QUOTE(WITH_MCK));
-	fp = popen(cmd, "r");
-	nread = fread(buf, 1, sizeof(buf), fp);
-	buf[nread] = 0;
-	OKNG(strstr(buf, "BOOTING") != NULL ||
-	     strstr(buf, "RUNNING") != NULL,
-	     "ihkconfig 0 get status (3) returned:\n%s\n", buf);
-
-	/* Make sure that all initialization related transactions
-	 * between McKernel and IHK finish
-	 * sysfs_init(void) (in mckernel/kernel/sysfs.c)
-	 * packet.msg = SCD_MSG_SYSFS_REQ_SETUP;
-	 * sysfsm_work_main() in (mckernel/executer/kernel/mcctrl/sysfs.c)
-	 * sysfsm_req_setup
-	 * sysfsm_setup
-	 */
-	usleep(100*1000);
-
-	// get status
-	ret = ihk_os_get_status(0);
-	OKNG(ret == IHK_STATUS_RUNNING, "ihk_os_get_status (4)\n");
-
-	// get status
-	sprintf(cmd, "%s/sbin/ihkosctl 0 get status 2>&1", QUOTE(WITH_MCK));
-	fp = popen(cmd, "r");
-	nread = fread(buf, 1, sizeof(buf), fp);
-	buf[nread] = 0;
-	OKNG(strstr(buf, "RUNNING") != NULL,
-	     "ihkconfig 0 get status (4) returned:\n%s\n", buf);
-
-	// get kmsg size
-	kmsg_size = ihk_os_get_kmsg_size(0);
-	OKNG(kmsg_size > 0, "ihk_os_get_kmsg_size\n");
-
-	// get kmsg
-	ret = ihk_os_kmsg(0, buf, kmsg_size);
-	OKNG(ret > 0 &&
-	     strstr(buf, "IHK/McKernel started.") != NULL, "ihk_os_kmsg\n");
-
-	// clear kmsg
-	ret = ihk_os_clear_kmsg(0);
-	OKNG(ret == 0, "ihk_os_clear_kmsg\n");
-
-#if 0
-	// get kmsg
-	ret = ihk_os_kmsg(0, buf, kmsg_size);
-	printf("%s,%d", strstr(buf, "IHK/McKernel started."), ret);
-	OKNG(ret == 0 &&
-	     strstr(buf, "IHK/McKernel started.") == NULL,
-	     "ihk_os_kmsg returns %d\n", ret);
-#endif
-
-	// mcexec
-	sprintf(cmd, "%s/bin/mcexec ls -l | grep Makefile", QUOTE(WITH_MCK));
-	if (mcexec_shutdown) { /* #928 */
-		status = system(cmd);
-		goto shutdown;
-	}
-	fp = popen(cmd, "r");
-	nread = fread(buf, 1, sizeof(buf), fp);
-	buf[nread] = 0;
-	OKNG(strstr(buf, "Makefile") != NULL, "mcexec\n");
-
-	// /proc
-	sprintf(cmd, "%s/bin/mcexec cat /proc/stat", QUOTE(WITH_MCK));
-	fp1 = popen(cmd, "r");
-	nread = fread(buf1, 1, sizeof(buf1), fp1);
-	buf1[nread] = 0;
-	fp2 = popen("cat /proc/stat", "r");
-	nread = fread(buf2, 1, sizeof(buf2), fp2);
-	buf2[nread] = 0;
-	OKNG(strcmp(buf1, buf2) != 0, "mcexec cat /proc/stat\n");
-
-	// get # of NUMA nodes
-	num_numa_nodes = ihk_os_get_num_numa_nodes(0);
-	OKNG(num_numa_nodes > 0, "ihk_os_get_num_numa_nodes\n");
-
-	// query_free_mem
-	ret = ihk_os_query_free_mem(0, memfree, num_numa_nodes);
-	OKNG(ret == 0 &&
-		 memfree[0] > 0, "ihk_os_query_free_mem\n");
-
-	// get # of page sizes
-	num_pgsizes = ihk_os_get_num_pagesizes(0);
-	OKNG(num_pgsizes == 3, "ihk_os_get_num_pagesizes\n");
-
-	// get page sizes
-	ret = ihk_os_get_pagesizes(0, pgsizes, num_pgsizes);
-	OKNG(ret == 0 &&
-		 pgsizes[0] == (1ULL<<12) &&
-		 pgsizes[1] == (1ULL<<21) &&
-		 pgsizes[2] == (1ULL<<30), "ihk_os_get_pagesizes\n");
 #if 1
 	// shutdown
 	// usleep(250*1000); // Wait for nothing is in-flight
@@ -811,24 +367,13 @@ int main(int argc, char **argv)
 	OKNG(strstr(buf, "0") == NULL,
 	     "ihkconfig 0 get os_instances (4) returned:\n%s\n", buf);
 
-	sprintf(cmd, "rmmod %s/kmod/mcctrl.ko", QUOTE(WITH_MCK));
-	status = system(cmd);
-	CHKANDJUMP(WEXITSTATUS(status) != 0, -1, "system");
 
-	sprintf(cmd, "rmmod %s/kmod/ihk-%s.ko",
-		QUOTE(WITH_MCK), QUOTE(BUILD_TARGET));
-	status = system(cmd);
-	CHKANDJUMP(WEXITSTATUS(status) != 0, -1, "system");
-
-	sprintf(cmd, "rmmod %s/kmod/ihk.ko", QUOTE(WITH_MCK));
-	status = system(cmd);
-	CHKANDJUMP(WEXITSTATUS(status) != 0, -1, "system");
-
+	ret = rmmod();
+	NG(ret == 0, "rmmod returned %d\n", ret);
+	
 	printf("[INFO] All tests finished\n");
 	ret = 0;
 
- fn_exit:
+ out:
 	return ret;
- fn_fail:
-	goto fn_exit;
 }

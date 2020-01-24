@@ -647,8 +647,7 @@ int ihklib_device_open(int index)
 
 int ihk_reserve_cpu(int index, int* cpus, int num_cpus)
 {
-	int ret = 0, ret_ioctl;
-	char cpu_list[IHK_MAX_NUM_CPUS];
+	int ret = 0;
 	struct ihk_ioctl_cpu_desc req = { 0 };
 	int fd = -1;
 
@@ -665,9 +664,16 @@ int ihk_reserve_cpu(int index, int* cpus, int num_cpus)
 	req.cpus = cpus;
 	req.num_cpus = num_cpus;
 
-	ret_ioctl = ioctl(fd, IHK_DEVICE_RESERVE_CPU, &req);
-	CHKANDJUMP(ret_ioctl != 0, -errno, "ioctl failed, string=%s\n", cpu_list);
+	ret = ioctl(fd, IHK_DEVICE_RESERVE_CPU, &req);
+	if (ret != 0) {
+		int old_ret = ret;
 
+		ret = -errno;
+		eprintf("%s: error: ioctl returned %d\n",
+			__func__, old_ret);
+		goto out;
+	}
+	
  out:
 	if (fd != -1) {
 		close(fd);
@@ -736,7 +742,6 @@ int ihk_query_cpu(int index, int *cpus, int num_cpus)
 
 	req.cpus = cpus;
 	req.num_cpus = num_cpus;
-	CHKANDJUMP(!req.cpus || !req.num_cpus, -EINVAL, "invalid format\n");
 
 	if ((ret = ioctl(fd, IHK_DEVICE_QUERY_CPU, &req))) {
 		eprintf("%s: error: IHK_DEVICE_QUERY_CPU\n",
