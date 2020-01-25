@@ -1,0 +1,3 @@
+#!/usr/bin/sh
+
+sudo ${CMAKE_INSTALL_PREFIX}/bin/ihk_get_num_reserved_cpus05 -u $(id -u) -g $(id -g)

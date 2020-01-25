@@ -1,7 +1,7 @@
 #ifndef __OKNG_H_INCLUDED__
 #define __OKNG_H_INCLUDED__
 
-#include "util.h"
+#include <stdio.h>
 
 #define _OKNG(verb, jump, cond, fmt, args...) do {	\
 	if (cond) {					\
@@ -31,6 +31,5 @@
 		goto out;					\
 	} \
 } while (0)
-
 
 #endif

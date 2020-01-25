@@ -4,7 +4,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <getopt.h>
-#include <ihk/ihklib.h>
+#include <ihklib.h>
 #include "util.h"
 #include "okng.h"
 #include "test.h"
@@ -97,8 +97,8 @@ int main(int argc, char **argv)
 	mem_chunks[0].numa_node_number = 0;
 	mem_chunks[1].size = 64*1024*1024ULL;
 	mem_chunks[1].numa_node_number = 0;
-	ret = ihk_reserve_mem(0, mem_chunks, num_mem_chunks);
-	OKNG(ret != 0, "ihk_reserve_mem w/o /dev/mcd0\n");
+	ret = ihk_reserve_cpu(0, mem_chunks, num_mem_chunks);
+	OKNG(ret != 0, "ihk_reserve_cpu w/o /dev/mcd0\n");
 
 	// get # of reserved mem chunks: exptected to fail
 	num_mem_chunks = ihk_get_num_reserved_mem_chunks(0);
@@ -199,8 +199,8 @@ int main(int argc, char **argv)
 	mem_chunks[0].numa_node_number = 0;
 	mem_chunks[1].size = 64*1024*1024ULL;
 	mem_chunks[1].numa_node_number = 0;
-	ret = ihk_reserve_mem(0, mem_chunks, num_mem_chunks);
-	OKNG(ret == 0, "ihk_reserve_mem\n");
+	ret = ihk_reserve_cpu(0, mem_chunks, num_mem_chunks);
+	OKNG(ret == 0, "ihk_reserve_cpu\n");
 
 	// get # of reserved mem chunks
 	num_mem_chunks = ihk_get_num_reserved_mem_chunks(0);
@@ -239,8 +239,8 @@ int main(int argc, char **argv)
 	num_mem_chunks = 1;
 	mem_chunks[0].size = 128*1024*1024ULL;
 	mem_chunks[0].numa_node_number = 0;
-	ret = ihk_reserve_mem(0, mem_chunks, num_mem_chunks);
-	OKNG(ret == 0, "ihk_reserve_mem\n");
+	ret = ihk_reserve_cpu(0, mem_chunks, num_mem_chunks);
+	OKNG(ret == 0, "ihk_reserve_cpu\n");
 
 	// get # of reserved mem chunks
 	num_mem_chunks = ihk_get_num_reserved_mem_chunks(0);
