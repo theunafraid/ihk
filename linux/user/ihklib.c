@@ -76,8 +76,8 @@ int loglevel = IHKLIB_LOGLEVEL_ERR;
 
 #define CHKANDJUMP(cond, err, fmt, args...) do {	\
 	if (cond) {					\
-		eprintf(fmt, ##args);			\
 		ret = err;				\
+		dprintf(fmt, ##args);			\
 		goto out;				\
 	}						\
 } while(0)
@@ -628,16 +628,16 @@ int ihklib_device_open(int index)
 
 	sprintf(fn, "/dev/mcd%d", index);
 	if ((ret = stat(fn, &file_stat))) {
+		ret = -errno;
 		eprintf("%s: error: stat %s: %s\n",
 			__func__, fn, strerror(errno));
-		ret = -errno;
 		goto out;
 	}
 
 	if ((ret = open(fn, O_RDONLY)) == -1) {
+		ret = -errno;
 		eprintf("%s: error: open %s: %s\n",
 			__func__, fn, strerror(errno));
-		ret = -errno;
 		goto out;
 	}
 
@@ -759,7 +759,7 @@ int ihk_query_cpu(int index, int *cpus, int num_cpus)
 
 int ihk_release_cpu(int index, int* cpus, int num_cpus)
 {
-	int ret = 0, ret_ioctl;
+	int ret = 0;
 	struct ihk_ioctl_cpu_desc req = { 0 };
 	int fd = -1;
 
@@ -776,12 +776,26 @@ int ihk_release_cpu(int index, int* cpus, int num_cpus)
 
 	req.cpus = cpus;
 	req.num_cpus = num_cpus;
-	CHKANDJUMP(!req.cpus || !req.num_cpus, -EINVAL,
-		"invalid format\n");
 
-	ret_ioctl = ioctl(fd, IHK_DEVICE_RELEASE_CPU, &req);
-	CHKANDJUMP(ret_ioctl != 0, -errno, "ioctl failed\n");
+	if (req.cpus == NULL) {
+		ret = -EFAULT;
+		goto out;
+	}
 
+	if (req.num_cpus == 0) {
+		ret = 0;
+		goto out;
+	}
+
+	ret = ioctl(fd, IHK_DEVICE_RELEASE_CPU, &req);
+	if (ret) {
+		int errno_save = errno;
+
+		dprintf("%s: IHK_DEVICE_RELEASE_CPU returned %d\n",
+			__func__, ret);
+		ret = -errno_save;
+		goto out;
+	}
  out:
 	if (fd != -1) {
 		close(fd);

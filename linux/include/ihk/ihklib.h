@@ -2,6 +2,8 @@
 #ifndef INCLUDED_IHKLIB
 #define INCLUDED_IHKLIB
 
+#include <stdio.h>
+
 #include <bfd.h>
 #define PATH_SYS_NODE "/sys/devices/system/node"
 #define PATH_DEV "/dev"
