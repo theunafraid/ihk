@@ -3705,7 +3705,15 @@ static int smp_ihk_release_cpu(ihk_device_t ihk_dev, unsigned long arg)
 
 	memset(&cpus_to_online, 0, sizeof(cpus_to_online));
 
+	printk("%s: nr_cpu_ids: %d\n", __func__, nr_cpu_ids);
 	for (i = 0; i < req.num_cpus; i++) {
+		printk("%s: req_cpus[%d]: %d\n", __FUNCTION__, i, req_cpus[i]);
+		if (req_cpus[i] < 0 || req_cpus[i] >= nr_cpu_ids) {
+			printk("%s: error: req_cpus[%d]: %d\n", __FUNCTION__, i, req_cpus[i]);
+
+			ret = -EINVAL;
+			goto out;
+		}
 		cpumask_set_cpu(req_cpus[i], &cpus_to_online);
 	}
 
@@ -3730,7 +3738,10 @@ static int smp_ihk_release_cpu(ihk_device_t ihk_dev, unsigned long arg)
 		}
 
 		if (cpu_online(cpu)) {
-			continue;
+			printk("IHK-SMP: error: CPU %d is online\n",
+			       cpu);
+			ret = -EINVAL;
+			goto err;
 		}
 
 		if (ihk_smp_cpus[cpu].status != IHK_SMP_CPU_AVAILABLE) {
