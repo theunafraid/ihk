@@ -61,6 +61,18 @@ foreach(target IN ITEMS
     ihk_get_num_reserved_cpus03
     ihk_get_num_reserved_cpus05
     ihk_get_num_reserved_cpus06
+    ihk_query_cpu01
+    ihk_query_cpu02
+    ihk_query_cpu03
+    ihk_query_cpu04
+    ihk_query_cpu05
+    ihk_query_cpu06
+    ihk_release_cpu01
+    ihk_release_cpu02
+#    ihk_release_cpu03
+#    ihk_release_cpu04
+#    ihk_release_cpu05
+#    ihk_release_cpu06
     )
 
   # Add target

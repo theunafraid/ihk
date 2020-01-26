@@ -3,6 +3,6 @@
 
 #include "input_vector.h"
 
-int query_and_check(struct cpus *expected);
+int check_reserved_cpu(struct cpus *expected);
 
 #endif

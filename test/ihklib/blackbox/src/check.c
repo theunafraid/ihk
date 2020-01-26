@@ -4,7 +4,7 @@
 #include "okng.h"
 #include "check.h"
 
-int query_and_check(struct cpus *expected)
+int check_reserved_cpu(struct cpus *expected)
 {
 	int ret;
 	struct cpus cpus;

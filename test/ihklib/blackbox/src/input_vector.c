@@ -8,6 +8,25 @@
 #include "okng.h"
 #include "input_vector.h"
 
+
+int cpus_init(struct cpus *cpus, int ncpus)
+{
+	int ret;
+	cpus->cpus = mmap(0, sizeof(int) * ncpus,
+			  PROT_READ | PROT_WRITE,
+			  MAP_ANONYMOUS | MAP_PRIVATE,
+			  -1, 0);
+	if (cpus->cpus == MAP_FAILED) {
+		ret = -errno;
+		goto out;
+	}
+
+	cpus->ncpus = ncpus;
+	ret = 0;
+ out:
+	return ret;
+}
+
 int cpus_ls(struct cpus *cpus)
 {
 	char cmd[1024];
@@ -21,16 +40,12 @@ int cpus_ls(struct cpus *cpus)
 	INTERR(fp == NULL, "%s failed\n", cmd);
 
 	if (cpus->cpus == NULL) {
-		cpus->cpus = mmap(0, sizeof(int) * MAX_NUM_CPUS,
-				  PROT_READ | PROT_WRITE,
-				  MAP_ANONYMOUS | MAP_PRIVATE,
-				  -1, 0);
-		if (cpus->cpus == MAP_FAILED) {
-			ret = -errno;
+		ret = cpus_init(cpus, MAX_NUM_CPUS);
+		if (ret != 0) {
 			goto out;
 		}
 	}
-	
+
 	ncpus = 0;
 	do {
 		int id;
@@ -48,17 +63,16 @@ int cpus_ls(struct cpus *cpus)
 		cpus->cpus[ncpus++] = id;
 	} while (ret);
 
-	cpus->ncpus = ncpus;
-	
-	cpus->cpus = mremap(cpus->cpus, sizeof(int) * MAX_NUM_CPUS,
-			    sizeof(int) * cpus->ncpus,
-			    MREMAP_MAYMOVE);
+	cpus->cpus = mremap(cpus->cpus, sizeof(int) * cpus->ncpus,
+			    sizeof(int) * ncpus, MREMAP_MAYMOVE);
 	if (cpus->cpus == MAP_FAILED) {
 		ret = -errno;
 		goto out;
 	}
 	
-		ret = 0;
+	cpus->ncpus = ncpus;
+	
+	ret = 0;
  out:
 	if (!fp) {
 		fclose(fp);
@@ -71,12 +85,8 @@ int cpus_push(struct cpus *cpus, int id)
 	int ret;
 	
 	if (cpus->cpus == NULL) {
-		cpus->cpus = mmap(0, sizeof(int),
-				  PROT_READ | PROT_WRITE,
-				  MAP_ANONYMOUS | MAP_PRIVATE,
-				  -1, 0);
-		if (cpus->cpus == MAP_FAILED) {
-			ret = -errno;
+		ret = cpus_init(cpus, 1);
+		if (ret != 0) {
 			goto out;
 		}
 	} else {
@@ -119,12 +129,24 @@ int cpus_pop(struct cpus *cpus)
 	return ret;
 }
 
-int cpus_unshift(struct cpus *cpus, int n)
+int cpus_shift(struct cpus *cpus, int n)
 {
 	int ret;
 	
 	if (cpus->ncpus < n || cpus->cpus == NULL) {
 		ret = 1;
+		goto out;
+	}
+
+	if (cpus->ncpus == n) {
+		ret = munmap(cpus->cpus, sizeof(int) * cpus->ncpus);
+		if (ret) {
+			ret = -errno;
+			goto out;
+		}
+		cpus->cpus = NULL;
+		cpus->ncpus = 0;
+		ret = 0;
 		goto out;
 	}
 	

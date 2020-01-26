@@ -53,11 +53,20 @@ int main(int argc, char **argv)
 		  -ENOENT,
 		};
 
-	int ret_expected[] =
+	int ret_expected_get_num_reserved_cpus[] =
 		{
 		  -ENOENT,
 		  -ENOENT,
 		  cpu_inputs[2].ncpus,
+		  -ENOENT,
+		  -ENOENT,
+		};
+
+	int ret_expected[] =
+		{
+		  -ENOENT,
+		  -ENOENT,
+		  0,
 		  -ENOENT,
 		  -ENOENT,
 		};
@@ -77,6 +86,8 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 5; i++) {
+		struct cpus cpus;
+
 		INFO("test-case: dev_index: %s\n", messages[i]);
 
 		ret = ihk_reserve_cpu(dev_index_inputs[i],
@@ -85,13 +96,32 @@ int main(int argc, char **argv)
 		     "ihk_reserve_cpu returned %d\n", ret);
 
 		ret = ihk_get_num_reserved_cpus(dev_index_inputs[i]);
-		OKNG(ret == ret_expected[i],
-		     "return value: %d, expected: %d\n",
-		     ret, ret_expected[i]);
+		INTERR(ret != ret_expected_get_num_reserved_cpus[i],
+		     "ihk_get_num_reserved_cpus returned %d\n", ret);
 
-		if (cpus_expected[i]) {
-			ret = check_reserved_cpu(cpus_expected[i]);
-			OKNG(ret == 0, "reserved as expected\n");
+		if (!cpus_expected[i]) {
+			ret = cpus_init(&cpus, 1);
+			INTERR(ret != 0, "cpus_init returned %d\n", ret);
+			
+			ret = ihk_query_cpu(dev_index_inputs[i], cpus.cpus,
+					    cpus.ncpus);
+			OKNG(ret == ret_expected[i],
+			     "return value: %d, expected: %d\n",
+			     ret, ret_expected[i]);
+		} else {
+			cpus.ncpus = ret;
+			
+			ret = cpus_init(&cpus, cpus.ncpus);
+			INTERR(ret != 0, "cpus_init returned %d\n", ret);
+			
+			ret = ihk_query_cpu(dev_index_inputs[i], cpus.cpus,
+					    cpus.ncpus);
+			OKNG(ret == ret_expected[i],
+			     "return value: %d, expected: %d\n",
+			     ret, ret_expected[i]);
+
+			ret = cpus_compare(&cpus, cpus_expected[i]);
+			OKNG(ret == 0, "query result matches input\n");
 
 			/* Clean up */
 			ret = ihk_release_cpu(0, cpu_inputs[i].cpus,

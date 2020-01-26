@@ -26,8 +26,8 @@ int main(int argc, char **argv)
 		ret = cpus_ls(&cpu_inputs[i]);
 		INTERR(ret, "cpus_ls returned %d\n", ret);
 
-		ret = cpus_unshift(&cpu_inputs[i], 2);
-		INTERR(ret, "cpus_unshift returned %d\n", ret);
+		ret = cpus_shift(&cpu_inputs[i], 2);
+		INTERR(ret, "cpus_shift returned %d\n", ret);
 	}
 	
 	int ret_expected_reserve_cpu[] = { -ENOENT, 0 };
@@ -48,7 +48,7 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 		
 		if (cpus_expected[i]) {
-			ret = query_and_check(cpus_expected[i]);
+			ret = check_reserved_cpu(cpus_expected[i]);
 			OKNG(ret == 0, "reserved as expected\n");
 			
 			/* Clean up */

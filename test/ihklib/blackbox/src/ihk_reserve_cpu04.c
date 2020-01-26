@@ -44,8 +44,8 @@ int main(int argc, char **argv)
 
 	/* Spare two cpus for Linux */
 	for (i = 0; i < 7; i++) { 
-		ret = cpus_unshift(&cpu_inputs[i], 2);
-		INTERR(ret, "cpus_unshift returned %d\n", ret);
+		ret = cpus_shift(&cpu_inputs[i], 2);
+		INTERR(ret, "cpus_shift returned %d\n", ret);
 	}
 
 	cpu_inputs[0].ncpus = INT_MIN;
@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 		
 		if (cpus_expected[i]) {
-			ret = query_and_check(cpus_expected[i]);
+			ret = check_reserved_cpu(cpus_expected[i]);
 			OKNG(ret == 0, "reserved as expected\n");
 
 			/* Clean up */

@@ -1,0 +1,3 @@
+#!/usr/bin/sh
+
+sudo ${CMAKE_INSTALL_PREFIX}/bin/ihk_release_cpu03 -u $(id -u) -g $(id -g)

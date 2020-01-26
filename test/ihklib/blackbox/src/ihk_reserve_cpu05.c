@@ -30,8 +30,8 @@ int main(int argc, char **argv)
 
 	/* Spare two cpus for Linux */
 	for (i = 0; i < 1; i++) { 
-		ret = cpus_unshift(&cpu_inputs[i], 2);
-		INTERR(ret, "cpus_unshift returned %d\n", ret);
+		ret = cpus_shift(&cpu_inputs[i], 2);
+		INTERR(ret, "cpus_shift returned %d\n", ret);
 	}
 
 	int ret_expected[] = { 0 };
@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 
 		if (cpus_expected[i]) {
-			ret = query_and_check(cpus_expected[i]);
+			ret = check_reserved_cpu(cpus_expected[i]);
 			OKNG(ret == 0, "reserved as expected\n");
 			
 			/* Clean up */
@@ -65,6 +65,7 @@ int main(int argc, char **argv)
 		}
 	}
 
+	ret = 0;
  out:
 	rmmod(0);
 	return ret;

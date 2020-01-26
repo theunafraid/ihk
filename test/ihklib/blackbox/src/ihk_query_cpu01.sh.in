@@ -1,0 +1,3 @@
+#!/usr/bin/sh
+
+sudo ${CMAKE_INSTALL_PREFIX}/bin/ihk_query_cpu01 -u $(id -u) -g $(id -g)
