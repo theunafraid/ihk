@@ -779,8 +779,12 @@ int ihk_release_cpu(int index, int* cpus, int num_cpus)
 	int fd = -1;
 
 	dprintk("%s: enter\n", __func__);
-	CHKANDJUMP(num_cpus > IHK_MAX_NUM_CPUS, -EINVAL,
-		"too many cpus specified\n");
+	if (num_cpus < 0 || num_cpus > IHK_MAX_NUM_CPUS) {
+		dprintf("%s: invalid num_cpus: %d\n",
+			__func__, num_cpus);
+		ret = -EINVAL;
+		goto out;
+	}
 
 	if ((fd = ihklib_device_open(index)) < 0) {
 		eprintf("%s: error: ihklib_device_open\n",
@@ -789,18 +793,18 @@ int ihk_release_cpu(int index, int* cpus, int num_cpus)
 		goto out;
 	}
 
-	req.cpus = cpus;
-	req.num_cpus = num_cpus;
-
-	if (req.cpus == NULL) {
+	if (num_cpus != 0 && cpus == NULL) {
 		ret = -EFAULT;
 		goto out;
 	}
 
-	if (req.num_cpus == 0) {
+	if (num_cpus == 0) {
 		ret = 0;
 		goto out;
 	}
+
+	req.cpus = cpus;
+	req.num_cpus = num_cpus;
 
 	ret = ioctl(fd, IHK_DEVICE_RELEASE_CPU, &req);
 	if (ret) {
