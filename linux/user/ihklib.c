@@ -152,9 +152,11 @@ static int cpu_str2array(char *_cpu_list, int num_cpus, int *cpus)
 	}
 
 	if (!(cpu_list = strdup(_cpu_list))) {
-		eprintf("%s: error: allocating cpu_list\n",
+		int errno_save = errno;
+
+		dprintf("%s: error: allocating cpu_list\n",
 			__func__);
-		ret = -errno;
+		ret = -errno_save;
 		goto out;
 	}
 	to_free = cpu_list;
@@ -276,9 +278,11 @@ static int ikc_str2array(char *_ikc_list, int num_maps,
 	}
 
 	if (!(ikc_list = strdup(_ikc_list))) {
-		eprintf("%s: error: allocating ikc_list\n",
+		int errno_save = errno;
+
+		dprintf("%s: error: allocating ikc_list\n",
 			__func__);
-		ret = -errno;
+		ret = -errno_save;
 		goto out;
 	}
 	to_free = ikc_list;
@@ -404,9 +408,11 @@ int mem_str2req(char *_mem_list, int num_mem_chunks, struct ihk_mem_req *req)
 	}
 
 	if (!(mem_list = strdup(_mem_list))) {
-		eprintf("%s: error: allocating mem_list\n",
+		int errno_save = errno;
+
+		dprintf("%s: error: allocating mem_list\n",
 			__func__);
-		ret = -errno;
+		ret = -errno_save;
 		goto out;
 	}
 	to_free = mem_list;
@@ -633,16 +639,20 @@ int ihklib_device_open(int index)
 
 	sprintf(fn, "/dev/mcd%d", index);
 	if ((ret = stat(fn, &file_stat))) {
-		ret = -errno;
-		eprintf("%s: error: stat %s: %s\n",
+		int errno_save = errno;
+
+		dprintf("%s: error: stat %s: %s\n",
 			__func__, fn, strerror(errno));
+		ret = -errno_save;
 		goto out;
 	}
 
 	if ((ret = open(fn, O_RDONLY)) == -1) {
-		ret = -errno;
-		eprintf("%s: error: open %s: %s\n",
+		int errno_save = errno;
+
+		dprintf("%s: error: open %s: %s\n",
 			__func__, fn, strerror(errno));
+		ret = -errno_save;
 		goto out;
 	}
 
@@ -741,9 +751,11 @@ int ihk_query_cpu(int index, int *cpus, int num_cpus)
 	}
 
 	if ((ret = ioctl(fd, IHK_DEVICE_GET_NUM_CPUS)) < 0) {
-		eprintf("%s: error: IHK_DEVICE_GET_NUM_CPUS\n",
+		int errno_save = errno;
+
+		dprintf("%s: error: IHK_DEVICE_GET_NUM_CPUS\n",
 			__func__);
-		ret = -errno;
+		ret = -errno_save;
 		goto out;
 	}
 
@@ -759,9 +771,11 @@ int ihk_query_cpu(int index, int *cpus, int num_cpus)
 	req.num_cpus = num_cpus;
 
 	if ((ret = ioctl(fd, IHK_DEVICE_QUERY_CPU, &req))) {
-		eprintf("%s: error: IHK_DEVICE_QUERY_CPU\n",
+		int errno_save = errno;
+
+		dprintf("%s: error: IHK_DEVICE_QUERY_CPU\n",
 			__func__);
-		ret = -errno;
+		ret = -errno_save;
 		goto out;
 	}
 
@@ -787,7 +801,7 @@ int ihk_release_cpu(int index, int* cpus, int num_cpus)
 	}
 
 	if ((fd = ihklib_device_open(index)) < 0) {
-		eprintf("%s: error: ihklib_device_open\n",
+		dprintf("%s: error: ihklib_device_open\n",
 			__func__);
 		ret = fd;
 		goto out;
@@ -811,7 +825,7 @@ int ihk_release_cpu(int index, int* cpus, int num_cpus)
 		int errno_save = errno;
 
 		dprintf("%s: IHK_DEVICE_RELEASE_CPU returned %d\n",
-			__func__, ret);
+			__func__, errno);
 		ret = -errno_save;
 		goto out;
 	}
@@ -844,7 +858,8 @@ int ihk_reserve_mem_conf(int index, int key, void *value)
 int ihk_reserve_mem(int index, struct ihk_mem_chunk *mem_chunks,
 		    int num_mem_chunks)
 {
-	int ret = 0, ret_ioctl, i;
+	int ret;
+	int i;
 	struct ihk_mem_req req = { 0 };
 	int fd = -1;
 
@@ -881,7 +896,7 @@ int ihk_reserve_mem(int index, struct ihk_mem_chunk *mem_chunks,
 
 	req.sizes = calloc(num_mem_chunks, sizeof(size_t));
 	if (!req.sizes) {
-		eprintf("%s: error: allocating request sizes\n",
+		dprintf("%s: error: allocating req.sizes\n",
 			__func__);
 		ret = -ENOMEM;
 		goto out;
@@ -889,7 +904,7 @@ int ihk_reserve_mem(int index, struct ihk_mem_chunk *mem_chunks,
 
 	req.numa_ids = calloc(num_mem_chunks, sizeof(int));
 	if (!req.numa_ids) {
-		eprintf("%s: error: allocating request numa_ids\n",
+		dprintf("%s: error: allocating req.numa_ids\n",
 			__func__);
 		ret = -ENOMEM;
 		goto out;
@@ -909,10 +924,23 @@ int ihk_reserve_mem(int index, struct ihk_mem_chunk *mem_chunks,
 	req.timeout = reserve_mem_conf.timeout;
 
 	fd = ihklib_device_open(index);
-	CHKANDJUMP(fd < 0, fd, "ihklib_device_open failed\n");
-	ret_ioctl = ioctl(fd, IHK_DEVICE_RESERVE_MEM, &req);
-	CHKANDJUMP(ret_ioctl != 0, -errno,
-		   "ioctl IHK_DEVICE_RESERVE_MEM failed");
+	if (fd < 0) {
+		ret = fd;
+		printf("%s: ihklib_device_open returned %d\n",
+		       __func__, fd);
+		goto out;
+	}
+
+	ret = ioctl(fd, IHK_DEVICE_RESERVE_MEM, &req);
+	if (ret != 0) {
+		int errno_save = errno;
+
+		dprintf("%s: IHK_DEVICE_RESERVE_MEM returned %d\n",
+			errno_save);
+		ret = -errno_save;
+		goto out;
+	}
+
 	close(fd);
 
 	if (reserve_mem_conf.total) {
@@ -1080,12 +1108,25 @@ int ihk_reserve_mem(int index, struct ihk_mem_chunk *mem_chunks,
 		req.num_chunks = IHK_MAX_NUM_NUMA_NODES;
 
 		fd = ihklib_device_open(index);
-		CHKANDJUMP(fd < 0, fd, "ihklib_device_open failed\n");
-		ret_ioctl = ioctl(fd, IHK_DEVICE_RELEASE_MEM_PARTIALLY, &req);
-		CHKANDJUMP(ret_ioctl != 0, -errno, "ioctl failed");
+		if (fd < 0) {
+			ret = fd;
+			dprintf("%s: ihklib_device_open returned %d\n", fd);
+		}
+
+		ret = ioctl(fd, IHK_DEVICE_RELEASE_MEM_PARTIALLY, &req);
+		if (ret != 0) {
+			int errno_save = errno;
+
+			dprintf("%s: IHK_DEVICE_RESERVE_MEM returned %d\n",
+				errno_save);
+			ret = -errno_save;
+			goto out;
+		}
+		
 		close(fd);
 	}
 
+	ret = 0;
 out:
 	if (fd >= 0) {
 		close(fd);
@@ -1378,16 +1419,20 @@ int ihklib_os_open(int index)
 
 	sprintf(fn, "/dev/mcos%d", index);
 	if ((ret = stat(fn, &file_stat))) {
-		eprintf("%s: error: stat %s: %s\n",
+		int errno_save = errno;
+
+		dprintf("%s: error: stat %s: %s\n",
 			__func__, fn, strerror(errno));
-		ret = -errno;
+		ret = -errno_save;
 		goto out;
 	}
 
 	if ((ret = open(fn, O_RDONLY)) == -1) {
-		eprintf("%s: error: open %s: %s\n",
+		int errno_save = errno;
+
+		dprintf("%s: error: open %s: %s\n",
 			__func__, fn, strerror(errno));
-		ret = -errno;
+		ret = -errno_save;
 		goto out;
 	}
 
@@ -1472,9 +1517,11 @@ int ihk_os_query_cpu(int index, int *cpus, int num_cpus)
 	}
 
 	if ((ret = ioctl(fd, IHK_OS_GET_NUM_CPUS)) < 0) {
-		eprintf("%s: error: IHK_OS_GET_NUM_CPUS returned %d\n",
+		int errno_save = errno;
+
+		dprintf("%s: error: IHK_OS_GET_NUM_CPUS returned %d\n",
 			__func__, errno);
-		ret = -errno;
+		ret = -errno_save;
 		goto out;
 	}
 
@@ -1491,9 +1538,11 @@ int ihk_os_query_cpu(int index, int *cpus, int num_cpus)
 	CHKANDJUMP(!req.cpus || !req.num_cpus, -EINVAL, "invalid format\n");
 
 	if ((ret = ioctl(fd, IHK_OS_QUERY_CPU, &req))) {
-		eprintf("%s: error: IHK_OS_QUERY_CPU returned %d\n",
+		int errno_save = errno;
+
+		dprintf("%s: error: IHK_OS_QUERY_CPU returned %d\n",
 			__func__, errno);
-		ret = -errno;
+		ret = -errno_save;
 		goto out;
 	}
 
@@ -1950,8 +1999,10 @@ int ihk_os_boot(int index)
 	}
 
 	if ((ret = ioctl(fd, IHK_OS_BOOT, 0)) == -1) {
+		int errno_save = errno;
+
 		dprintf("error: ioctl failed\n");
-		ret = -errno;
+		ret = -errno_save;
 		goto out;
 	}
 
@@ -1972,9 +2023,11 @@ int ihk_os_boot(int index)
 booted_or_error:
 
 	if (ret == -1) {
-		eprintf("%s: error: IHK_OS_STATUS\n",
+		int errno_save = errno;
+
+		dprintf("%s: error: IHK_OS_STATUS\n",
 			__func__);
-		ret = -errno;
+		ret = -errno_save;
 		goto out;
 	}
 
@@ -2811,8 +2864,10 @@ out:
 	if (osfd >= 0) {
 		error = close(osfd);
 		if (error) {
-			eprintf("close failed: %s\n", strerror(errno));
-			ret = -errno;
+			int errno_save = errno;
+			
+			dprintf("close failed: %s\n", strerror(errno));
+			ret = -errno_save;
 		}
 	}
 	return ret;
