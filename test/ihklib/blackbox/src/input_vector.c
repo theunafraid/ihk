@@ -125,6 +125,8 @@ int cpus_pop(struct cpus *cpus)
 	}
 
 	cpus->ncpus--;
+
+	ret = 0;
  out:
 	return ret;
 }

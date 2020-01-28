@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 2; i++) {
-		INFO("test-case: /dev/mcd0: %s\n", messages[i]);
+		START("test-case: /dev/mcd0: %s\n", messages[i]);
 
 		ret = ihk_reserve_cpu(0, cpu_inputs[i].cpus, cpu_inputs[i].ncpus);
 		OKNG(ret == ret_expected[i],

@@ -88,7 +88,7 @@ int main(int argc, char **argv)
 	for (i = 0; i < 5; i++) {
 		struct cpus cpus;
 
-		INFO("test-case: dev_index: %s\n", messages[i]);
+		START("test-case: dev_index: %s\n", messages[i]);
 
 		ret = ihk_reserve_cpu(dev_index_inputs[i],
 				      cpu_inputs[i].cpus, cpu_inputs[i].ncpus);

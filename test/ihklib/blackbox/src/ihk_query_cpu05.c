@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 	for (i = 0; i < 1; i++) {
 		int ncpus;
 		
-		INFO("test-case: user priviledge: %s\n", messages[i]);
+		START("test-case: user privilege: %s\n", messages[i]);
 
 		ret = ihk_reserve_cpu(0, cpu_inputs_reserve_cpu[i].cpus, cpu_inputs_reserve_cpu[i].ncpus);
 		INTERR(ret != ret_expected_reserve_cpu[i],

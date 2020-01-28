@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
-		INFO("test-case: user priviledge: %s\n", messages[i]);
+		START("test-case: user privilege: %s\n", messages[i]);
 
 		ret = ihk_reserve_cpu(0, cpu_inputs[i].cpus, cpu_inputs[i].ncpus);
 		OKNG(ret == ret_expected[i],

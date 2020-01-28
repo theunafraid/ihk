@@ -22,6 +22,10 @@
 	printf("[ INFO ] " fmt, ##args); \
 } while (0)
 
+#define START(fmt, args...) do { \
+	printf("[ START] " fmt, ##args); \
+} while (0)
+
 #define INTERR(cond, fmt, args...) do {	 \
 	if (cond) {			 \
 		char msg[1024];			 \

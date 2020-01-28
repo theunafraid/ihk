@@ -1,3 +1,3 @@
 #!/usr/bin/sh
 
-sudo ${CMAKE_INSTALL_PREFIX}/bin/ihk_reserve_mem04 -u $(id -u) -g $(id -g)
+sudo ${CMAKE_INSTALL_PREFIX}/bin/ihk_reserve_cpu04 -u $(id -u) -g $(id -g)

@@ -100,7 +100,7 @@ int main(int argc, char **argv)
 	
 	/* Activate and check */
 	for (i = 0; i < 4; i++) {
-		INFO("test-case: cpus array passed: %s\n", messages[i]);
+		START("test-case: cpus array passed: %s\n", messages[i]);
 		
 		ret = ihk_reserve_cpu(0, cpu_inputs_reserve_cpu[i].cpus,
 				      cpu_inputs_reserve_cpu[i].ncpus);
