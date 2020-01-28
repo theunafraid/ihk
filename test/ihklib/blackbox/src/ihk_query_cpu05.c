@@ -3,10 +3,9 @@
 #include <ihklib.h>
 #include "util.h"
 #include "okng.h"
-#include "input_vector.h"
+#include "cpu.h"
 #include "params.h"
 #include "init_fini.h"
-#include "check.h"
 
 int main(int argc, char **argv)
 {
@@ -77,7 +76,7 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 
 		if (cpus_expected[i]) {
-			ret = check_reserved_cpu(cpus_expected[i]);
+			ret = cpus_check_reserved(cpus_expected[i]);
 			OKNG(ret == 0, "reserved as expected\n");
 			
 			/* Clean up */

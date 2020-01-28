@@ -4,9 +4,10 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/mman.h>
+#include <ihklib.h>
 #include "util.h"
 #include "okng.h"
-#include "input_vector.h"
+#include "cpu.h"
 
 
 int cpus_init(struct cpus *cpus, int ncpus)
@@ -27,6 +28,30 @@ int cpus_init(struct cpus *cpus, int ncpus)
 	return ret;
 }
 
+int cpus_copy(struct cpus *dst, struct cpus *src)
+{
+	int ret;
+
+	if (dst->cpus) {
+		dst->cpus = mremap(dst->cpus,
+				   sizeof(int) * dst->ncpus,
+				   sizeof(int) * src->ncpus,
+				   MREMAP_MAYMOVE);
+		dst->ncpus = src->ncpus;
+	} else {
+		ret = cpus_init(dst, src->ncpus);
+		if (ret) {
+			goto out;
+		}
+	}
+
+	memcpy(dst->cpus, src->cpus, sizeof(int) * src->ncpus);
+
+	ret = 0;
+ out:
+	return ret;
+}
+
 int cpus_ls(struct cpus *cpus)
 {
 	char cmd[1024];
@@ -37,7 +62,10 @@ int cpus_ls(struct cpus *cpus)
 	sprintf(cmd, "lscpu -p=cpu --online | awk '!/#/ { print $0; }'");
 	//INFO("%s\n", cmd);
 	fp = popen(cmd, "r");
-	INTERR(fp == NULL, "%s failed\n", cmd);
+	if (fp == NULL) {
+		ret = -errno;
+		goto out;
+	}
 
 	if (cpus->cpus == NULL) {
 		ret = cpus_init(cpus, MAX_NUM_CPUS);
@@ -51,14 +79,11 @@ int cpus_ls(struct cpus *cpus)
 		int id;
 		
 		ret = fscanf(fp, "%d", &id);
-		if (ret == -1) {
+		if (ret == -1)
 			break;
-			
-		}
 
-		if (ret != 1) {
+		if (ret != 1)
 			continue;
-		}
 
 		cpus->cpus[ncpus++] = id;
 	} while (ret);
@@ -74,7 +99,7 @@ int cpus_ls(struct cpus *cpus)
 	
 	ret = 0;
  out:
-	if (!fp) {
+	if (fp) {
 		fclose(fp);
 	}
 	return ret;
@@ -107,24 +132,24 @@ int cpus_push(struct cpus *cpus, int id)
 	return ret;
 }
 
-int cpus_pop(struct cpus *cpus)
+int cpus_pop(struct cpus *cpus, int n)
 {
 	int ret;
 	
-	if (cpus->ncpus == 0 || cpus->cpus == NULL) {
+	if (cpus->ncpus < n || cpus->cpus == NULL) {
 		ret = 1;
 		goto out;
 	}
 	
 	cpus->cpus = mremap(cpus->cpus, sizeof(int) * cpus->ncpus,
-			    sizeof(int) * (cpus->ncpus - 1),
+			    sizeof(int) * (cpus->ncpus - n),
 			    MREMAP_MAYMOVE);
 	if (cpus->cpus == MAP_FAILED) {
 		ret = -errno;
 		goto out;
 	}
 
-	cpus->ncpus--;
+	cpus->ncpus -= n;
 
 	ret = 0;
  out:
@@ -204,4 +229,33 @@ int cpus_compare(struct cpus *result, struct cpus *expected)
 		}
 	}
 	return 0;
+}
+
+int cpus_check_reserved(struct cpus *expected)
+{
+	int ret;
+	struct cpus cpus;
+	
+	ret = ihk_get_num_reserved_cpus(0);
+	INTERR(ret < 0, "ihk_get_num_reserved_cpus returned %d\n",
+	       ret);
+	INFO("# of reserved cpus: %d\n", ret);
+	
+	ret = cpus_init(&cpus, ret);
+	INTERR(ret != 0, "cpus_init returned %d\n", ret);
+	
+	ret = ihk_query_cpu(0, cpus.cpus, cpus.ncpus);
+	INTERR(ret < 0, "ihk_query_cpu returned %d\n",
+	       ret);
+		
+	ret = cpus_compare(&cpus, expected);
+	if (ret) {
+		INFO("actual reservation:\n");
+		cpus_dump(&cpus);
+		INFO("expected reservation:\n");
+		cpus_dump(expected);
+	}
+
+ out:
+	return ret;
 }

@@ -23,7 +23,7 @@ int main(int argc, char **argv)
 		 "all - 1",
 		};
 	
-	struct cpus cpu_inputs[4] = { 0 };
+	struct mems cpu_inputs[4] = { 0 };
 
 	/* All of McKernel CPUs */
 	for (i = 0; i < 4; i++) { 
@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 	}
 
 	/* Plus one */
-	ret = cpus_push(&cpu_inputs[2], cpu_inputs[2].ncpus);
+	ret = cpus_push(&cpu_inputs[2], cpu_inputs[2].num_mem_chunks);
 	INTERR(ret, "cpus_push returned %d\n", ret);
 
 	/* Minus one */
@@ -46,11 +46,11 @@ int main(int argc, char **argv)
 	}
 	
 	/* ncpus isn't zero but cpus is NULL */
-	ret = cpus_shift(&cpu_inputs[0], cpu_inputs[0].ncpus);
+	ret = cpus_shift(&cpu_inputs[0], cpu_inputs[0].num_mem_chunks);
 	INTERR(ret, "cpus_shift returned %d\n", ret);
-	cpu_inputs[0].ncpus = 1;
+	cpu_inputs[0].num_mem_chunks = 1;
 	
-	struct cpus cpu_after_reserve[4] = { 0 };
+	struct mems cpu_after_reserve[4] = { 0 };
 
 	/* All of McKernel CPUs */
 	for (i = 0; i < 4; i++) { 
@@ -69,11 +69,11 @@ int main(int argc, char **argv)
 	}
 	
 	/* Empty */
-	ret = cpus_shift(&cpu_after_reserve[0], cpu_after_reserve[0].ncpus);
+	ret = cpus_shift(&cpu_after_reserve[0], cpu_after_reserve[0].num_mem_chunks);
 	INTERR(ret, "cpus_shift returned %d\n", ret);
 
 	/* Empty */
-	ret = cpus_shift(&cpu_after_reserve[2], cpu_after_reserve[2].ncpus);
+	ret = cpus_shift(&cpu_after_reserve[2], cpu_after_reserve[2].num_mem_chunks);
 	INTERR(ret, "cpus_shift returned %d\n", ret);
 
 	int ret_expected[] = {
@@ -83,7 +83,7 @@ int main(int argc, char **argv)
 		  0,
 	};
 
-	struct cpus *cpus_expected[] = 
+	struct mems *cpus_expected[] = 
 		{
 		  &cpu_after_reserve[0],
 		  &cpu_after_reserve[1],
@@ -99,7 +99,7 @@ int main(int argc, char **argv)
 	for (i = 0; i < 4; i++) {
 		START("test-case: cpus: %s\n", messages[i]);
 		
-		ret = ihk_reserve_cpu(0, cpu_inputs[i].cpus, cpu_inputs[i].ncpus);
+		ret = ihk_reserve_mem(0, cpu_inputs[i].mem_chunks, cpu_inputs[i].num_mem_chunks);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
@@ -109,9 +109,9 @@ int main(int argc, char **argv)
 			OKNG(ret == 0, "reserved as expected\n");
 			
 			/* Clean up */
-			ret = ihk_release_cpu(0, cpu_after_reserve[i].cpus,
-					      cpu_after_reserve[i].ncpus);
-			INTERR(ret != 0, "ihk_release_cpu returned %d\n", ret);
+			ret = ihk_release_mem(0, cpu_after_reserve[i].mem_chunks,
+					      cpu_after_reserve[i].num_mem_chunks);
+			INTERR(ret != 0, "ihk_release_mem returned %d\n", ret);
 		}
 	}
 

@@ -25,7 +25,7 @@ int main(int argc, char **argv)
 		 "INT_MAX",
 		};
 	
-	struct cpus cpu_inputs[7] = { 0 };
+	struct mems cpu_inputs[7] = { 0 };
 
 	/* Both Linux and McKernel cpus */
 	for (i = 0; i < 7; i++) { 
@@ -34,7 +34,7 @@ int main(int argc, char **argv)
 	}
 
 	/* Plus one */
-	ret = cpus_push(&cpu_inputs[4], cpu_inputs[4].ncpus);
+	ret = cpus_push(&cpu_inputs[4], cpu_inputs[4].num_mem_chunks);
 	INTERR(ret, "cpus_push returned %d\n", ret);
 
 	/* Minus one */
@@ -47,10 +47,10 @@ int main(int argc, char **argv)
 		INTERR(ret, "cpus_shift returned %d\n", ret);
 	}
 
-	cpu_inputs[0].ncpus = INT_MIN;
-	cpu_inputs[1].ncpus = -1;
-	cpu_inputs[2].ncpus = 0;
-	cpu_inputs[6].ncpus = INT_MAX;
+	cpu_inputs[0].num_mem_chunks = INT_MIN;
+	cpu_inputs[1].num_mem_chunks = -1;
+	cpu_inputs[2].num_mem_chunks = 0;
+	cpu_inputs[6].num_mem_chunks = INT_MAX;
 
 	int ret_expected[] =
 		{
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 		  -EINVAL,
 		};
 	
-	struct cpus *cpus_expected[] = 
+	struct mems *cpus_expected[] = 
 		{
 		  NULL, /* don't care */
 		  NULL, /* don't care */
@@ -82,8 +82,8 @@ int main(int argc, char **argv)
 	for (i = 0; i < 7; i++) {
 		START("test-case: num_cpus: %s\n", messages[i]);
 
-		ret = ihk_reserve_cpu(0,
-				      cpu_inputs[i].cpus, cpu_inputs[i].ncpus);
+		ret = ihk_reserve_mem(0,
+				      cpu_inputs[i].mem_chunks, cpu_inputs[i].num_mem_chunks);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
@@ -93,9 +93,9 @@ int main(int argc, char **argv)
 			OKNG(ret == 0, "reserved as expected\n");
 
 			/* Clean up */
-			ret = ihk_release_cpu(0, cpu_inputs[i].cpus,
-					      cpu_inputs[i].ncpus);
-			INTERR(ret != 0, "ihk_release_cpu returned %d\n", ret);
+			ret = ihk_release_mem(0, cpu_inputs[i].mem_chunks,
+					      cpu_inputs[i].num_mem_chunks);
+			INTERR(ret != 0, "ihk_release_mem returned %d\n", ret);
 		}
 	}
 

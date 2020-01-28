@@ -2,10 +2,9 @@
 #include <ihklib.h>
 #include "util.h"
 #include "okng.h"
-#include "input_vector.h"
+#include "cpu.h"
 #include "params.h"
 #include "init_fini.h"
-#include "check.h"
 
 int main(int argc, char **argv)
 {
@@ -47,7 +46,7 @@ int main(int argc, char **argv)
 	ret = cpus_push(&cpu_inputs[2], cpu_inputs[2].ncpus);
 	INTERR(ret, "cpus_push returned %d\n", ret);
 	
-	ret = cpus_pop(&cpu_inputs[3]);
+	ret = cpus_pop(&cpu_inputs[3], 1);
 	INTERR(ret, "cpus_pop returned %d\n", ret);
 	
 	for (i = 1; i < 4; i++) { 
@@ -78,7 +77,7 @@ int main(int argc, char **argv)
 		INTERR(ret, "cpus_shift returned %d\n", ret);
 	}
 
-	/* None */
+	/* Empty */
 	ret = cpus_shift(&cpus_after_release[1], cpus_after_release[1].ncpus);
 	INTERR(ret, "cpus_shift returned %d\n", ret);
 
@@ -113,7 +112,7 @@ int main(int argc, char **argv)
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 		
-		ret = check_reserved_cpu(cpus_expected[i]);
+		ret = cpus_check_reserved(cpus_expected[i]);
 		OKNG(ret == 0, "released as expected\n");
 		
 		/* Clean up */

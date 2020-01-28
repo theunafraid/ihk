@@ -2,10 +2,9 @@
 #include <ihklib.h>
 #include "util.h"
 #include "okng.h"
-#include "input_vector.h"
+#include "cpu.h"
 #include "params.h"
 #include "init_fini.h"
-#include "check.h"
 
 int main(int argc, char **argv)
 {

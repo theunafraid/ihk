@@ -16,28 +16,49 @@ int main(int argc, char **argv)
 
 	const char *messages[] =
 		{
-		 "root",
+		 "INT_MIN",
+		 "-1",
+		 "0",
+		 "1",
+		 "INT_MAX",
 		};
 	
-	struct cpus cpu_inputs[1] = { 0 };
+	int dev_index_inputs[] =
+		{
+		 INT_MIN,
+		 -1,
+		 0,
+		 1,
+		 INT_MAX
+		};
 
-	/* Both Linux and McKernel cpus */
-	for (i = 0; i < 1; i++) { 
+	struct mems cpu_inputs[5] = { 0 };
+
+	/* All of McKernel CPUs */
+	for (i = 0; i < 5; i++) { 
 		ret = cpus_ls(&cpu_inputs[i]);
 		INTERR(ret, "cpus_ls returned %d\n", ret);
-	}
 
-	/* Spare two cpus for Linux */
-	for (i = 0; i < 1; i++) { 
 		ret = cpus_shift(&cpu_inputs[i], 2);
 		INTERR(ret, "cpus_shift returned %d\n", ret);
 	}
 
-	int ret_expected[] = { 0 };
-
-	struct cpus *cpus_expected[] = 
+	int ret_expected[] =
 		{
-		 &cpu_inputs[0],
+		  -ENOENT,
+		  -ENOENT,
+		  0,
+		  -ENOENT,
+		  -ENOENT,
+		};
+
+	struct mems *cpus_expected[] = 
+		{
+		  NULL, /* don't care */
+		  NULL, /* don't care */
+		  &cpu_inputs[2],
+		  NULL, /* don't care */
+		  NULL, /* don't care */
 		};
 	
 	/* Precondition */
@@ -45,10 +66,11 @@ int main(int argc, char **argv)
 	INTERR(ret != 0, "insmod returned %d\n", ret);
 
 	/* Activate and check */
-	for (i = 0; i < 1; i++) {
-		START("test-case: user privilege: %s\n", messages[i]);
+	for (i = 0; i < 5; i++) {
+		START("test-case: dev_index: %s\n", messages[i]);
 
-		ret = ihk_reserve_cpu(0, cpu_inputs[i].cpus, cpu_inputs[i].ncpus);
+		ret = ihk_reserve_mem(dev_index_inputs[i],
+				      cpu_inputs[i].mem_chunks, cpu_inputs[i].num_mem_chunks);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
@@ -56,11 +78,11 @@ int main(int argc, char **argv)
 		if (cpus_expected[i]) {
 			ret = cpus_check_reserved(cpus_expected[i]);
 			OKNG(ret == 0, "reserved as expected\n");
-			
+
 			/* Clean up */
-			ret = ihk_release_cpu(0, cpu_inputs[i].cpus,
-					      cpu_inputs[i].ncpus);
-			INTERR(ret != 0, "ihk_release_cpu returned %d\n", ret);
+			ret = ihk_release_mem(0, cpu_inputs[i].mem_chunks,
+					      cpu_inputs[i].num_mem_chunks);
+			INTERR(ret != 0, "ihk_release_mem returned %d\n", ret);
 		}
 	}
 

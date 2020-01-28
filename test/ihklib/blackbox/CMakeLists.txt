@@ -30,23 +30,27 @@ target_include_directories(init_fini
   PRIVATE "${PROJECT_SOURCE_DIR}/include"
   )
 
-add_library(input_vector STATIC src/input_vector.c)
-target_include_directories(input_vector
+add_library(cpu STATIC src/cpu.c)
+target_include_directories(cpu
   PRIVATE "${PROJECT_SOURCE_DIR}/include"
+  PRIVATE "${WITH_MCK}/include"
+  )
+target_link_libraries(cpu
+  PUBLIC ihk
+  )
+
+add_library(mem STATIC src/mem.c)
+target_include_directories(mem
+  PRIVATE "${PROJECT_SOURCE_DIR}/include"
+  PRIVATE "${WITH_MCK}/include"
+  )
+target_link_libraries(mem
+  PUBLIC ihk
   )
 
 add_library(params STATIC src/params.c)
 target_include_directories(params
   PRIVATE "${PROJECT_SOURCE_DIR}/include"
-  )
-
-add_library(check STATIC src/check.c)
-target_include_directories(check
-  PRIVATE "${PROJECT_SOURCE_DIR}/include"
-  PRIVATE "${WITH_MCK}/include"
-  )
-target_link_libraries(check
-  PUBLIC ihk
   )
 
 foreach(target IN ITEMS
@@ -69,10 +73,11 @@ foreach(target IN ITEMS
     ihk_query_cpu06
     ihk_release_cpu01
     ihk_release_cpu02
-#    ihk_release_cpu03
-#    ihk_release_cpu04
-#    ihk_release_cpu05
-#    ihk_release_cpu06
+    ihk_release_cpu03
+    ihk_release_cpu04
+    ihk_release_cpu05
+    ihk_release_cpu06
+    ihk_reserve_mem01
     )
 
   # Add target
@@ -86,7 +91,7 @@ foreach(target IN ITEMS
 
   # -l
   target_link_libraries(${target}
-    PRIVATE params input_vector init_fini check
+    PRIVATE params cpu mem init_fini
     )
 
   # String replacement

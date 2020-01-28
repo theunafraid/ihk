@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 		 "root",
 		};
 	
-	struct cpus cpu_inputs[1] = { 0 };
+	struct mems cpu_inputs[1] = { 0 };
 
 	/* Both Linux and McKernel cpus */
 	for (i = 0; i < 1; i++) { 
@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 
 	int ret_expected[] = { 0 };
 
-	struct cpus *cpus_expected[] = 
+	struct mems *cpus_expected[] = 
 		{
 		 &cpu_inputs[0],
 		};
@@ -48,7 +48,7 @@ int main(int argc, char **argv)
 	for (i = 0; i < 1; i++) {
 		START("test-case: user privilege: %s\n", messages[i]);
 
-		ret = ihk_reserve_cpu(0, cpu_inputs[i].cpus, cpu_inputs[i].ncpus);
+		ret = ihk_reserve_mem(0, cpu_inputs[i].mem_chunks, cpu_inputs[i].num_mem_chunks);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
@@ -58,9 +58,9 @@ int main(int argc, char **argv)
 			OKNG(ret == 0, "reserved as expected\n");
 			
 			/* Clean up */
-			ret = ihk_release_cpu(0, cpu_inputs[i].cpus,
-					      cpu_inputs[i].ncpus);
-			INTERR(ret != 0, "ihk_release_cpu returned %d\n", ret);
+			ret = ihk_release_mem(0, cpu_inputs[i].mem_chunks,
+					      cpu_inputs[i].num_mem_chunks);
+			INTERR(ret != 0, "ihk_release_mem returned %d\n", ret);
 		}
 	}
 
