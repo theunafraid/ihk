@@ -714,8 +714,8 @@ int ihk_get_num_reserved_cpus(int index)
 
 	dprintk("%s: enter\n", __func__);
 	if ((fd = ihklib_device_open(index)) < 0) {
-		eprintf("%s: error: ihklib_device_open\n",
-			__func__);
+		dprintf("%s: ihklib_device_open returned %d\n",
+			__func__, fd);
 		ret = fd;
 		goto out;
 	}
@@ -737,16 +737,16 @@ int ihk_query_cpu(int index, int *cpus, int num_cpus)
 	int fd = -1;
 
 	dprintk("%s: enter\n", __func__);
-	if (num_cpus > IHK_MAX_NUM_CPUS) {
-		eprintf("%s: error: too many cpus (%d) requested\n",
+	if (num_cpus < 0 || num_cpus > IHK_MAX_NUM_CPUS) {
+		dprintf("%s: invalid number of cpus (%d)\n",
 			__func__, num_cpus);
 		ret = -EINVAL;
 		goto out;
 	}
 
 	if ((fd = ihklib_device_open(index)) < 0) {
-		eprintf("%s: error: ihklib_device_open\n",
-			__func__);
+		dprintf("%s: ihklib_device_open returned %d\n",
+			__func__, fd);
 		ret = fd;
 		goto out;
 	}
@@ -754,8 +754,8 @@ int ihk_query_cpu(int index, int *cpus, int num_cpus)
 	if ((ret = ioctl(fd, IHK_DEVICE_GET_NUM_CPUS)) < 0) {
 		int errno_save = errno;
 
-		dprintf("%s: error: IHK_DEVICE_GET_NUM_CPUS\n",
-			__func__);
+		dprintf("%s: IHK_DEVICE_GET_NUM_CPUS returned %d\n",
+			__func__, errno_save);
 		ret = -errno_save;
 		goto out;
 	}
