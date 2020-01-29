@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <errno.h>
 #include <sys/mman.h>
 #include <ihklib.h>
@@ -13,6 +14,12 @@
 int cpus_init(struct cpus *cpus, int ncpus)
 {
 	int ret;
+
+	if (ncpus == 0) {
+		ret = 0;
+		goto out;
+	}
+
 	cpus->cpus = mmap(0, sizeof(int) * ncpus,
 			  PROT_READ | PROT_WRITE,
 			  MAP_ANONYMOUS | MAP_PRIVATE,
@@ -105,6 +112,20 @@ int cpus_ls(struct cpus *cpus)
 	return ret;
 }
 
+int cpus_max_id(struct cpus *cpus)
+{
+	int i;
+	int max = INT_MIN;
+
+	for (i = 0; i < cpus->ncpus; i++) {
+		if (cpus->cpus[i] > max) {
+			max = cpus->cpus[i];
+		}
+	}
+
+	return max;
+}
+
 int cpus_push(struct cpus *cpus, int id)
 {
 	int ret;
@@ -161,7 +182,7 @@ int cpus_shift(struct cpus *cpus, int n)
 	int ret;
 	
 	if (cpus->ncpus < n || cpus->cpus == NULL) {
-		ret = 1;
+		ret = -EINVAL;
 		goto out;
 	}
 
@@ -215,7 +236,7 @@ int cpus_compare(struct cpus *result, struct cpus *expected)
 {
 	int i;
 
-	if (expected == NULL) {
+	if (result == NULL && expected == NULL) {
 		return 0;
 	}
 
@@ -234,19 +255,21 @@ int cpus_compare(struct cpus *result, struct cpus *expected)
 int cpus_check_reserved(struct cpus *expected)
 {
 	int ret;
-	struct cpus cpus;
+	struct cpus cpus = { 0 };
 	
 	ret = ihk_get_num_reserved_cpus(0);
 	INTERR(ret < 0, "ihk_get_num_reserved_cpus returned %d\n",
 	       ret);
 	INFO("# of reserved cpus: %d\n", ret);
-	
-	ret = cpus_init(&cpus, ret);
-	INTERR(ret != 0, "cpus_init returned %d\n", ret);
-	
-	ret = ihk_query_cpu(0, cpus.cpus, cpus.ncpus);
-	INTERR(ret < 0, "ihk_query_cpu returned %d\n",
-	       ret);
+
+	if (ret > 0) {
+		ret = cpus_init(&cpus, ret);
+		INTERR(ret != 0, "cpus_init returned %d\n", ret);
+		
+		ret = ihk_query_cpu(0, cpus.cpus, cpus.ncpus);
+		INTERR(ret < 0, "ihk_query_cpu returned %d\n",
+		       ret);
+	}
 		
 	ret = cpus_compare(&cpus, expected);
 	if (ret) {

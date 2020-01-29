@@ -91,7 +91,7 @@ int mems_ls(struct mems *mems, char *type, double ratio)
 		}
 
 		numa_node_number = atoi(entp->d_name + 4);
-		printf("%s: numa_node_number: %d\n",
+		dprintf("%s: numa_node_number: %d\n",
 		       __func__, numa_node_number);
 
 		if (numa_node_number > max_numa_node_number) {
@@ -108,7 +108,7 @@ int mems_ls(struct mems *mems, char *type, double ratio)
 		}
 
 		ret = fscanf(fp, "%ld kb", &memfree);
-		printf("%s: memfree: %ld\n", __func__, memfree);
+		dprintf("%s: %s: %ld\n", __func__, type, memfree);
 		if (ret == EOF) {
 			ret = -errno;
 			goto out;
@@ -257,6 +257,15 @@ int mems_shift(struct mems *mems, int n)
 	return ret;
 }
 
+void mems_fill(struct mems *mems, unsigned long size)
+{
+	int i;
+
+	for (i = 0; i < mems->num_mem_chunks; i++) {
+		mems->mem_chunks[i].size = size;
+	}
+}
+
 void mems_dump(struct mems *mems)
 {
 	int i;
@@ -267,9 +276,17 @@ void mems_dump(struct mems *mems)
 	}
 	
 	for (i = 0; i < mems->num_mem_chunks; i++) {
-		INFO("mem_chunks[%d]: size: %ld MiB, numa_node_number: %d\n",
-		     i, mems->mem_chunks[i].size / 1024 / 1024,
-		     mems->mem_chunks[i].numa_node_number);
+		char size_str[256];
+
+		if (mems->mem_chunks[i].size == -1) {
+			sprintf(size_str, "all");
+		} else {
+			sprintf(size_str, "%ld MiB",
+				mems->mem_chunks[i].size / 1024 / 1024);
+		}
+
+		INFO("mem_chunks[%d]: size: %s, numa_node_number: %d\n",
+		     i, size_str, mems->mem_chunks[i].numa_node_number);
 	}
 }
 
@@ -293,29 +310,32 @@ void mems_dump_sum(struct mems *mems) {
 	
 	for (i = 0; i < MAX_NUM_MEM_CHUNKS; i++) {
 		if (sum[i].size) {
-			INFO("size: %ld, numa_node_number: %d\n",
-			     sum[i].size,
+			INFO("size: %ld MiB, numa_node_number: %d\n",
+			     sum[i].size >> 20,
 			     sum[i].numa_node_number);
 		}
 	}
 }
 
-int mems_compare(struct mems *result, struct mems *expected, unsigned long margin)
+int mems_compare(struct mems *result, struct mems *expected, struct mems *margin)
 {
 	int i;
 	struct ihk_mem_chunk sum_result[MAX_NUM_MEM_CHUNKS] = { 0 };
 	struct ihk_mem_chunk sum_expected[MAX_NUM_MEM_CHUNKS] = { 0 };
+	struct ihk_mem_chunk sum_margin[MAX_NUM_MEM_CHUNKS] = { 0 };
 	
-	if (expected == NULL) {
+	if (result == NULL && expected == NULL) {
 		return 0;
 	}
 
 	mems_sum(result, sum_result);
 	mems_sum(expected, sum_expected);
+	mems_sum(margin, sum_margin);
 
 	for (i = 0; i < MAX_NUM_MEM_CHUNKS; i++) {
 		if (sum_result[i].size < sum_expected[i].size ||
-		    sum_result[i].size > sum_expected[i].size + margin) {
+		    sum_result[i].size > sum_expected[i].size +
+		    sum_margin[i].size) {
 			return 1;
 		}
 	}
@@ -323,28 +343,35 @@ int mems_compare(struct mems *result, struct mems *expected, unsigned long margi
 	return 0;
 }
 
-int mems_check_reserved(struct mems *expected, unsigned long margin)
+int mems_check_reserved(struct mems *expected, struct mems *margin)
 {
 	int ret;
-	struct mems mems;
+	int num_mem_chunks;
+	struct mems mems = { 0 };
 	
 	ret = ihk_get_num_reserved_mem_chunks(0);
 	INTERR(ret < 0, "ihk_get_num_reserved_mem_chunks returned %d\n",
 	       ret);
 	
-	ret = mems_init(&mems, ret);
-	INTERR(ret != 0, "cpus_init returned %d\n", ret);
+	num_mem_chunks = ret;
+
+	if (num_mem_chunks > 0) {
+		ret = mems_init(&mems, num_mem_chunks);
+		INTERR(ret != 0, "mems_init returned %d, num_mem_chunks: %d\n", ret, num_mem_chunks);
 	
-	ret = ihk_query_mem(0, mems.mem_chunks, mems.num_mem_chunks);
-	INTERR(ret != 0, "ihk_query_cpu returned %d\n",
-	       ret);
-		
+		ret = ihk_query_mem(0, mems.mem_chunks, mems.num_mem_chunks);
+		INTERR(ret != 0, "ihk_query_cpu returned %d\n",
+		       ret);
+	}
+
 	ret = mems_compare(&mems, expected, margin);
-	if (ret) {
+	if (expected->num_mem_chunks > 0) {
 		INFO("actual reservation:\n");
 		mems_dump_sum(&mems);
 		INFO("expected reservation:\n");
 		mems_dump_sum(expected);
+		INFO("margin:\n");
+		mems_dump_sum(margin);
 	}
 
  out:
@@ -359,6 +386,10 @@ int mems_query_and_release(void)
 	ret = ihk_get_num_reserved_mem_chunks(0);
 	INTERR(ret < 0, "ihk_get_num_reserved_mem_chunks returned %d\n",
 	       ret);
+
+	if (ret == 0) {
+		goto out;
+	}
 	
 	ret = mems_init(&mems, ret);
 	INTERR(ret != 0, "cpus_init returned %d\n", ret);

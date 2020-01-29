@@ -16,10 +16,11 @@ int mems_ls(struct mems *mems, char *type, double ratio);
 int mems_push(struct mems *mems, unsigned long size, int numa_node_number);
 int mems_pop(struct mems *mems, int n);
 int mems_shift(struct mems *mems, int n);
+void mems_fill(struct mems *mems, unsigned long size);
 void mems_dump(struct mems *mems);
 void mems_dump_sum(struct mems *mems);
-int mems_compare(struct mems *result, struct mems *expected, unsigned long margin);
-int mems_check_reserved(struct mems *expected, unsigned long margin);
+int mems_compare(struct mems *result, struct mems *expected, struct mems *margin);
+int mems_check_reserved(struct mems *expected, struct mems *margin);
 int mems_query_and_release(void);
 
 #endif

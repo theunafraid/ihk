@@ -32,13 +32,8 @@ int main(int argc, char **argv)
 		 { 0 },
 		};
 
-	ret = cpus_push(&cpu_inputs[1], 12);
-	INTERR(ret, "cpus_push returned %d\n", ret);
-
-	cpus_dump(&cpu_inputs[1]);
-
 	/* All of McKernel CPUs */
-	for (i = 2; i < 3; i++) { 
+	for (i = 1; i < 3; i++) { 
 		ret = cpus_ls(&cpu_inputs[i]);
 		INTERR(ret, "cpus_ls returned %d\n", ret);
 
@@ -46,8 +41,12 @@ int main(int argc, char **argv)
 		ret = cpus_shift(&cpu_inputs[i], 2);
 		INTERR(ret, "cpus_shift returned %d\n", ret);
 	}
-	
-	int ret_expected_reserve_cpu[] = { -EINVAL, 0, 0 };
+
+	/* First CPU */
+	ret = cpus_shift(&cpu_inputs[1], cpu_inputs[1].ncpus - 1);
+	INTERR(ret, "cpus_shift returned %d\n", ret);
+
+	int ret_expected_reserve_cpu[] = { 0, 0, 0 };
 
 	int ret_expected[] = { cpu_inputs[0].ncpus,
 			       cpu_inputs[1].ncpus,

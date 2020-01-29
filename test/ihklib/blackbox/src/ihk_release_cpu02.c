@@ -48,9 +48,12 @@ int main(int argc, char **argv)
 		INTERR(ret, "cpus_ls returned %d\n", ret);
 	}
 
-	ret = cpus_push(&cpu_inputs[2], cpu_inputs[2].ncpus);
+	/* Plus one */
+	ret = cpus_push(&cpu_inputs[2],
+			cpus_max_id(&cpu_inputs[2]) + 1);
 	INTERR(ret, "cpus_push returned %d\n", ret);
 	
+	/* Minus one */
 	ret = cpus_pop(&cpu_inputs[3], 1);
 	INTERR(ret, "cpus_pop returned %d\n", ret);
 	

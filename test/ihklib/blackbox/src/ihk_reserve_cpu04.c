@@ -34,7 +34,8 @@ int main(int argc, char **argv)
 	}
 
 	/* Plus one */
-	ret = cpus_push(&cpu_inputs[4], cpu_inputs[4].ncpus);
+	ret = cpus_push(&cpu_inputs[4],
+			cpus_max_id(&cpu_inputs[4]) + 1);
 	INTERR(ret, "cpus_push returned %d\n", ret);
 
 	/* Minus one */

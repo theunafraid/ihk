@@ -1,7 +1,7 @@
 #ifndef __UTIL_H_INCLUDED__
 #define __UTIL_H_INCLUDED__
 
-#define DEBUG
+//#define DEBUG
 
 #ifdef DEBUG
 #define dprintf(...) do {			 \

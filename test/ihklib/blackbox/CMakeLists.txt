@@ -79,6 +79,8 @@ foreach(target IN ITEMS
     ihk_release_cpu06
     ihk_reserve_mem01
     ihk_reserve_mem02
+    ihk_reserve_mem07
+    ihk_reserve_mem08
     )
 
   # Add target

@@ -32,7 +32,8 @@ int main(int argc, char **argv)
 	}
 
 	/* Plus one */
-	ret = cpus_push(&cpu_inputs[2], cpu_inputs[2].ncpus);
+	ret = cpus_push(&cpu_inputs[2],
+			cpus_max_id(&cpu_inputs[2]) + 1);
 	INTERR(ret, "cpus_push returned %d\n", ret);
 
 	/* Minus one */
@@ -100,6 +101,10 @@ int main(int argc, char **argv)
 		START("test-case: cpus: %s\n", messages[i]);
 		
 		ret = ihk_reserve_cpu(0, cpu_inputs[i].cpus, cpu_inputs[i].ncpus);
+		if (ret != ret_expected[i]) {
+			cpus_dump(&cpu_inputs[i]);
+		}
+
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
