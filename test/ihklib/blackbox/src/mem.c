@@ -260,8 +260,6 @@ int mems_shift(struct mems *mems, int n)
 void mems_dump(struct mems *mems)
 {
 	int i;
-	
-	INFO("num_mem_chunks: %d\n", mems->num_mem_chunks);
 
 	if (mems->mem_chunks == NULL) {
 		INFO("mems->mem_chunks is NULL\n");
@@ -269,8 +267,8 @@ void mems_dump(struct mems *mems)
 	}
 	
 	for (i = 0; i < mems->num_mem_chunks; i++) {
-		INFO("mem_chunks[%d]: size: %ld, numa_node_number: %d\n",
-		     i, mems->mem_chunks[i].size,
+		INFO("mem_chunks[%d]: size: %ld MiB, numa_node_number: %d\n",
+		     i, mems->mem_chunks[i].size / 1024 / 1024,
 		     mems->mem_chunks[i].numa_node_number);
 	}
 }
@@ -302,7 +300,7 @@ void mems_dump_sum(struct mems *mems) {
 	}
 }
 
-int mems_compare(struct mems *result, struct mems *expected)
+int mems_compare(struct mems *result, struct mems *expected, unsigned long margin)
 {
 	int i;
 	struct ihk_mem_chunk sum_result[MAX_NUM_MEM_CHUNKS] = { 0 };
@@ -316,7 +314,8 @@ int mems_compare(struct mems *result, struct mems *expected)
 	mems_sum(expected, sum_expected);
 
 	for (i = 0; i < MAX_NUM_MEM_CHUNKS; i++) {
-		if (sum_result[i].size != sum_expected[i].size) {
+		if (sum_result[i].size < sum_expected[i].size ||
+		    sum_result[i].size > sum_expected[i].size + margin) {
 			return 1;
 		}
 	}
@@ -324,7 +323,7 @@ int mems_compare(struct mems *result, struct mems *expected)
 	return 0;
 }
 
-int mems_check_reserved(struct mems *expected)
+int mems_check_reserved(struct mems *expected, unsigned long margin)
 {
 	int ret;
 	struct mems mems;
@@ -337,10 +336,10 @@ int mems_check_reserved(struct mems *expected)
 	INTERR(ret != 0, "cpus_init returned %d\n", ret);
 	
 	ret = ihk_query_mem(0, mems.mem_chunks, mems.num_mem_chunks);
-	INTERR(ret < 0, "ihk_query_cpu returned %d\n",
+	INTERR(ret != 0, "ihk_query_cpu returned %d\n",
 	       ret);
 		
-	ret = mems_compare(&mems, expected);
+	ret = mems_compare(&mems, expected, margin);
 	if (ret) {
 		INFO("actual reservation:\n");
 		mems_dump_sum(&mems);
@@ -348,6 +347,29 @@ int mems_check_reserved(struct mems *expected)
 		mems_dump_sum(expected);
 	}
 
+ out:
+	return ret;
+}
+
+int mems_query_and_release(void)
+{
+	int ret;
+	struct mems mems;
+
+	ret = ihk_get_num_reserved_mem_chunks(0);
+	INTERR(ret < 0, "ihk_get_num_reserved_mem_chunks returned %d\n",
+	       ret);
+	
+	ret = mems_init(&mems, ret);
+	INTERR(ret != 0, "cpus_init returned %d\n", ret);
+	
+	ret = ihk_query_mem(0, mems.mem_chunks, mems.num_mem_chunks);
+	INTERR(ret != 0, "ihk_query_cpu returned %d\n", ret);
+
+	ret = ihk_release_mem(0, mems.mem_chunks, mems.num_mem_chunks);
+	INTERR(ret != 0, "ihk_release_mem returned %d\n", ret);
+
+	ret = 0;
  out:
 	return ret;
 }

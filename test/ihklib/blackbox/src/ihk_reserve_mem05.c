@@ -3,7 +3,7 @@
 #include <ihklib.h>
 #include "util.h"
 #include "okng.h"
-#include "cpu.h"
+#include "mem.h"
 #include "params.h"
 #include "init_fini.h"
 
@@ -14,30 +14,30 @@ int main(int argc, char **argv)
 	
 	params_getopt(argc, argv);
 
-	const char *messages[] =
+	const char *values[] =
 		{
 		 "root",
 		};
 	
-	struct mems cpu_inputs[1] = { 0 };
+	struct mems mems_input[1] = { 0 };
 
 	/* Both Linux and McKernel cpus */
 	for (i = 0; i < 1; i++) { 
-		ret = cpus_ls(&cpu_inputs[i]);
-		INTERR(ret, "cpus_ls returned %d\n", ret);
+		ret = mems_ls(&mems_input[i]);
+		INTERR(ret, "mems_ls returned %d\n", ret);
 	}
 
 	/* Spare two cpus for Linux */
 	for (i = 0; i < 1; i++) { 
-		ret = cpus_shift(&cpu_inputs[i], 2);
-		INTERR(ret, "cpus_shift returned %d\n", ret);
+		ret = mems_shift(&mems_input[i], 2);
+		INTERR(ret, "mems_shift returned %d\n", ret);
 	}
 
 	int ret_expected[] = { 0 };
 
-	struct mems *cpus_expected[] = 
+	struct mems *mems_expected[] = 
 		{
-		 &cpu_inputs[0],
+		 &mems_input[0],
 		};
 	
 	/* Precondition */
@@ -46,20 +46,20 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
-		START("test-case: user privilege: %s\n", messages[i]);
+		START("test-case: user privilege: %s\n", values[i]);
 
-		ret = ihk_reserve_mem(0, cpu_inputs[i].mem_chunks, cpu_inputs[i].num_mem_chunks);
+		ret = ihk_reserve_mem(0, mems_input[i].mem_chunks, mems_input[i].num_mem_chunks);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		if (cpus_expected[i]) {
-			ret = cpus_check_reserved(cpus_expected[i]);
+		if (mems_expected[i]) {
+			ret = mems_check_reserved(mems_expected[i]);
 			OKNG(ret == 0, "reserved as expected\n");
 			
 			/* Clean up */
-			ret = ihk_release_mem(0, cpu_inputs[i].mem_chunks,
-					      cpu_inputs[i].num_mem_chunks);
+			ret = ihk_release_mem(0, mems_input[i].mem_chunks,
+					      mems_input[i].num_mem_chunks);
 			INTERR(ret != 0, "ihk_release_mem returned %d\n", ret);
 		}
 	}

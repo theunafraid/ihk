@@ -13,7 +13,8 @@ int main(int argc, char **argv)
 	
 	params_getopt(argc, argv);
 
-	const char *messages[] =
+	const char param[] = "/dev/mcd0";
+	const char *values[] =
 		{
 		 "before insmod",
 		 "after insmod",
@@ -30,9 +31,8 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 2; i++) {
-		START("test-case: /dev/mcd0: %s\n", messages[i]);
+		START("test-case: %s: %s\n", param, values[i]);
 
-		mems_dump(&mems_input[i]);
 		ret = ihk_reserve_mem(0, mems_input[i].mem_chunks,
 				      mems_input[i].num_mem_chunks);
 		OKNG(ret == ret_expected[i],
@@ -40,15 +40,14 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 		
 		if (mems_expected[i]) {
-			mems_dump_sum(&mems_input[i]);
+			mems_dump(&mems_input[i]);
 
-			ret = mems_check_reserved(mems_expected[i]);
+			ret = mems_check_reserved(mems_expected[i], 4UL << 20);
 			OKNG(ret == 0, "reserved as expected\n");
 
 			/* Clean up */
-			ret = ihk_release_mem(0, mems_input[i].mem_chunks,
-					      mems_input[i].num_mem_chunks);
-			INTERR(ret != 0, "ihk_release_mem returned %d\n", ret);
+			ret = mems_query_and_release();
+			INTERR(ret != 0, "mems_query_and_release returned %d\n", ret);
 		}
 		
 		/* Precondition */

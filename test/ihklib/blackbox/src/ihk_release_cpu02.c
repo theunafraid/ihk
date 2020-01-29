@@ -35,7 +35,12 @@ int main(int argc, char **argv)
 		INTERR(ret, "cpus_shift returned %d\n", ret);
 	}
 	
-	struct cpus cpu_inputs[4] = { 0 };
+	struct cpus cpu_inputs[4] = {
+				     { .ncpus = 1, .cpus = NULL },
+				     { 0 },
+				     { 0 },
+				     { 0 },
+	};
 
 	/* All of McKernel CPUs */
 	for (i = 1; i < 4; i++) { 
