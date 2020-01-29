@@ -99,6 +99,7 @@ struct namespace_file namespace_files[] = {
 struct ihklib_reserve_mem_conf reserve_mem_conf = {
 	.total = 0,
 	.variance_limit = 0,
+	.all_order_limit = 3,
 	.all_size_limit = 100,
 	.timeout = 30,
 };
@@ -843,6 +844,9 @@ int ihk_reserve_mem_conf(int index, int key, void *value)
 		reserve_mem_conf.total = 1;
 		reserve_mem_conf.variance_limit = *((int *)value);
 		break;
+	case IHK_RESERVE_MEM_ALL_ORDER_LIMIT:
+		reserve_mem_conf.all_order_limit = *((int *)value);
+		break;
 	case IHK_RESERVE_MEM_ALL_SIZE_LIMIT:
 		reserve_mem_conf.all_size_limit = *((int *)value);
 		break;
@@ -920,6 +924,7 @@ int ihk_reserve_mem(int index, struct ihk_mem_chunk *mem_chunks,
 		req.numa_ids[i] = mem_chunks[i].numa_node_number;
 	}
 	req.num_chunks = num_mem_chunks;
+	req.all_order_limit = reserve_mem_conf.all_order_limit;
 	req.all_size_limit = reserve_mem_conf.all_size_limit;
 	req.timeout = reserve_mem_conf.timeout;
 

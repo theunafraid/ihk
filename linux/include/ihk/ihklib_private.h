@@ -58,6 +58,12 @@ struct ihklib_reserve_mem_conf {
 	 */
 	int variance_limit;
 
+	/* Limit of alloc_pages order when reserving.
+	 * Use 3 for a system with system memory isolated,
+	 * 8 otherwise.
+	 */
+	int all_order_limit;
+
 	/* Stop gathering chunks for "all" request after accumulating
 	 * this percentage
 	 */

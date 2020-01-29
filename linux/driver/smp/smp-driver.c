@@ -2896,7 +2896,8 @@ static void sort_pagelists(struct zone *zone)
 //#define USE_TRY_TO_FREE_PAGES
 
 static int __ihk_smp_reserve_mem(size_t ihk_mem, int numa_id,
-				 int all_size_limit, int timeout)
+				 int all_order_limit, int all_size_limit,
+				 int timeout)
 {
 	int order = get_order(IHK_SMP_CHUNK_BASE_SIZE);
 	size_t want = ihk_mem;
@@ -2908,7 +2909,8 @@ static int __ihk_smp_reserve_mem(size_t ihk_mem, int numa_id,
 	struct rb_root tmp_chunks = RB_ROOT;
 	nodemask_t nodemask;
 	int i;
-	int order_limit = (want == IHK_SMP_MEM_ALL) ? 8 : 3;
+	int order_limit = (want == IHK_SMP_MEM_ALL) ?
+		all_order_limit : 3;
 #ifdef USE_TRY_TO_FREE_PAGES
 	unsigned long (*__try_to_free_pages)(struct zonelist *zonelist, int order,
 				gfp_t gfp_mask, nodemask_t *nodemask) = NULL;
@@ -3925,7 +3927,9 @@ static int smp_ihk_reserve_mem(ihk_device_t ihk_dev, unsigned long arg)
 		numa_id = req_numa_ids[i];
 
 		ret = __ihk_smp_reserve_mem(mem_size, numa_id,
-					    req.all_size_limit, req.timeout);
+					    req.all_order_limit,
+					    req.all_size_limit,
+					    req.timeout);
 		if (ret != 0) {
 			printk("IHK-SMP: reserve_mem: error: reserving memory\n");
 			break;
