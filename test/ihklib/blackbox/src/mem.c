@@ -154,6 +154,79 @@ int mems_ls(struct mems *mems, char *type, double ratio)
 	return ret;
 }
 
+int mems_free(struct mems *mems)
+{
+	int ret;
+	FILE *fp = NULL;
+	int max_numa_node_number = -1;
+	
+	if (mems->mem_chunks == NULL) {
+		ret = mems_init(mems, MAX_NUM_MEM_CHUNKS);
+		if (ret != 0) {
+			goto out;
+		}
+	}
+
+	fp = popen("dmesg | awk ' /NUMA.*free mem/ { size[$4] = $10; if ($4 > max) { max = $4 } } END { for (i = 0; i <= max; i++) { if (size[i] > 0) { printf \"%d %d\\n\", i, size[i] } } }'",
+		   "r");
+	if (fp == NULL) {
+		ret = -errno;
+		goto out;
+	}
+	
+	do {
+		unsigned long memfree;
+		int numa_node_number;
+		
+		ret = fscanf(fp, "%d %ld\n", &numa_node_number, &memfree);
+
+		if (ret == -1)
+			break;
+
+		if (ret != 2) {
+			continue;
+		}
+
+		if (numa_node_number > max_numa_node_number) {
+			max_numa_node_number = numa_node_number;
+		}
+
+		printf("%s: %d: %ld (%ld MiB)\n",
+		       __func__, numa_node_number, memfree, memfree >> 20);
+
+		mems->mem_chunks[numa_node_number].size =
+			(memfree & ~(RESERVE_MEM_GRANULE - 1));
+		mems->mem_chunks[numa_node_number].numa_node_number =
+			numa_node_number;
+	} while (ret);
+
+	fclose(fp);
+	fp = NULL;
+
+	mems->mem_chunks = mremap(mems->mem_chunks,
+				  sizeof(struct ihk_mem_chunk) *
+				  mems->num_mem_chunks,
+				  sizeof(struct ihk_mem_chunk) *
+				  max_numa_node_number + 1,
+				  MREMAP_MAYMOVE);
+	if (mems->mem_chunks == MAP_FAILED) {
+		int errno_save = errno;
+
+		printf("%s: mremap returned %d\n", __func__, errno);
+		ret = -errno;
+		goto out;
+	}
+
+ 	mems->num_mem_chunks = max_numa_node_number + 1;
+	ret = 0;
+ out:
+	if (fp) {
+		fclose(fp);
+	}
+
+	return ret;
+}
+
 int mems_push(struct mems *mems, unsigned long size, int numa_node_number)
 {
 	int ret;
@@ -266,6 +339,15 @@ void mems_fill(struct mems *mems, unsigned long size)
 	}
 }
 
+void mems_multiply(struct mems *mems, double ratio)
+{
+	int i;
+
+	for (i = 0; i < mems->num_mem_chunks; i++) {
+		mems->mem_chunks[i].size *= ratio;
+	}
+}
+
 void mems_dump(struct mems *mems)
 {
 	int i;
@@ -281,8 +363,9 @@ void mems_dump(struct mems *mems)
 		if (mems->mem_chunks[i].size == -1) {
 			sprintf(size_str, "all");
 		} else {
-			sprintf(size_str, "%ld MiB",
-				mems->mem_chunks[i].size / 1024 / 1024);
+			sprintf(size_str, "%ld (%ld MiB)",
+				mems->mem_chunks[i].size,
+				mems->mem_chunks[i].size >> 20);
 		}
 
 		INFO("mem_chunks[%d]: size: %s, numa_node_number: %d\n",
@@ -376,6 +459,63 @@ int mems_check_reserved(struct mems *expected, struct mems *margin)
 
  out:
 	return ret;
+}
+
+/* ratio is represented by percentage */
+int mems_check_ratio(struct mems *divisor, struct mems *ratios)
+{
+	int ret;
+	int num_mem_chunks;
+	struct mems dividend = { 0 };
+	int i;
+	struct ihk_mem_chunk sum_dividend[MAX_NUM_MEM_CHUNKS] = { 0 };
+	struct ihk_mem_chunk sum_divisor[MAX_NUM_MEM_CHUNKS] = { 0 };
+	struct ihk_mem_chunk sum_ratios[MAX_NUM_MEM_CHUNKS] = { 0 };
+	int fail = 0;
+
+	ret = ihk_get_num_reserved_mem_chunks(0);
+	INTERR(ret < 0, "ihk_get_num_reserved_mem_chunks returned %d\n",
+	       ret);
+	
+	num_mem_chunks = ret;
+
+	if (num_mem_chunks > 0) {
+		ret = mems_init(&dividend, num_mem_chunks);
+		INTERR(ret != 0, "mems_init returned %d, num_mem_chunks: %d\n", ret, num_mem_chunks);
+	
+		ret = ihk_query_mem(0, dividend.mem_chunks, dividend.num_mem_chunks);
+		INTERR(ret != 0, "ihk_query_cpu returned %d\n",
+		       ret);
+	}
+
+	mems_sum(&dividend, sum_dividend);
+	mems_sum(divisor, sum_divisor);
+	mems_sum(ratios, sum_ratios);
+	
+	for (i = 0; i < MAX_NUM_MEM_CHUNKS; i++) {
+		if (sum_divisor[i].size) {
+			double ratio = sum_dividend[i].size /
+				(double)sum_divisor[i].size;
+			double limit = sum_ratios[i].size /
+				(double)100;
+
+			if (ratio < limit) {
+				fail = 1;
+			}
+
+			INFO("numa_node_number %d: %ld (%ld MiB) / %ld (%ld MiB) = %1.4f, lower limit %1.4f\n",
+			     i,
+			     sum_dividend[i].size,
+			     sum_dividend[i].size >> 20,
+			     sum_divisor[i].size,
+			     sum_divisor[i].size >> 20,
+			     ratio, limit);
+		}
+	}
+	
+	ret = 0;
+ out:
+	return ret ? ret: fail;
 }
 
 int mems_query_and_release(void)
