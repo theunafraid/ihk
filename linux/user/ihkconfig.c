@@ -275,8 +275,9 @@ static int do_reserve(int fd)
 		IHKCONFIG_CHKANDJUMP(ret < 0,
 				"parse provided memlist string", -1);
 
-		req_mem.all_order_limit = reserve_mem_conf.all_order_limit;
-		req_mem.all_size_limit = reserve_mem_conf.all_size_limit;
+		req_mem.min_chunk_size = reserve_mem_conf.min_chunk_size;
+		req_mem.max_size_ratio_all =
+			reserve_mem_conf.max_size_ratio_all;
 		req_mem.timeout = reserve_mem_conf.timeout;
 
 		ret = ioctl(fd, IHK_DEVICE_RESERVE_MEM, &req_mem);

@@ -2896,7 +2896,8 @@ static void sort_pagelists(struct zone *zone)
 //#define USE_TRY_TO_FREE_PAGES
 
 static int __ihk_smp_reserve_mem(size_t ihk_mem, int numa_id,
-				 int all_order_limit, int all_size_limit,
+				 int min_chunk_size,
+				 int max_size_ratio_all,
 				 int timeout)
 {
 	int order = get_order(IHK_SMP_CHUNK_BASE_SIZE);
@@ -2909,8 +2910,7 @@ static int __ihk_smp_reserve_mem(size_t ihk_mem, int numa_id,
 	struct rb_root tmp_chunks = RB_ROOT;
 	nodemask_t nodemask;
 	int i;
-	int order_limit = (want == IHK_SMP_MEM_ALL) ?
-		all_order_limit : 3;
+	int order_limit = get_order(min_chunk_size);
 #ifdef USE_TRY_TO_FREE_PAGES
 	unsigned long (*__try_to_free_pages)(struct zonelist *zonelist, int order,
 				gfp_t gfp_mask, nodemask_t *nodemask) = NULL;
@@ -2931,6 +2931,13 @@ static int __ihk_smp_reserve_mem(size_t ihk_mem, int numa_id,
 #ifdef CONFIG_MOVABLE_NODE
 	bool *__movable_node_enabled = NULL;
 #endif
+
+	if (order_limit < 0 || order_limit > MAX_ORDER) {
+		pr_err("IHK-SMP: error: invalid order_limit (%d)\n",
+		       order_limit);
+		ret = -EINVAL;
+		goto out;
+	}
 
 	if (!node_online(numa_id)) {
 		pr_err("IHK-SMP: error: NUMA node %d isn't online\n",
@@ -3042,7 +3049,7 @@ retry:
 		 */
 		if ((numa_id == 0 && allocated > (available * 95 / 100)) ||
 		    (want == IHK_SMP_MEM_ALL &&
-		     allocated > (available * all_size_limit / 100))) {
+		     allocated > (available * max_size_ratio_all / 100))) {
 			printk("%s: 95%% of NUMA %d taken, breaking allocation"
 					" loop (current order: %d)..\n",
 					__FUNCTION__, numa_id, order);
@@ -3927,8 +3934,8 @@ static int smp_ihk_reserve_mem(ihk_device_t ihk_dev, unsigned long arg)
 		numa_id = req_numa_ids[i];
 
 		ret = __ihk_smp_reserve_mem(mem_size, numa_id,
-					    req.all_order_limit,
-					    req.all_size_limit,
+					    req.min_chunk_size,
+					    req.max_size_ratio_all,
 					    req.timeout);
 		if (ret != 0) {
 			printk("IHK-SMP: reserve_mem: error: reserving memory\n");

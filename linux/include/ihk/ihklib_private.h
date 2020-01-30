@@ -62,12 +62,12 @@ struct ihklib_reserve_mem_conf {
 	 * Use 3 for a system with system memory isolated,
 	 * 8 otherwise.
 	 */
-	int all_order_limit;
+	int min_chunk_size;
 
 	/* Stop gathering chunks for "all" request after accumulating
 	 * this percentage
 	 */
-	int all_size_limit;
+	int max_size_ratio_all;
 
 	/* Give up proceeding to the smaller order when it took longer
 	 * than this seconds for the current order
