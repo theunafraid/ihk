@@ -106,3 +106,13 @@ foreach(target IN ITEMS
 
 endforeach()
 
+# kernel module
+add_custom_target(test_driver ALL COMMAND make && mv test_driver.ko ${CMAKE_BINARY_DIR} && make clean
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/driver
+)
+install(PROGRAMS ${CMAKE_BINARY_DIR}/test_driver.ko DESTINATION kmod)
+
+configure_file(driver/test_driver_insmod.sh.in test_driver_insmod.sh)
+install(PROGRAMS ${CMAKE_BINARY_DIR}/test_driver_insmod.sh DESTINATION bin)
+install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/driver/test_driver_rmmod.sh DESTINATION bin)
+

@@ -518,6 +518,47 @@ int mems_check_ratio(struct mems *divisor, struct mems *ratios)
 	return ret ? ret: fail;
 }
 
+int mems_check_total(unsigned long lower_limit)
+{
+	int ret;
+	int i;
+	int num_mem_chunks;
+	struct mems mems;
+	struct ihk_mem_chunk sums[MAX_NUM_MEM_CHUNKS] = { 0 };
+	unsigned long sum = 0;
+
+	ret = ihk_get_num_reserved_mem_chunks(0);
+	INTERR(ret < 0, "ihk_get_num_reserved_mem_chunks returned %d\n",
+	       ret);
+	
+	num_mem_chunks = ret;
+
+	if (num_mem_chunks > 0) {
+		ret = mems_init(&mems, num_mem_chunks);
+		INTERR(ret != 0, "mems_init returned %d, num_mem_chunks: %d\n", ret, num_mem_chunks);
+	
+		ret = ihk_query_mem(0, mems.mem_chunks, mems.num_mem_chunks);
+		INTERR(ret != 0, "ihk_query_cpu returned %d\n",
+		       ret);
+
+		mems_sum(&mems, sums);
+		
+		for (i = 0; i < MAX_NUM_MEM_CHUNKS; i++) {
+			sum += sums[i].size;
+		}
+	}
+	INFO("total: %ld, lower limit: %ld\n", sum, lower_limit);
+
+	if (sum < lower_limit) {
+		ret = 1;
+		goto out;
+	}
+
+	ret = 0;
+ out:
+	return ret;
+}
+
 int mems_query_and_release(void)
 {
 	int ret;
