@@ -6,17 +6,17 @@
 #include "params.h"
 #include "init_fini.h"
 
+const char *messages[] = {
+	"before insmod",
+	"after insmod",
+};
+
 int main(int argc, char **argv)
 {
 	int ret;
 	int i;
 
 	params_getopt(argc, argv);
-
-	const char *messages[] = {
-		 "before insmod",
-		 "after insmod",
-		};
 
 	/* All of McKernel CPUs */
 	struct cpus cpu_inputs[2] = { 0 };
@@ -35,7 +35,8 @@ int main(int argc, char **argv)
 	for (i = 0; i < 2; i++) {
 		START("test-case: /dev/mcd0: %s\n", messages[i]);
 
-		ret = ihk_reserve_cpu(0, cpu_inputs[i].cpus, cpu_inputs[i].ncpus);
+		ret = ihk_reserve_cpu(0, cpu_inputs[i].cpus,
+				      cpu_inputs[i].ncpus);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
@@ -53,7 +54,7 @@ int main(int argc, char **argv)
 		/* Precondition */
 		if (i == 0) {
 			ret = insmod(params.uid, params.gid);
-			NG(ret == 0, "insmod returned %d\n", ret);
+			INTERR(ret == 0, "insmod returned %d\n", ret);
 		}
 	}
 
