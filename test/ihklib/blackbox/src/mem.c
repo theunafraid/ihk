@@ -376,14 +376,14 @@ void mems_dump(struct mems *mems)
 	}
 }
 
-static void mems_sum(struct mems *mems, struct ihk_mem_chunk *sum)
+static void mems_sum(struct mems *mems, unsigned long *sum)
 {
 	int i;
 
-	memset(sum, 0, sizeof(struct ihk_mem_chunk) * MAX_NUM_MEM_CHUNKS);
+	memset(sum, 0, sizeof(unsigned long) * MAX_NUM_MEM_CHUNKS);
 
 	for (i = 0; i < mems->num_mem_chunks; i++) {
-		sum[mems->mem_chunks[i].numa_node_number].size +=
+		sum[mems->mem_chunks[i].numa_node_number] +=
 			mems->mem_chunks[i].size;
 	}
 }
@@ -391,15 +391,14 @@ static void mems_sum(struct mems *mems, struct ihk_mem_chunk *sum)
 void mems_dump_sum(struct mems *mems)
 {
 	int i;
-	struct ihk_mem_chunk sum[MAX_NUM_MEM_CHUNKS] = { 0 };
+	unsigned long sum[MAX_NUM_MEM_CHUNKS] = { 0 };
 
 	mems_sum(mems, sum);
 
 	for (i = 0; i < MAX_NUM_MEM_CHUNKS; i++) {
-		if (sum[i].size) {
+		if (sum[i]) {
 			INFO("size: %ld MiB, numa_node_number: %d\n",
-			     sum[i].size >> 20,
-			     sum[i].numa_node_number);
+			     sum[i] >> 20, i);
 		}
 	}
 }
@@ -408,9 +407,9 @@ int mems_compare(struct mems *result, struct mems *expected,
 		 struct mems *margin)
 {
 	int i;
-	struct ihk_mem_chunk sum_result[MAX_NUM_MEM_CHUNKS] = { 0 };
-	struct ihk_mem_chunk sum_expected[MAX_NUM_MEM_CHUNKS] = { 0 };
-	struct ihk_mem_chunk sum_margin[MAX_NUM_MEM_CHUNKS] = { 0 };
+	unsigned long sum_result[MAX_NUM_MEM_CHUNKS] = { 0 };
+	unsigned long sum_expected[MAX_NUM_MEM_CHUNKS] = { 0 };
+	unsigned long sum_margin[MAX_NUM_MEM_CHUNKS] = { 0 };
 
 	if (result == NULL && expected == NULL) {
 		return 0;
@@ -418,12 +417,14 @@ int mems_compare(struct mems *result, struct mems *expected,
 
 	mems_sum(result, sum_result);
 	mems_sum(expected, sum_expected);
-	mems_sum(margin, sum_margin);
+	if (margin) {
+		mems_sum(margin, sum_margin);
+	}
 
 	for (i = 0; i < MAX_NUM_MEM_CHUNKS; i++) {
-		if (sum_result[i].size < sum_expected[i].size ||
-		    sum_result[i].size > sum_expected[i].size +
-		    sum_margin[i].size) {
+		if (sum_result[i] < sum_expected[i] ||
+		    sum_result[i] > sum_expected[i] +
+		    sum_margin[i]) {
 			return 1;
 		}
 	}
@@ -445,12 +446,12 @@ int mems_check_reserved(struct mems *expected, struct mems *margin)
 
 	if (num_mem_chunks > 0) {
 		ret = mems_init(&mems, num_mem_chunks);
-		INTERR(ret != 0,
+		INTERR(ret,
 		       "mems_init returned %d, num_mem_chunks: %d\n",
 		       ret, num_mem_chunks);
 
 		ret = ihk_query_mem(0, mems.mem_chunks, mems.num_mem_chunks);
-		INTERR(ret != 0, "ihk_query_cpu returned %d\n",
+		INTERR(ret, "ihk_query_cpu returned %d\n",
 		       ret);
 	}
 
@@ -475,9 +476,9 @@ int mems_check_ratio(struct mems *divisor, struct mems *ratios)
 	int num_mem_chunks;
 	struct mems dividend = { 0 };
 	int i;
-	struct ihk_mem_chunk sum_dividend[MAX_NUM_MEM_CHUNKS] = { 0 };
-	struct ihk_mem_chunk sum_divisor[MAX_NUM_MEM_CHUNKS] = { 0 };
-	struct ihk_mem_chunk sum_ratios[MAX_NUM_MEM_CHUNKS] = { 0 };
+	unsigned long sum_dividend[MAX_NUM_MEM_CHUNKS] = { 0 };
+	unsigned long sum_divisor[MAX_NUM_MEM_CHUNKS] = { 0 };
+	unsigned long sum_ratios[MAX_NUM_MEM_CHUNKS] = { 0 };
 	int fail = 0;
 
 	ret = ihk_get_num_reserved_mem_chunks(0);
@@ -488,13 +489,13 @@ int mems_check_ratio(struct mems *divisor, struct mems *ratios)
 
 	if (num_mem_chunks > 0) {
 		ret = mems_init(&dividend, num_mem_chunks);
-		INTERR(ret != 0,
+		INTERR(ret,
 		       "mems_init returned %d, num_mem_chunks: %d\n",
 		       ret, num_mem_chunks);
 
 		ret = ihk_query_mem(0, dividend.mem_chunks,
 				    dividend.num_mem_chunks);
-		INTERR(ret != 0, "ihk_query_cpu returned %d\n",
+		INTERR(ret, "ihk_query_cpu returned %d\n",
 		       ret);
 	}
 
@@ -503,10 +504,10 @@ int mems_check_ratio(struct mems *divisor, struct mems *ratios)
 	mems_sum(ratios, sum_ratios);
 
 	for (i = 0; i < MAX_NUM_MEM_CHUNKS; i++) {
-		if (sum_divisor[i].size) {
-			double ratio = sum_dividend[i].size /
-				(double)sum_divisor[i].size;
-			double limit = sum_ratios[i].size /
+		if (sum_divisor[i]) {
+			double ratio = sum_dividend[i] /
+				(double)sum_divisor[i];
+			double limit = sum_ratios[i] /
 				(double)100;
 
 			if (ratio < limit) {
@@ -517,10 +518,10 @@ int mems_check_ratio(struct mems *divisor, struct mems *ratios)
 			     "%ld (%ld MiB) / %ld (%ld MiB) = %1.4f, "
 			     "lower limit %1.4f\n",
 			     i,
-			     sum_dividend[i].size,
-			     sum_dividend[i].size >> 20,
-			     sum_divisor[i].size,
-			     sum_divisor[i].size >> 20,
+			     sum_dividend[i],
+			     sum_dividend[i] >> 20,
+			     sum_divisor[i],
+			     sum_divisor[i] >> 20,
 			     ratio, limit);
 		}
 	}
@@ -536,7 +537,7 @@ int mems_check_total(unsigned long lower_limit)
 	int i;
 	int num_mem_chunks;
 	struct mems mems;
-	struct ihk_mem_chunk sums[MAX_NUM_MEM_CHUNKS] = { 0 };
+	unsigned long sums[MAX_NUM_MEM_CHUNKS] = { 0 };
 	unsigned long sum = 0;
 
 	ret = ihk_get_num_reserved_mem_chunks(0);
@@ -547,18 +548,18 @@ int mems_check_total(unsigned long lower_limit)
 
 	if (num_mem_chunks > 0) {
 		ret = mems_init(&mems, num_mem_chunks);
-		INTERR(ret != 0,
+		INTERR(ret,
 		       "mems_init returned %d, num_mem_chunks: %d\n",
 		       ret, num_mem_chunks);
 
 		ret = ihk_query_mem(0, mems.mem_chunks, mems.num_mem_chunks);
-		INTERR(ret != 0, "ihk_query_cpu returned %d\n",
+		INTERR(ret, "ihk_query_cpu returned %d\n",
 		       ret);
 
 		mems_sum(&mems, sums);
 
 		for (i = 0; i < MAX_NUM_MEM_CHUNKS; i++) {
-			sum += sums[i].size;
+			sum += sums[i];
 		}
 	}
 	INFO("total: %ld, lower limit: %ld\n", sum, lower_limit);
@@ -573,7 +574,32 @@ int mems_check_total(unsigned long lower_limit)
 	return ret;
 }
 
-int mems_query_and_release(void)
+int mems_reserve(void)
+{
+	int ret;
+	struct mems mems = { 0 };
+	int excess;
+
+	ret = mems_ls(&mems, "MemFree", 0.9);
+	INTERR(ret, "mems_ls returned %d\n", ret);
+
+	excess = mems.num_mem_chunks - 4;
+	if (excess > 0) {
+		ret = mems_shift(&mems, excess);
+		INTERR(ret, "mems_shift returned %d\n", ret);
+	}
+
+	ret = ihk_reserve_mem(0, mems.mem_chunks,
+			      mems.num_mem_chunks);
+
+	INTERR(ret, "ihk_reserve_mem returned %d\n", ret);
+
+	ret = 0;
+ out:
+	return ret;
+}
+
+int mems_release(void)
 {
 	int ret;
 	struct mems mems;
@@ -587,13 +613,92 @@ int mems_query_and_release(void)
 	}
 
 	ret = mems_init(&mems, ret);
-	INTERR(ret != 0, "cpus_init returned %d\n", ret);
+	INTERR(ret, "mems_init returned %d\n", ret);
 
 	ret = ihk_query_mem(0, mems.mem_chunks, mems.num_mem_chunks);
-	INTERR(ret != 0, "ihk_query_cpu returned %d\n", ret);
+	INTERR(ret, "ihk_query_mem returned %d\n", ret);
 
 	ret = ihk_release_mem(0, mems.mem_chunks, mems.num_mem_chunks);
-	INTERR(ret != 0, "ihk_release_mem returned %d\n", ret);
+	INTERR(ret, "ihk_release_mem returned %d\n", ret);
+
+	ret = 0;
+ out:
+	return ret;
+}
+
+int mems_reserved(struct mems *mems)
+{
+	int ret;
+
+	ret = ihk_get_num_reserved_mem_chunks(0);
+	INTERR(ret < 0, "ihk_get_num_reserved_mem_chunks returned %d\n",
+	       ret);
+
+	if (ret == 0) {
+		goto out;
+	}
+
+	ret = mems_init(mems, ret);
+	INTERR(ret, "mems_init returned %d\n", ret);
+
+	ret = ihk_query_mem(0, mems->mem_chunks, mems->num_mem_chunks);
+	INTERR(ret, "ihk_query_mem returned %d\n", ret);
+
+	ret = 0;
+ out:
+	return ret;
+}
+
+int mems_check_assigned(struct mems *expected)
+{
+	int ret;
+	struct mems mems = { 0 };
+
+	ret = ihk_os_get_num_assigned_mem_chunks(0);
+	INTERR(ret < 0, "ihk_get_num_assigned_mem_chunks returned %d\n",
+	       ret);
+
+	if (ret > 0) {
+		ret = mems_init(&mems, ret);
+		INTERR(ret, "mems_init returned %d\n", ret);
+
+		ret = ihk_os_query_mem(0, mems.mem_chunks, mems.num_mem_chunks);
+		INTERR(ret, "ihk_query_mem returned %d\n", ret);
+	}
+
+	ret = mems_compare(&mems, expected, NULL);
+	if (expected->num_mem_chunks > 0) {
+		INFO("actual reservation:\n");
+		mems_dump_sum(&mems);
+		INFO("expected reservation:\n");
+		mems_dump_sum(expected);
+	}
+
+ out:
+	return ret;
+}
+
+int mems_os_release(void)
+{
+	int ret;
+	struct mems mems;
+
+	ret = ihk_os_get_num_assigned_mem_chunks(0);
+	INTERR(ret < 0, "ihk_os_get_num_assigned_mem_chunks returned %d\n",
+	       ret);
+
+	if (ret == 0) {
+		goto out;
+	}
+
+	ret = mems_init(&mems, ret);
+	INTERR(ret, "mems_init returned %d\n", ret);
+
+	ret = ihk_os_query_mem(0, mems.mem_chunks, mems.num_mem_chunks);
+	INTERR(ret, "ihk_os_query_mem returned %d\n", ret);
+
+	ret = ihk_os_release_mem(0, mems.mem_chunks, mems.num_mem_chunks);
+	INTERR(ret, "ihk_os_release_mem returned %d\n", ret);
 
 	ret = 0;
  out:
