@@ -26,6 +26,14 @@ int mems_compare(struct mems *result, struct mems *expected,
 int mems_check_reserved(struct mems *expected, struct mems *margin);
 int mems_check_ratio(struct mems *divisor, struct mems *ratio);
 int mems_check_total(unsigned long lower_limit);
-int mems_query_and_release(void);
+
+int mems_reserve(void);
+int mems_release(void);
+
+int mems_os_assign(void);
+int mems_os_release(void);
+
+int mems_reserved(struct mems *mems);
+int mems_check_assigned(struct mems *expected);
 
 #endif

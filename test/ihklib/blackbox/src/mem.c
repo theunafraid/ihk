@@ -256,7 +256,6 @@ int mems_push(struct mems *mems, unsigned long size, int numa_node_number)
 	mems->mem_chunks[mems->num_mem_chunks].numa_node_number =
 		numa_node_number;
 	mems->num_mem_chunks++;
-
 	ret = 0;
  out:
 	return ret;
@@ -667,14 +666,37 @@ int mems_check_assigned(struct mems *expected)
 	}
 
 	ret = mems_compare(&mems, expected, NULL);
-	if (expected->num_mem_chunks > 0) {
-		INFO("actual reservation:\n");
-		mems_dump_sum(&mems);
-		INFO("expected reservation:\n");
-		mems_dump_sum(expected);
+
+	INFO("actual reservation:\n");
+	mems_dump_sum(&mems);
+	if (mems.num_mem_chunks == 0) {
+		INFO("(none)\n");
+	}
+
+	INFO("expected reservation:\n");
+	mems_dump_sum(expected);
+	if (expected->num_mem_chunks == 0) {
+		INFO("(none)\n");
 	}
 
  out:
+	return ret;
+}
+
+int mems_os_assign(void)
+{
+	int ret;
+	struct mems mems;
+
+	ret = mems_reserved(&mems);
+	INTERR(ret, "mems_reserved returned %d\n", ret);
+
+	ret = ihk_os_assign_mem(0, mems.mem_chunks,
+				mems.num_mem_chunks);
+	INTERR(ret, "ihk_os_assign_mem returned %d\n", ret);
+
+	ret = 0;
+out:
 	return ret;
 }
 
