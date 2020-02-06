@@ -19,4 +19,12 @@ void cpus_dump(struct cpus *cpus);
 int cpus_compare(struct cpus *cpus_result, struct cpus *cpus_expected);
 int cpus_check_reserved(struct cpus *expected);
 
+int cpus_reserve(void);
+int cpus_release(void);
+
+int cpus_reserved(struct cpus *cpus);
+int cpus_check_assigned(struct cpus *expected);
+
+int cpus_os_assign(void);
+int cpus_os_release(void);
 #endif

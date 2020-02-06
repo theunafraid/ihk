@@ -264,7 +264,7 @@ int cpus_check_reserved(struct cpus *expected)
 
 	if (ret > 0) {
 		ret = cpus_init(&cpus, ret);
-		INTERR(ret != 0, "cpus_init returned %d\n", ret);
+		INTERR(ret, "cpus_init returned %d\n", ret);
 
 		ret = ihk_query_cpu(0, cpus.cpus, cpus.ncpus);
 		INTERR(ret < 0, "ihk_query_cpu returned %d\n",
@@ -280,5 +280,149 @@ int cpus_check_reserved(struct cpus *expected)
 	}
 
  out:
+	return ret;
+}
+
+int cpus_reserved(struct cpus *cpus)
+{
+	int ret;
+
+	ret = ihk_get_num_reserved_cpus(0);
+	INTERR(ret < 0, "ihk_get_num_reserved_cpus returned %d\n",
+	       ret);
+	INFO("# of reserved cpus: %d\n", ret);
+
+	if (ret > 0) {
+		ret = cpus_init(cpus, ret);
+		INTERR(ret, "cpus_init returned %d\n", ret);
+
+		ret = ihk_query_cpu(0, cpus->cpus, cpus->ncpus);
+		INTERR(ret < 0, "ihk_query_cpu returned %d\n",
+		       ret);
+	}
+
+	ret = 0;
+ out:
+	return ret;
+}
+
+int cpus_check_assigned(struct cpus *expected)
+{
+	int ret;
+	struct cpus cpus = { 0 };
+
+	ret = ihk_os_get_num_assigned_cpus(0);
+	INTERR(ret < 0, "ihk_os_get_num_assigned_cpus returned %d\n",
+	       ret);
+	INFO("# of assigned cpus: %d\n", ret);
+
+	if (ret > 0) {
+		ret = cpus_init(&cpus, ret);
+		INTERR(ret, "cpus_init returned %d\n", ret);
+
+		ret = ihk_os_query_cpu(0, cpus.cpus, cpus.ncpus);
+		INTERR(ret < 0, "ihk_os_query_cpu returned %d\n",
+		       ret);
+	}
+
+	ret = cpus_compare(&cpus, expected);
+	if (ret) {
+		INFO("actual reservation:\n");
+		cpus_dump(&cpus);
+		INFO("expected reservation:\n");
+		cpus_dump(expected);
+	}
+
+ out:
+	return ret;
+}
+
+int cpus_reserve(void)
+{
+	int ret;
+	struct cpus cpus = { 0 };
+
+	ret = cpus_ls(&cpus);
+	INTERR(ret, "cpus_ls returned %d\n", ret);
+
+	ret = cpus_shift(&cpus, 2);
+	INTERR(ret, "cpus_shift returned %d\n", ret);
+
+	ret = ihk_reserve_cpu(0, cpus.cpus, cpus.ncpus);
+	INTERR(ret, "ihk_reserve_cpu returned %d\n", ret);
+
+	ret = 0;
+ out:
+	return ret;
+}
+
+int cpus_release(void)
+{
+	int ret;
+	struct cpus cpus = { 0 };
+
+	ret = ihk_os_get_num_assigned_cpus(0);
+	INTERR(ret < 0, "ihk_os_get_num_assigned_cpus returned %d\n",
+	       ret);
+
+	if (ret > 0) {
+		ret = cpus_init(&cpus, ret);
+		INTERR(ret, "cpus_init returned %d\n", ret);
+
+		ret = ihk_os_query_cpu(0, cpus.cpus, cpus.ncpus);
+		INTERR(ret, "ihk_os_query_cpu returned %d\n",
+		       ret);
+	}
+
+	ret = ihk_release_cpu(0, cpus.cpus, cpus.ncpus);
+	INTERR(ret, "ihk_os_release_cpu returned %d\n", ret);
+
+	ret = 0;
+ out:
+	return ret;
+}
+
+/* lscpu and shift */
+int cpus_os_assign(void)
+{
+	int ret;
+	struct cpus cpus = {0};
+
+	ret = cpus_reserved(&cpus);
+	INTERR(ret, "cpus_reserved returned %d\n", ret);
+
+	ret = ihk_os_assign_cpu(0, cpus.cpus, ret);
+	INTERR(ret, "ihk_os_assign_cpu returned %d\n", ret);
+
+	ret = 0;
+out:
+	return ret;
+}
+
+/* query and release */
+int cpus_os_release(void)
+{
+	int ret;
+	struct cpus cpus = {0};
+
+	ret = ihk_os_get_num_assigned_cpus(0);
+	INTERR(ret < 0, "ihk_os_get_num_assigned_cpus returned %d\n",
+	       ret);
+
+	if (ret > 0) {
+		ret = cpus_init(&cpus, ret);
+		INTERR(ret, "cpus_init returned %d\n", ret);
+
+		ret = ihk_os_query_cpu(0, cpus.cpus, cpus.ncpus);
+		INTERR(ret, "ihk_os_query_cpu returned %d\n",
+		       ret);
+
+		ret = ihk_os_release_cpu(0, cpus.cpus, cpus.ncpus);
+		INTERR(ret, "ihk_os_release_cpu returned %d\n",
+		       ret);
+	}
+
+	ret = 0;
+out:
 	return ret;
 }
