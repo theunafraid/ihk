@@ -143,7 +143,7 @@ int main(int argc, char **argv)
 
 	/* Expected to succeed */
 	ret = insmod(uid, gid);
-	NG(ret == 0, "insmod returned %d\n", ret);
+	INTERR(ret == 0, "insmod returned %d\n", ret);
 
 	// reserve cpu
 	cpus[0] = 3;

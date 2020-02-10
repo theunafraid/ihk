@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
-	int dev_index_inputs[] = {
+	int dev_index_input[] = {
 		 INT_MIN,
 		 -1,
 		 0,
@@ -59,13 +59,13 @@ int main(int argc, char **argv)
 
 	/* Precondition */
 	ret = insmod(params.uid, params.gid);
-	INTERR(ret != 0, "insmod returned %d\n", ret);
+	INTERR(ret, "insmod returned %d\n", ret);
 
 	/* Activate and check */
 	for (i = 0; i < 5; i++) {
 		START("test-case: dev_index: %s\n", values[i]);
 
-		ret = ihk_reserve_mem(dev_index_inputs[i],
+		ret = ihk_reserve_mem(dev_index_input[i],
 				      mems_input[i].mem_chunks,
 				      mems_input[i].num_mem_chunks);
 		OKNG(ret == ret_expected[i],
@@ -79,7 +79,7 @@ int main(int argc, char **argv)
 			/* Clean up */
 			ret = ihk_release_mem(0, mems_input[i].mem_chunks,
 					      mems_input[i].num_mem_chunks);
-			INTERR(ret != 0, "ihk_release_mem returned %d\n", ret);
+			INTERR(ret, "ihk_release_mem returned %d\n", ret);
 		}
 	}
 

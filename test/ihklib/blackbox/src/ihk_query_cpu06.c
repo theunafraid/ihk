@@ -27,13 +27,13 @@ int main(int argc, char **argv)
 		case 'i':
 			/* Precondition */
 			ret = insmod(params.uid, params.gid);
-			INTERR(ret != 0, "insmod returned %d\n", ret);
+			INTERR(ret, "insmod returned %d\n", ret);
 			exit(0);
 			break;
 		case 'r':
 			/* Clean up */
 			ret = rmmod(1);
-			INTERR(ret != 0, "rmmod returned %d\n", ret);
+			INTERR(ret, "rmmod returned %d\n", ret);
 			exit(0);
 			break;
 		default: /* '?' */
@@ -42,22 +42,22 @@ int main(int argc, char **argv)
 		}
 	}
 
-	struct cpus cpu_inputs_reserve_cpu[1] = { 0 };
+	struct cpus cpus_input_reserve_cpu[1] = { 0 };
 
 	/* Both Linux and McKernel cpus */
 	for (i = 0; i < 1; i++) {
-		ret = cpus_ls(&cpu_inputs_reserve_cpu[i]);
+		ret = cpus_ls(&cpus_input_reserve_cpu[i]);
 		INTERR(ret, "cpus_ls returned %d\n", ret);
 	}
 
 	/* Spare two cpus for Linux */
 	for (i = 0; i < 1; i++) {
-		ret = cpus_shift(&cpu_inputs_reserve_cpu[i], 2);
+		ret = cpus_shift(&cpus_input_reserve_cpu[i], 2);
 		INTERR(ret, "cpus_shift returned %d\n", ret);
 	}
 
-	struct cpus cpu_inputs[] = { 0 };
-	ret = cpus_init(&cpu_inputs[0], cpu_inputs_reserve_cpu[0].ncpus);
+	struct cpus cpus_input[] = { 0 };
+	ret = cpus_init(&cpus_input[0], cpus_input_reserve_cpu[0].ncpus);
 	INTERR(ret, "cpus_init returned %d\n", ret);
 
 	int ret_expected_reserve_cpu[] = { -EACCES };
@@ -71,13 +71,13 @@ int main(int argc, char **argv)
 	for (i = 0; i < 1; i++) {
 		START("test-case: user privilege: %s\n", messages[i]);
 
-		ret = ihk_reserve_cpu(0, cpu_inputs[i].cpus,
-				      cpu_inputs[i].ncpus);
+		ret = ihk_reserve_cpu(0, cpus_input[i].cpus,
+				      cpus_input[i].ncpus);
 		INTERR(ret != ret_expected_reserve_cpu[i],
 		     "ihk_reserve_cpu returned %d\n", ret);
 
-		ret = ihk_query_cpu(0, cpu_inputs[i].cpus,
-				    cpu_inputs[i].ncpus);
+		ret = ihk_query_cpu(0, cpus_input[i].cpus,
+				    cpus_input[i].ncpus);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
@@ -87,9 +87,9 @@ int main(int argc, char **argv)
 			OKNG(ret == 0, "reserved as expected\n");
 
 			/* Clean up */
-			ret = ihk_release_cpu(0, cpu_inputs_reserve_cpu[i].cpus,
-					      cpu_inputs_reserve_cpu[i].ncpus);
-			INTERR(ret != 0, "ihk_release_cpu returned %d\n", ret);
+			ret = ihk_release_cpu(0, cpus_input_reserve_cpu[i].cpus,
+					      cpus_input_reserve_cpu[i].ncpus);
+			INTERR(ret, "ihk_release_cpu returned %d\n", ret);
 		}
 	}
 

@@ -9,9 +9,9 @@
 const char param[] = "cpus to store result";
 const char *values[] = {
 	"NULL",
-	"reserved",
-	"reserved + 1",
-	"reserved - 1",
+	"assigned",
+	"assigned + 1",
+	"assigned - 1",
 };
 
 int main(int argc, char **argv)
@@ -53,13 +53,6 @@ int main(int argc, char **argv)
 		ret = cpus_reserved(&cpus_after_assign[i]);
 		INTERR(ret, "cpus_reserved returned %d\n", ret);
 	}
-
-	int ret_expected_get_num_assigned_cpus[] = {
-		0,
-		cpus_after_assign[1].ncpus,
-		cpus_after_assign[2].ncpus,
-		cpus_after_assign[3].ncpus,
-	};
 
 	int ret_expected[] = {
 		-EINVAL,

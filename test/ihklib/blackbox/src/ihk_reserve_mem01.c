@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 		excess = mems_margin[i].num_mem_chunks - 4;
 		if (excess > 0) {
 			ret = mems_shift(&mems_margin[i], excess);
-			INTERR(ret, "mems_ls returned %d\n", ret);
+			INTERR(ret, "mems_shift returned %d\n", ret);
 		}
 
 		mems_fill(&mems_margin[i], 4UL << 20);
@@ -70,14 +70,14 @@ int main(int argc, char **argv)
 			OKNG(ret == 0, "reserved as expected\n");
 
 			/* Clean up */
-			ret = mems_query_and_release();
-			INTERR(ret != 0, "mems_query_and_release returned %d\n", ret);
+			ret = mems_release();
+			INTERR(ret, "mems_release returned %d\n", ret);
 		}
 
 		/* Precondition */
 		if (i == 0) {
 			ret = insmod(params.uid, params.gid);
-			NG(ret == 0, "insmod returned %d\n", ret);
+			INTERR(ret == 0, "insmod returned %d\n", ret);
 		}
 	}
 

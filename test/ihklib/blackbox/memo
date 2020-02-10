@@ -1,0 +1,26 @@
+#define NPERM_CPUS 4
+	struct cpus cpu_inputs[NPERM_CPUS] = 
+		{
+		 [0] =
+		 {
+		  .cpus =
+		  {
+		   [0] = 3,
+		   [1] = 1,
+		  },
+		  .ncpus = 2,
+		 },
+		};
+	exit(0);
+#endif
+
+#if 0
+	cpu_inputs[0] = (struct cpus) {
+					 .cpus =
+					 {
+					  [0] = 3,
+					  [1] = 1,
+					 },
+					 .ncpus = 2,
+	};
+#endif	

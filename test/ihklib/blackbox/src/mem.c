@@ -270,6 +270,20 @@ int mems_pop(struct mems *mems, int n)
 		goto out;
 	}
 
+	if (mems->num_mem_chunks == n) {
+		ret = munmap(mems->mem_chunks,
+			     sizeof(struct ihk_mem_chunk) *
+			     mems->num_mem_chunks);
+		if (ret) {
+			ret = -errno;
+			goto out;
+		}
+		mems->mem_chunks = NULL;
+		mems->num_mem_chunks = 0;
+		ret = 0;
+		goto out;
+	}
+
 	mems->mem_chunks = mremap(mems->mem_chunks,
 				  sizeof(struct ihk_mem_chunk) *
 				  mems->num_mem_chunks,
@@ -378,7 +392,7 @@ void mems_dump(struct mems *mems)
 static void mems_sum(struct mems *mems, unsigned long *sum)
 {
 	int i;
-
+	
 	memset(sum, 0, sizeof(unsigned long) * MAX_NUM_MEM_CHUNKS);
 
 	for (i = 0; i < mems->num_mem_chunks; i++) {
@@ -392,7 +406,7 @@ void mems_dump_sum(struct mems *mems)
 	int i;
 	unsigned long sum[MAX_NUM_MEM_CHUNKS] = { 0 };
 
-	mems_sum(mems, sum);
+	if (mems) mems_sum(mems, sum);
 
 	for (i = 0; i < MAX_NUM_MEM_CHUNKS; i++) {
 		if (sum[i]) {
@@ -632,7 +646,9 @@ int mems_reserved(struct mems *mems)
 	ret = ihk_get_num_reserved_mem_chunks(0);
 	INTERR(ret < 0, "ihk_get_num_reserved_mem_chunks returned %d\n",
 	       ret);
-
+	printf("%s: num_mem_chunks: %d\n",
+	       __func__, ret);
+	
 	if (ret == 0) {
 		goto out;
 	}

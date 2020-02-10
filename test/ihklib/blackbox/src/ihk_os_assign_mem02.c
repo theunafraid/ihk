@@ -72,21 +72,12 @@ int main(int argc, char **argv)
 			ret = mems_os_release();
 			INTERR(ret, "mems_os_release returned %d\n",
 			       ret);
-
-			/* Clean up */
-			ret = mems_os_release();
-			INTERR(ret, "mems_os_release returned %d\n", ret);
 		}
 	}
 
 	ret = 0;
  out:
-	ret = mems_release();
-	if (ret) {
-		printf("[INTERR] %s:%d mems_release returned %d\n",
-		       __FILE__, __LINE__, ret);
-	}
-
+	mems_release();
 	rmmod(0);
 	return ret;
 }

@@ -8,6 +8,11 @@ struct cpus {
 	int ncpus;
 };
 
+struct ikc_cpu_map {
+	struct ihk_ikc_cpu_map *map;
+	int ncpus;
+};
+
 int cpus_init(struct cpus *cpus, int ncpus);
 int cpus_copy(struct cpus *dst, struct cpus *src);
 int cpus_ls(struct cpus *cpus);
@@ -15,6 +20,7 @@ int cpus_max_id(struct cpus *cpus);
 int cpus_push(struct cpus *cpus, int id);
 int cpus_pop(struct cpus *cpus, int n);
 int cpus_shift(struct cpus *cpus, int n);
+void cpus_fill(struct cpus *cpus, int id);
 void cpus_dump(struct cpus *cpus);
 int cpus_compare(struct cpus *cpus_result, struct cpus *cpus_expected);
 int cpus_check_reserved(struct cpus *expected);
@@ -27,4 +33,17 @@ int cpus_check_assigned(struct cpus *expected);
 
 int cpus_os_assign(void);
 int cpus_os_release(void);
+
+int cpus_at(struct cpus *cpus, int index);
+int cpus_broadcast(struct cpus *cpus, int ncpus);
+
+void ikc_cpu_map_dump(struct ikc_cpu_map *map);
+int ikc_cpu_map_init(struct ikc_cpu_map *map, int ncpus);
+int ikc_cpu_map_copy(struct ikc_cpu_map *map, struct cpus *src_cpus,
+		     struct cpus *dst_cpus);
+int ikc_cpu_map_cat(struct ikc_cpu_map *a, struct ikc_cpu_map *b,
+		    struct ikc_cpu_map *c);
+int ikc_cpu_map_compare(struct ikc_cpu_map *result, struct ikc_cpu_map *expected);
+int ikc_cpu_map_check(struct ikc_cpu_map *expected);
+
 #endif

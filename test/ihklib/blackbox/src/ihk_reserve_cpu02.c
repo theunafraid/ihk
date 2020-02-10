@@ -22,33 +22,31 @@ int main(int argc, char **argv)
 		 "all - 1",
 		};
 
-	struct cpus cpu_inputs[4] = { 0 };
+	struct cpus cpus_input[4] = { 0 };
 
 	/* All of McKernel CPUs */
-	for (i = 0; i < 4; i++) {
-		ret = cpus_ls(&cpu_inputs[i]);
+	for (i = 1; i < 4; i++) {
+		ret = cpus_ls(&cpus_input[i]);
 		INTERR(ret, "cpus_ls returned %d\n", ret);
 	}
 
 	/* Plus one */
-	ret = cpus_push(&cpu_inputs[2],
-			cpus_max_id(&cpu_inputs[2]) + 1);
+	ret = cpus_push(&cpus_input[2],
+			cpus_max_id(&cpus_input[2]) + 1);
 	INTERR(ret, "cpus_push returned %d\n", ret);
 
 	/* Minus one */
-	ret = cpus_pop(&cpu_inputs[3], 1);
+	ret = cpus_pop(&cpus_input[3], 1);
 	INTERR(ret, "cpus_pop returned %d\n", ret);
 
 	for (i = 1; i < 4; i++) {
 		/* Spare two cpus for Linux */
-		ret = cpus_shift(&cpu_inputs[i], 2);
+		ret = cpus_shift(&cpus_input[i], 2);
 		INTERR(ret, "cpus_shift returned %d\n", ret);
 	}
 
 	/* ncpus isn't zero but cpus is NULL */
-	ret = cpus_shift(&cpu_inputs[0], cpu_inputs[0].ncpus);
-	INTERR(ret, "cpus_shift returned %d\n", ret);
-	cpu_inputs[0].ncpus = 1;
+	cpus_input[0].ncpus = 1;
 
 	struct cpus cpu_after_reserve[4] = { 0 };
 
@@ -92,15 +90,15 @@ int main(int argc, char **argv)
 
 	/* Precondition */
 	ret = insmod(params.uid, params.gid);
-	INTERR(ret != 0, "insmod returned %d\n", ret);
+	INTERR(ret, "insmod returned %d\n", ret);
 
 	/* Activate and check */
 	for (i = 0; i < 4; i++) {
 		START("test-case: cpus: %s\n", messages[i]);
 
-		ret = ihk_reserve_cpu(0, cpu_inputs[i].cpus, cpu_inputs[i].ncpus);
+		ret = ihk_reserve_cpu(0, cpus_input[i].cpus, cpus_input[i].ncpus);
 		if (ret != ret_expected[i]) {
-			cpus_dump(&cpu_inputs[i]);
+			cpus_dump(&cpus_input[i]);
 		}
 
 		OKNG(ret == ret_expected[i],
@@ -114,7 +112,7 @@ int main(int argc, char **argv)
 			/* Clean up */
 			ret = ihk_release_cpu(0, cpu_after_reserve[i].cpus,
 					      cpu_after_reserve[i].ncpus);
-			INTERR(ret != 0, "ihk_release_cpu returned %d\n", ret);
+			INTERR(ret, "ihk_release_cpu returned %d\n", ret);
 		}
 	}
 

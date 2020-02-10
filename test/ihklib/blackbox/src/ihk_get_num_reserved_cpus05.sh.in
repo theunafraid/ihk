@@ -5,7 +5,7 @@ if [ "${AUTOTEST_HOME}" != "" ]; then
     . ${AUTOTEST_HOME}/bin/config.sh
 fi
 
-sudo ${CMAKE_INSTALL_PREFIX}/bin/ihk_get_num_reserved_cpus05 -u $(id -u) -g $(id -g)
+sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_get_num_reserved_cpus05 -u $(id -u) -g $(id -g)
 ret=$?
 
 if [ "${AUTOTEST_HOME}" != "" ]; then

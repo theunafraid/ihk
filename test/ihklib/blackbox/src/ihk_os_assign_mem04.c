@@ -7,7 +7,7 @@
 #include "params.h"
 #include "init_fini.h"
 
-const char param[] = "num_cpus";
+const char param[] = "num_mem_chunks";
 const char *values[] = {
 	"INT_MIN",
 	"-1",

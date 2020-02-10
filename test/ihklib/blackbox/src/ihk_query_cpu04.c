@@ -24,31 +24,31 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
-	struct cpus cpu_inputs_reserve_cpu[7] = { 0 };
+	struct cpus cpus_input_reserve_cpu[7] = { 0 };
 
 	/* Both Linux and McKernel cpus */
 	for (i = 0; i < 7; i++) {
-		ret = cpus_ls(&cpu_inputs_reserve_cpu[i]);
+		ret = cpus_ls(&cpus_input_reserve_cpu[i]);
 		INTERR(ret, "cpus_ls returned %d\n", ret);
 
 		/* Spare two cpus for Linux */
-		ret = cpus_shift(&cpu_inputs_reserve_cpu[i], 2);
+		ret = cpus_shift(&cpus_input_reserve_cpu[i], 2);
 		INTERR(ret, "cpus_shift returned %d\n", ret);
 	}
 
-	struct cpus cpu_inputs[] = {
+	struct cpus cpus_input[] = {
 		 { .ncpus = INT_MIN },
 		 { .ncpus = -1 },
 		 { .ncpus = 0 },
-		 { .ncpus = cpu_inputs_reserve_cpu[3].ncpus },
-		 { .ncpus = cpu_inputs_reserve_cpu[4].ncpus + 1 },
-		 { .ncpus = cpu_inputs_reserve_cpu[5].ncpus - 1 },
+		 { .ncpus = cpus_input_reserve_cpu[3].ncpus },
+		 { .ncpus = cpus_input_reserve_cpu[4].ncpus + 1 },
+		 { .ncpus = cpus_input_reserve_cpu[5].ncpus - 1 },
 		 { .ncpus = INT_MAX },
 		};
 
 	for (i = 3; i < 6; i++) {
-		ret = cpus_init(&cpu_inputs[1],
-				cpu_inputs_reserve_cpu[1].ncpus);
+		ret = cpus_init(&cpus_input[1],
+				cpus_input_reserve_cpu[1].ncpus);
 		INTERR(ret, "cpus_init returned %d\n", ret);
 	}
 
@@ -68,7 +68,7 @@ int main(int argc, char **argv)
 		  NULL, /* don't care */
 		  NULL, /* don't care */
 		  NULL, /* don't care */
-		  &cpu_inputs_reserve_cpu[3],
+		  &cpus_input_reserve_cpu[3],
 		  NULL, /* don't care */
 		  NULL, /* don't care */
 		  NULL, /* don't care */
@@ -76,14 +76,14 @@ int main(int argc, char **argv)
 
 	/* Precondition */
 	ret = insmod(params.uid, params.gid);
-	INTERR(ret != 0, "insmod returned %d\n", ret);
+	INTERR(ret, "insmod returned %d\n", ret);
 
 	/* Activate and check */
 	for (i = 0; i < 7; i++) {
 		START("test-case: num_cpus: %s\n", messages[i]);
 
-		ret = ihk_reserve_cpu(0, cpu_inputs_reserve_cpu[i].cpus,
-				      cpu_inputs_reserve_cpu[i].ncpus);
+		ret = ihk_reserve_cpu(0, cpus_input_reserve_cpu[i].cpus,
+				      cpus_input_reserve_cpu[i].ncpus);
 		INTERR(ret != ret_expected_reserve_cpu[i],
 		     "ihk_reserve_cpu returned %d\n", ret);
 
@@ -91,21 +91,21 @@ int main(int argc, char **argv)
 		INTERR(ret != ret_expected_get_num_reserved_cpus[i],
 		     "ihk_get_num_reserved_cpus returned %d\n", ret);
 
-		ret = ihk_query_cpu(0, cpu_inputs[i].cpus,
-				    cpu_inputs[i].ncpus);
+		ret = ihk_query_cpu(0, cpus_input[i].cpus,
+				    cpus_input[i].ncpus);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
 		if (cpus_expected[i]) {
-			ret = cpus_compare(&cpu_inputs[i], cpus_expected[i]);
+			ret = cpus_compare(&cpus_input[i], cpus_expected[i]);
 			OKNG(ret == 0, "query result matches input\n");
 		}
 
 		/* Clean up */
-		ret = ihk_release_cpu(0, cpu_inputs_reserve_cpu[i].cpus,
-				      cpu_inputs_reserve_cpu[i].ncpus);
-		INTERR(ret != 0, "ihk_release_cpu returned %d\n", ret);
+		ret = ihk_release_cpu(0, cpus_input_reserve_cpu[i].cpus,
+				      cpus_input_reserve_cpu[i].ncpus);
+		INTERR(ret, "ihk_release_cpu returned %d\n", ret);
 	}
 
 	ret = 0;

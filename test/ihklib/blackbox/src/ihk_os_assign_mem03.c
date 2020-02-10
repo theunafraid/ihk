@@ -94,12 +94,7 @@ int main(int argc, char **argv)
 
 	ret = 0;
  out:
-	ret = mems_release();
-	if (ret) {
-		printf("[INTERR] %s:%d mems_release returned %d\n",
-		       __FILE__, __LINE__, ret);
-	}
-
+	mems_release();
 	rmmod(0);
 	return ret;
 }
