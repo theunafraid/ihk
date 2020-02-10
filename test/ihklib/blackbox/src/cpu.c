@@ -162,6 +162,18 @@ int cpus_pop(struct cpus *cpus, int n)
 		goto out;
 	}
 
+	if (cpus->ncpus == n) {
+		ret = munmap(cpus->cpus, sizeof(int) * cpus->ncpus);
+		if (ret) {
+			ret = -errno;
+			goto out;
+		}
+		cpus->cpus = NULL;
+		cpus->ncpus = 0;
+		ret = 0;
+		goto out;
+	}
+
 	cpus->cpus = mremap(cpus->cpus, sizeof(int) * cpus->ncpus,
 			    sizeof(int) * (cpus->ncpus - n),
 			    MREMAP_MAYMOVE);
@@ -183,6 +195,11 @@ int cpus_shift(struct cpus *cpus, int n)
 
 	if (cpus->ncpus < n || cpus->cpus == NULL) {
 		ret = -EINVAL;
+		goto out;
+	}
+
+	if (n == 0) {
+		ret = 0;
 		goto out;
 	}
 
@@ -213,6 +230,15 @@ int cpus_shift(struct cpus *cpus, int n)
 	ret = 0;
  out:
 	return ret;
+}
+
+void cpus_fill(struct cpus *cpus, int id)
+{
+	int i;
+
+	for (i = 0; i < cpus->ncpus; i++) {
+		cpus->cpus[i] = id;
+	}
 }
 
 
@@ -382,7 +408,6 @@ int cpus_release(void)
 	return ret;
 }
 
-/* lscpu and shift */
 int cpus_os_assign(void)
 {
 	int ret;
@@ -391,7 +416,7 @@ int cpus_os_assign(void)
 	ret = cpus_reserved(&cpus);
 	INTERR(ret, "cpus_reserved returned %d\n", ret);
 
-	ret = ihk_os_assign_cpu(0, cpus.cpus, ret);
+	ret = ihk_os_assign_cpu(0, cpus.cpus, cpus.ncpus);
 	INTERR(ret, "ihk_os_assign_cpu returned %d\n", ret);
 
 	ret = 0;
@@ -399,7 +424,6 @@ out:
 	return ret;
 }
 
-/* query and release */
 int cpus_os_release(void)
 {
 	int ret;

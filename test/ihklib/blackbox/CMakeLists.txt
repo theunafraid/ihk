@@ -14,6 +14,8 @@ elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
   add_definitions(-DBUILD_TARGET=smp-arm64)
 endif()
 
+add_definitions(-DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX})
+
 # CFLAGS
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g")
 
@@ -48,6 +50,15 @@ target_link_libraries(mem
   PUBLIC ihk
   )
 
+add_library(os STATIC src/os.c)
+target_include_directories(os
+  PRIVATE "${PROJECT_SOURCE_DIR}/include"
+  PRIVATE "${WITH_MCK}/include"
+  )
+target_link_libraries(os
+  PUBLIC ihk
+  )
+
 add_library(params STATIC src/params.c)
 target_include_directories(params
   PRIVATE "${PROJECT_SOURCE_DIR}/include"
@@ -71,16 +82,37 @@ foreach(target IN ITEMS
     ihk_query_cpu04
     ihk_query_cpu05
     ihk_query_cpu06
+    ihk_query_mem02
     ihk_release_cpu01
     ihk_release_cpu02
     ihk_release_cpu03
     ihk_release_cpu04
     ihk_release_cpu05
     ihk_release_cpu06
+    ihk_release_mem02
     ihk_reserve_mem01
     ihk_reserve_mem02
     ihk_reserve_mem07
     ihk_reserve_mem08
+    ihk_get_num_reserved_mem_chunks02
+    ihk_create_os01
+    ihk_os_assign_cpu01
+    ihk_os_assign_cpu02
+    ihk_os_assign_cpu03
+    ihk_os_assign_cpu04
+    ihk_os_assign_mem01
+    ihk_os_assign_mem02
+    ihk_os_assign_mem03
+    ihk_os_assign_mem04
+    ihk_os_get_num_assigned_cpus02
+    ihk_os_get_num_assigned_mem_chunks02
+    ihk_os_release_cpu02
+    ihk_os_query_mem02
+    ihk_os_query_cpu02
+    ihk_os_release_mem02
+    ihk_os_shutdown07
+    ihk_os_set_ikc_map07
+    ikc_map
     )
 
   # Add target
@@ -94,11 +126,11 @@ foreach(target IN ITEMS
 
   # -l
   target_link_libraries(${target}
-    PRIVATE params cpu mem init_fini
+    PRIVATE params cpu mem os init_fini
     )
 
   # String replacement
-  configure_file(src/${target}.sh.in ${target}.sh)
+  configure_file(src/${target}.sh.in ${target}.sh @ONLY)
 
   # Install
   install(TARGETS ${target} DESTINATION bin)

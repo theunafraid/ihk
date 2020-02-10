@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 
 	/* Precondition */
 	ret = insmod(params.uid, params.gid);
-	INTERR(ret != 0, "insmod returned %d\n", ret);
+	INTERR(ret, "insmod returned %d\n", ret);
 
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
@@ -59,7 +59,7 @@ int main(int argc, char **argv)
 			/* Clean up */
 			ret = ihk_release_mem(0, mems_input[i].mem_chunks,
 					      mems_input[i].num_mem_chunks);
-			INTERR(ret != 0, "ihk_release_mem returned %d\n", ret);
+			INTERR(ret, "ihk_release_mem returned %d\n", ret);
 		}
 	}
 

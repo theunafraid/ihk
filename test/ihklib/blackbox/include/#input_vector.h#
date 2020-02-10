@@ -1,0 +1,24 @@
+#ifndef __INPUT_VECTOR_H_INCLUDED__
+#define __INPUT_VECTOR_H_INCLUDED__
+
+#define MAX_NUM_CPUS 272
+
+struct cpus {
+	int *cpus;
+	int ncpus;
+
+	int ret_expected; /*
+	int (*check_ret)(int result, int expected);
+
+	int cpus_expected;
+	int (*check_cpus)(struct cpus *cpus_result, struct cpus *cpus_expected);
+};
+
+int cpus_ls(struct cpus *cpus);
+int cpus_plus_one(struct cpus *cpus);
+int cpus_minus_one(struct cpus *cpus);
+void cpus_dump(struct cpus *cpus);
+
+int cpus_check(
+
+#endif

@@ -19,26 +19,26 @@ int main(int argc, char **argv)
 	params_getopt(argc, argv);
 
 	/* All of McKernel CPUs */
-	struct cpus cpu_inputs[2] = { 0 };
+	struct cpus cpus_input[2] = { 0 };
 
 	for (i = 1; i < 2; i++) {
-		ret = cpus_ls(&cpu_inputs[i]);
+		ret = cpus_ls(&cpus_input[i]);
 		INTERR(ret, "cpus_ls returned %d\n", ret);
 
-		ret = cpus_shift(&cpu_inputs[i], 2);
+		ret = cpus_shift(&cpus_input[i], 2);
 		INTERR(ret, "cpus_shift returned %d\n", ret);
 	}
 
 	int ret_expected_reserve_cpu[] = { -ENOENT, 0 };
-	int ret_expected[] = { -ENOENT, cpu_inputs[1].ncpus };
-	struct cpus *cpus_expected[] = { NULL, &cpu_inputs[1] };
+	int ret_expected[] = { -ENOENT, cpus_input[1].ncpus };
+	struct cpus *cpus_expected[] = { NULL, &cpus_input[1] };
 
 	/* Activate and check */
 	for (i = 0; i < 2; i++) {
 		START("test-case: /dev/mcd0: %s\n", messages[i]);
 
-		ret = ihk_reserve_cpu(0, cpu_inputs[i].cpus,
-				      cpu_inputs[i].ncpus);
+		ret = ihk_reserve_cpu(0, cpus_input[i].cpus,
+				      cpus_input[i].ncpus);
 		INTERR(ret != ret_expected_reserve_cpu[i],
 		       "ihk_reserve_cpu returned %d\n", ret);
 
@@ -52,15 +52,15 @@ int main(int argc, char **argv)
 			OKNG(ret == 0, "reserved as expected\n");
 
 			/* Clean up */
-			ret = ihk_release_cpu(0, cpu_inputs[i].cpus,
-					      cpu_inputs[i].ncpus);
-			INTERR(ret != 0, "ihk_release_cpu returned %d\n", ret);
+			ret = ihk_release_cpu(0, cpus_input[i].cpus,
+					      cpus_input[i].ncpus);
+			INTERR(ret, "ihk_release_cpu returned %d\n", ret);
 		}
 
 		/* Precondition */
 		if (i == 0) {
 			ret = insmod(params.uid, params.gid);
-			NG(ret == 0, "insmod returned %d\n", ret);
+			INTERR(ret == 0, "insmod returned %d\n", ret);
 		}
 	}
 
