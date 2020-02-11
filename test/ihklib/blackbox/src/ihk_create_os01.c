@@ -8,38 +8,42 @@
 
 const char param[] = "/dev/mcd0";
 const char *values[] = {
-	"/dev/mcd0 exists",
 	"No /dev/mcd0 exists"
+	"/dev/mcd0 exists",
 };
 
-int main(int argc, char **argv) 
+int main(int argc, char **argv)
 {
 	int ret;
 	int i;
 
 	params_getopt(argc, argv);
-	
-	ret = insmod(params.uid, params.gid);
-	INTERR(ret, "insmod returned %d\n", ret);
-	
-	int ret_expected[2] = { 0, -ENOENT }; 
-	int ret_expected_os_instances[2] = { 1, -ENOENT }; 
 
-/*	for (i = 0; i < 2; i++) {
+	int ret_expected[2] = { -ENOENT, 0 };
+	int ret_expected_os_instances[2] = { -ENOENT, 1 };
+
+	for (i = 0; i < 2; i++) {
 		ret = ihk_create_os(0);
 		OKNG(ret == ret_expected[i],
-		     "return value: %d, expected: %d\n",
+		     "return value (os index when positive): %d, expected: %d\n",
 		     ret, ret_expected[i]);
-		
-		ret = ihk_get_num_os_instances(0);
-		OKNG(ret == ret_expected_os_instances[i], 
-				"create os instance as expected\n");
-		
-		if (i == 0) rmmod(0);
+
+		if (ret_expected[i] == 0) {
+			ret = ihk_get_num_os_instances(0);
+			OKNG(ret == ret_expected_os_instances[i],
+			     "# of os instances: %d, expected: %d\n",
+			     ret, ret_expected_os_instances[i]);
+		}
+
+		/* Precondition */
+		if (i == 0) {
+			ret = insmod(params.uid, params.gid);
+			INTERR(ret, "insmod returned %d\n", ret);
+		}
 	}
-*/	
 
 out:
+	rmmod(0);
 	return ret;
 }
 
