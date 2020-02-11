@@ -7,7 +7,7 @@ int os_load(void)
 {
 	int ret;
 	char fn[4096];
-	
+
 	sprintf(fn, "%s/%s/kernel/mckernel.img",
 		QUOTE(WITH_MCK), QUOTE(BUILD_TARGET));
 	ret = ihk_os_load(0, fn);

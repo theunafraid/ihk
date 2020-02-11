@@ -45,5 +45,10 @@ int ikc_cpu_map_cat(struct ikc_cpu_map *a, struct ikc_cpu_map *b,
 		    struct ikc_cpu_map *c);
 int ikc_cpu_map_compare(struct ikc_cpu_map *result, struct ikc_cpu_map *expected);
 int ikc_cpu_map_check(struct ikc_cpu_map *expected);
+int ikc_cpu_map_2toN(struct ikc_cpu_map *map);
+void ikc_cpu_map_max_src_cpu(struct ikc_cpu_map *map, int *src_cpu,
+			     int *dst_cpu);
+int ikc_cpu_map_push(struct ikc_cpu_map *map, int src_cpu, int dst_cpu);
+int ikc_cpu_map_pop(struct ikc_cpu_map *map, int n);
 
 #endif

@@ -239,6 +239,7 @@ int mems_push(struct mems *mems, unsigned long size, int numa_node_number)
 		if (ret != 0) {
 			goto out;
 		}
+		mems->num_mem_chunks = 0;
 	} else {
 		mems->mem_chunks = mremap(mems->mem_chunks,
 					  sizeof(struct ihk_mem_chunk) *
@@ -392,7 +393,7 @@ void mems_dump(struct mems *mems)
 static void mems_sum(struct mems *mems, unsigned long *sum)
 {
 	int i;
-	
+
 	memset(sum, 0, sizeof(unsigned long) * MAX_NUM_MEM_CHUNKS);
 
 	for (i = 0; i < mems->num_mem_chunks; i++) {
@@ -646,9 +647,7 @@ int mems_reserved(struct mems *mems)
 	ret = ihk_get_num_reserved_mem_chunks(0);
 	INTERR(ret < 0, "ihk_get_num_reserved_mem_chunks returned %d\n",
 	       ret);
-	printf("%s: num_mem_chunks: %d\n",
-	       __func__, ret);
-	
+
 	if (ret == 0) {
 		goto out;
 	}

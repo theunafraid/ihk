@@ -37,11 +37,11 @@ int main(int argc, char **argv)
 	/* Activate and check */
 	for (i = 0; i < 2; i++) {
 		START("test-case: %s: %s\n", param, values[i]);
-		
+
 		if (i != 0) {
-			ret = mems_reserve();		
+			ret = mems_reserve();
 			INTERR(ret, "mems_reserve returned %d\n", ret);
-			
+
 			ret = mems_reserved(&mems_after_reserve[i]);
 			INTERR(ret, "mems_reserved returned %d\n", ret);
 
@@ -52,7 +52,7 @@ int main(int argc, char **argv)
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
-		
+
 		ret = mems_release();
 		INTERR(ret, "mems_reserve returned %d\n", ret);
 	}
