@@ -135,6 +135,7 @@ int cpus_push(struct cpus *cpus, int id)
 		if (ret != 0) {
 			goto out;
 		}
+		cpus->ncpus = 0;
 	} else {
 		cpus->cpus = mremap(cpus->cpus, sizeof(int) * cpus->ncpus,
 				    sizeof(int) * (cpus->ncpus + 1),
@@ -316,7 +317,6 @@ int cpus_reserved(struct cpus *cpus)
 	ret = ihk_get_num_reserved_cpus(0);
 	INTERR(ret < 0, "ihk_get_num_reserved_cpus returned %d\n",
 	       ret);
-	INFO("# of reserved cpus: %d\n", ret);
 
 	if (ret > 0) {
 		ret = cpus_init(cpus, ret);
@@ -623,6 +623,149 @@ int ikc_cpu_map_check(struct ikc_cpu_map *expected)
 		ikc_cpu_map_dump(expected);
 	}
 
+ out:
+	return ret;
+}
+
+/* -r 2-(N/2):0+(N/2+1)-(N-1):1*/
+int ikc_cpu_map_2toN(struct ikc_cpu_map *map)
+{
+	int ret;
+	struct cpus cpus_lwk_1st = { 0 };
+	struct cpus cpus_lwk_2nd = { 0 };
+
+	/* first half */
+	ret = cpus_reserved(&cpus_lwk_1st);
+	INTERR(ret, "cpus_reserved returned %d\n", ret);
+	ret = cpus_pop(&cpus_lwk_1st,
+		       cpus_lwk_1st.ncpus / 2);
+	INTERR(ret, "cpus_pop returned %d\n", ret);
+
+	/* others */
+	ret = cpus_reserved(&cpus_lwk_2nd);
+	INTERR(ret, "cpus_reserved returned %d\n", ret);
+	ret = cpus_shift(&cpus_lwk_2nd,
+			 cpus_lwk_1st.ncpus);
+	INTERR(ret, "cpus_shift returned %d\n", ret);
+
+	struct cpus cpus_linux_1st = { 0 };
+	struct cpus cpus_linux_2nd = { 0 };
+
+	/* array of first cpu */
+	ret = cpus_ls(&cpus_linux_1st);
+	INTERR(ret, "cpus_reserved returned %d\n", ret);
+	ret = cpus_at(&cpus_linux_1st, 0);
+	INTERR(ret, "cpus_at returned %d\n", ret);
+	ret = cpus_broadcast(&cpus_linux_1st, cpus_lwk_1st.ncpus);
+	INTERR(ret, "cpus_broadcast returned %d\n", ret);
+
+	/* array of second cpu */
+	ret = cpus_ls(&cpus_linux_2nd);
+	INTERR(ret, "cpus_reserved returned %d\n", ret);
+	ret = cpus_at(&cpus_linux_2nd, 1);
+	INTERR(ret, "cpus_at returned %d\n", ret);
+	ret = cpus_broadcast(&cpus_linux_2nd, cpus_lwk_2nd.ncpus);
+	INTERR(ret, "cpus_broadcast returned %d\n", ret);
+
+	/* transform into array of <ikc_src, ikc_dst> */
+	struct ikc_cpu_map map_1st = { 0 };
+	struct ikc_cpu_map map_2nd = { 0 };
+
+	ret = ikc_cpu_map_copy(&map_1st, &cpus_lwk_1st, &cpus_linux_1st);
+	INTERR(ret, "ihc_cpu_map_copy returned %d\n", ret);
+
+	ret = ikc_cpu_map_copy(&map_2nd, &cpus_lwk_2nd, &cpus_linux_2nd);
+	INTERR(ret, "ihc_cpu_map_copy returned %d\n", ret);
+
+	/* cat 1st and 2nd */
+	ret = ikc_cpu_map_cat(map, &map_1st, &map_2nd);
+	INTERR(ret, "ihc_cpu_map_cat returned %d\n", ret);
+	//ikc_cpu_map_dump(map);
+
+	ret = 0;
+ out:
+	return ret;
+}
+
+void ikc_cpu_map_max_src_cpu(struct ikc_cpu_map *map, int *src_cpu,
+			    int *dst_cpu)
+{
+	int i;
+	*src_cpu = INT_MIN;
+
+	for (i = 0; i < map->ncpus; i++) {
+		if (map->map[i].src_cpu > *src_cpu) {
+			*src_cpu = map->map[i].src_cpu;
+			*dst_cpu = map->map[i].dst_cpu;
+		}
+	}
+}
+
+int ikc_cpu_map_push(struct ikc_cpu_map *map, int src_cpu, int dst_cpu)
+{
+	int ret;
+
+	if (map->map == NULL) {
+		ret = ikc_cpu_map_init(map, 1);
+		if (ret) {
+			goto out;
+		}
+		map->ncpus = 0;
+	} else {
+		map->map = mremap(map->map,
+				  sizeof(struct ihk_ikc_cpu_map) * map->ncpus,
+				  sizeof(struct ihk_ikc_cpu_map) *
+				  (map->ncpus + 1),
+				  MREMAP_MAYMOVE);
+		if (map->map == MAP_FAILED) {
+			ret = -errno;
+			goto out;
+		}
+	}
+
+	map->map[map->ncpus].src_cpu = src_cpu;
+	map->map[map->ncpus].dst_cpu = dst_cpu;
+	map->ncpus++;
+
+	ret = 0;
+ out:
+	return ret;
+}
+
+int ikc_cpu_map_pop(struct ikc_cpu_map *map, int n)
+{
+	int ret;
+
+	if (map->ncpus < n || map->map == NULL) {
+		ret = 1;
+		goto out;
+	}
+
+	if (map->ncpus == n) {
+		ret = munmap(map->map,
+			     sizeof(struct ihk_ikc_cpu_map) * map->ncpus);
+		if (ret) {
+			ret = -errno;
+			goto out;
+		}
+		map->map = NULL;
+		map->ncpus = 0;
+		ret = 0;
+		goto out;
+	}
+
+	map->map = mremap(map->map,
+			  sizeof(struct ihk_ikc_cpu_map) * map->ncpus,
+			  sizeof(struct ihk_ikc_cpu_map) * (map->ncpus - n),
+			  MREMAP_MAYMOVE);
+	if (map->map == MAP_FAILED) {
+		ret = -errno;
+		goto out;
+	}
+
+	map->ncpus -= n;
+
+	ret = 0;
  out:
 	return ret;
 }

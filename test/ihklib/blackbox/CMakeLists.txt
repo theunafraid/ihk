@@ -96,8 +96,6 @@ foreach(target IN ITEMS
     ihk_reserve_mem02
     ihk_reserve_mem07
     ihk_reserve_mem08
-    ihk_get_num_reserved_mem_chunks02
-    ihk_create_os01
     ihk_os_assign_cpu01
     ihk_os_assign_cpu02
     ihk_os_assign_cpu03
@@ -112,9 +110,17 @@ foreach(target IN ITEMS
     ihk_os_query_mem02
     ihk_os_query_cpu02
     ihk_os_release_mem02
+    ihk_get_num_reserved_mem_chunks02
     ihk_os_shutdown07
     ihk_os_set_ikc_map07
     ikc_map
+    ihk_create_os01
+    ihk_destroy_os07
+    ihk_os_get_ikc_map07
+    ihk_destroy_os03
+    ihk_destroy_os08
+    ihk_destroy_os05
+    ihk_destroy_os06
     )
 
   # Add target
