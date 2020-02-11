@@ -9,7 +9,7 @@
 const char param[] = "num_chunks";
 const char *values[] = {
 	"NULL",
-	"Reserved * 0.9",
+	"MemFree * 0.9",
 };
 
 int main(int argc, char **argv)
@@ -23,7 +23,6 @@ int main(int argc, char **argv)
 	ret = insmod(params.uid, params.gid);
 	INTERR(ret, "insmod returned %d\n", ret);
 
-
 	struct mems mems_input[] = {
 		{
 			.mem_chunks = NULL,
@@ -32,8 +31,8 @@ int main(int argc, char **argv)
 		{ 0 },
 	};
 
-	struct mems mems_after_reserve[2] = {0};
-	int ret_expected[2] = {0};
+	struct mems mems_after_reserve[2] = { 0 };
+	int ret_expected[2] = { 0 };
 
 	/* Activate and check */
 	for (i = 0; i < 2; i++) {
