@@ -33,11 +33,11 @@ int main(int argc, char **argv)
 
 	int ret_expected[] = { 0, 0 };
 
-	int num_os_instances_after_shutdown[] = { 0, 0 };
+	int num_os_instances_after_destroy[] = { 0, 0 };
 
 	/* Activate and check */
 	for (i = 0; i < 2; i++) {
-		START("test-case: : %s\n", messages[i]);
+		START("test-case: %s: %s\n", param, messages[i]);
 
 		ret = ihk_create_os(0);
 		INTERR(ret, "ihk_create_os returned %d\n", ret);
@@ -67,7 +67,7 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 
 		ret = ihk_get_num_os_instances(0);
-		OKNG(ret == num_os_instances_after_shutdown[i],
+		OKNG(ret == num_os_instances_after_destroy[i],
 		     "os is destroyed as expected\n");
 	}
 
