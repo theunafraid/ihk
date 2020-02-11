@@ -67,7 +67,6 @@ int main(int argc, char **argv)
 		  NULL,
 	};
 
-
 	/* Activate and check */
 	for (i = 0; i < 4; i++) {
 		START("test-case: %s: %s\n", param, values[i]);
