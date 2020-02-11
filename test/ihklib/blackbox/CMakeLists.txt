@@ -10,8 +10,10 @@ project(ihk_rmif_bbtest C)
 # CPPFLAGS
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
   add_definitions(-DBUILD_TARGET=smp-x86)
+  add_definitions(-DKMOD_POSTFIX=smp_x86)
 elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
   add_definitions(-DBUILD_TARGET=smp-arm64)
+  add_definitions(-DKMOD_POSTFIX=smp_arm64)
 endif()
 
 add_definitions(-DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX})
