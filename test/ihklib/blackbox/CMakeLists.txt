@@ -91,6 +91,7 @@ foreach(target IN ITEMS
     ihk_release_cpu04
     ihk_release_cpu05
     ihk_release_cpu06
+    ihk_release_mem01
     ihk_release_mem02
     ihk_reserve_mem01
     ihk_reserve_mem02
@@ -121,6 +122,7 @@ foreach(target IN ITEMS
     ihk_destroy_os08
     ihk_destroy_os05
     ihk_destroy_os06
+    ihk_get_num_os_instances01
     )
 
   # Add target
