@@ -3,5 +3,6 @@
 
 int os_load(void);
 int os_kargs(void);
+int os_wait_for_status(int status);
 
 #endif
