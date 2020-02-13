@@ -25,16 +25,20 @@ int main(int argc, char **argv)
 	ret = insmod(params.uid, params.gid);
 	INTERR(ret, "insmod returned %d\n", ret);
 
-	struct mems mems_input[4] = { 0 };
+	struct mems mems_input[4] = {
+		{ .num_mem_chunks = 1, .mem_chunks = NULL },
+		{ 0 },
+		{ 0 },
+		{ 0 },
+	};
 
 	struct mems mems_after_release[4] = { 0 };
 
-
 	int ret_expected[] = {
-		  -EINVAL,
-		  0,
-		  -EINVAL,
-		  0,
+		-EFAULT,
+		0,
+		-EINVAL,
+		0,
 	};
 
 	struct mems *mems_expected[] = {
