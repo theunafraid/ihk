@@ -682,13 +682,13 @@ int mems_check_assigned(struct mems *expected)
 
 	ret = mems_compare(&mems, expected, NULL);
 
-	INFO("actual reservation:\n");
+	INFO("actual assignment:\n");
 	mems_dump_sum(&mems);
 	if (mems.num_mem_chunks == 0) {
 		INFO("(none)\n");
 	}
 
-	INFO("expected reservation:\n");
+	INFO("expected assignment:\n");
 	mems_dump_sum(expected);
 	if (expected->num_mem_chunks == 0) {
 		INFO("(none)\n");
