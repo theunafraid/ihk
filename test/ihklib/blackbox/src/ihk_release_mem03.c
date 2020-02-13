@@ -33,21 +33,20 @@ int main(int argc, char **argv)
 
 	struct mems mems_input[5] = { 0 };
 
-	int ret_expected_reserve_mem[] = {
-		  -ENOENT,
-		  -ENOENT,
-		  0,
-		  -ENOENT,
-		  -ENOENT,
-		};
+	for (i = 0; i < 5; i++) {
+		int excess;
 
-	int ret_expected_get_num_reserved_mems[] = {
-		  -ENOENT,
-		  -ENOENT,
-		  mems_input[2].nmems,
-		  -ENOENT,
-		  -ENOENT,
-		};
+		ret = mems_ls(&mems_input[i], "MemFree", 0.9);
+		INTERR(ret, "mems_ls returned %d\n", ret);
+
+		excess = mems_input[i].num_mem_chunks - 4;
+		if (excess > 0) {
+			ret = mems_shift(&mems_input[i], excess);
+			INTERR(ret, "mems_shift returned %d\n", ret);
+		}
+	}
+
+	struct mems mems_after_release[5] = { 0 };
 
 	int ret_expected[] = {
 		  -ENOENT,
@@ -58,11 +57,11 @@ int main(int argc, char **argv)
 		};
 
 	struct mems *mems_expected[] = {
-		  NULL, /* don't care */
-		  NULL, /* don't care */
-		  &mems_input[2],
-		  NULL, /* don't care */
-		  NULL, /* don't care */
+		  &mems_after_release[0],
+		  &mems_after_release[1],
+		  &mems_after_release[2],
+		  &mems_after_release[3],
+		  &mems_after_release[4],
 		};
 
 	/* Precondition */
@@ -71,48 +70,52 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 5; i++) {
-		struct mems mems;
+		int num_mem_chunks;
 
-		START("test-case: : %s\n", values[i]);
+		START("test-case: %s: %s\n", param, values[i]);
 
-		ret = ihk_reserve_mem(dev_index_input[i],
-				      mems_input[i].mems, mems_input[i].nmems);
-		INTERR(ret != ret_expected_reserve_mem[i],
-		     "ihk_reserve_mem returned %d\n", ret);
+		ret = ihk_reserve_mem(0, mems_input[i].mem_chunks,
+				      mems_input[i].num_mem_chunks);
+		INTERR(ret, "ihk_reserve_mem returned %d\n", ret);
 
-		ret = ihk_get_num_reserved_mems(dev_index_input[i]);
-		INTERR(ret != ret_expected_get_num_reserved_mems[i],
-		     "ihk_get_num_reserved_mems returned %d\n", ret);
+		ret = ihk_get_num_reserved_mem_chunks(0);
+		INTERR(ret < 0, "ihk_get_num_reserved_mem_chunks returned %d\n",
+		       ret);
+		num_mem_chunks = ret;
 
-		if (!mems_expected[i]) {
-			ret = mems_init(&mems, 1);
-			INTERR(ret, "mems_init returned %d\n", ret);
+		ret = mems_init(&mems_input[i], num_mem_chunks);
+		INTERR(ret, "mems_init returned %d\n", ret);
 
-			ret = ihk_query_mem(dev_index_input[i], mems.mems,
-					    mems.nmems);
-			OKNG(ret == ret_expected[i],
-			     "return value: %d, expected: %d\n",
-			     ret, ret_expected[i]);
-		} else {
-			mems.nmems = ret;
+		ret = ihk_query_mem(0, mems_input[i].mem_chunks,
+				    mems_input[i].num_mem_chunks);
+		INTERR(ret, "ihk_query_mem returned %d\n", ret);
 
-			ret = mems_init(&mems, mems.nmems);
-			INTERR(ret, "mems_init returned %d\n", ret);
+		ret = mems_init(&mems_after_release[i], num_mem_chunks);
+		INTERR(ret, "mems_init returned %d\n", ret);
 
-			ret = ihk_query_mem(dev_index_input[i], mems.mems,
-					    mems.nmems);
-			OKNG(ret == ret_expected[i],
-			     "return value: %d, expected: %d\n",
-			     ret, ret_expected[i]);
+		ret = ihk_query_mem(0, mems_after_release[i].mem_chunks,
+				    mems_after_release[i].num_mem_chunks);
+		INTERR(ret, "ihk_query_mem returned %d\n", ret);
 
-			ret = mems_compare(&mems, mems_expected[i]);
-			OKNG(ret == 0, "query result matches input\n");
-
-			/* Clean up */
-			ret = ihk_release_mem(0, mems_input[i].mems,
-					      mems_input[i].nmems);
-			INTERR(ret, "ihk_release_mem returned %d\n", ret);
+		if (i == 2) {
+			ret = mems_shift(&mems_after_release[i],
+				mems_after_release[i].num_mem_chunks);
+			INTERR(ret, "mems_shift returned %d\n", ret);
 		}
+
+		ret = ihk_release_mem(dev_index_input[i],
+				mems_input[i].mem_chunks,
+				mems_input[i].num_mem_chunks);
+		OKNG(ret == ret_expected[i],
+		     "return value: %d, expected: %d\n",
+		     ret, ret_expected[i]);
+
+		ret = mems_check_reserved(mems_expected[i], NULL);
+		OKNG(ret == 0, "released as expected\n");
+
+		/* Clean up */
+		ret = mems_release();
+		INTERR(ret, "ihk_release_mem returned %d\n", ret);
 	}
 
 	ret = 0;
