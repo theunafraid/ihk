@@ -7,7 +7,7 @@
 #include "init_fini.h"
 
 const char param[] = "mem_chunks";
-const char *messages[] = {
+const char *values[] = {
 	 "NULL",
 	 "assigned",
 	 "assigned + 1",
@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 4; i++) {
-		START("test-case: : %s\n", messages[i]);
+		START("test-case: %s: %s\n", param, values[i]);
 
 		ret = mems_os_assign();
 		INTERR(ret, "mems_os_assign returned %d\n", ret);
@@ -100,8 +100,10 @@ int main(int argc, char **argv)
 		INTERR(ret, "mems_os_release returned %d\n", ret);
 	}
 
+
 	ret = 0;
  out:
+	mems_release();
 	rmmod(0);
 	return ret;
 }
