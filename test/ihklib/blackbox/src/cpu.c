@@ -387,15 +387,15 @@ int cpus_release(void)
 	int ret;
 	struct cpus cpus = { 0 };
 
-	ret = ihk_os_get_num_assigned_cpus(0);
-	INTERR(ret < 0, "ihk_os_get_num_assigned_cpus returned %d\n",
+	ret = ihk_get_num_reserved_cpus(0);
+	INTERR(ret < 0, "ihk_get_num_reserved_cpus returned %d\n",
 	       ret);
 
 	if (ret > 0) {
 		ret = cpus_init(&cpus, ret);
 		INTERR(ret, "cpus_init returned %d\n", ret);
 
-		ret = ihk_os_query_cpu(0, cpus.cpus, cpus.ncpus);
+		ret = ihk_query_cpu(0, cpus.cpus, cpus.ncpus);
 		INTERR(ret, "ihk_os_query_cpu returned %d\n",
 		       ret);
 	}
