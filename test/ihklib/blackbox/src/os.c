@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <ihklib.h>
+#include <errno.h>
 #include "util.h"
 #include "okng.h"
 #include "os.h"
@@ -29,6 +30,28 @@ int os_kargs(void)
 	INTERR(ret, "ihk_os_kargs returned %d\n", ret);
 
 	ret = 0;
+ out:
+	return ret;
+}
+
+int os_wait_for_status(int status)
+{
+	int ret;
+	int i;
+
+	INFO("waiting for status getting %d\n",
+	     status);
+
+	for (i = 0; i < 20; i++) {
+		ret = ihk_os_get_status(0);
+		if (ret == status) {
+			ret = 0;
+			goto out;
+		}
+		printf("status: %d\n", ret);
+		usleep(400000);
+	}
+	ret = -ETIMEDOUT;
  out:
 	return ret;
 }
