@@ -26,28 +26,6 @@ const char *messages[] = {
 	"IHK_STATUS_FROZEN"
 };
 
-int wait_for_status(int status)
-{
-	int ret;
-	int i;
-
-	INFO("waiting for status getting %d\n",
-	     status);
-
-	for (i = 0; i < 20; i++) {
-		ret = ihk_os_get_status(0);
-		if (ret == status) {
-			ret = 0;
-			goto out;
-		}
-		printf("status: %d\n", ret);
-		usleep(400000);
-	}
-	ret = -ETIMEDOUT;
- out:
-	return ret;
-}
-
 int main(int argc, char **argv)
 {
 	int ret;
@@ -98,8 +76,6 @@ int main(int argc, char **argv)
 		IHK_STATUS_INACTIVE,
 		IHK_STATUS_INACTIVE,
 	};
-
-	int num_os_instances_after_shutdown[] = { 0, 0 };
 
 	int fd;
 	unsigned long os_set[1] = { 1 };
@@ -192,11 +168,10 @@ int main(int argc, char **argv)
 		}
 
 		/* wait until os status changes to the target status */
-		ret = wait_for_status(target_status[i]);
+		ret = os_wait_for_status(target_status[i]);
 		INTERR(ret, "os status didn't change to %d\n",
 		       target_status[i]);
 
- status_changed:
 		INFO("trying to shutdown os\n");
 
 		ret = ihk_os_shutdown(0);
@@ -205,14 +180,13 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 
 		/* wait until os status stablizes */
-		wait_for_status(status_expected[i]);
+		os_wait_for_status(status_expected[i]);
 		ret = ihk_os_get_status(0);
 		OKNG(ret == status_expected[i],
 		     "status: %d, expected: %d\n",
 		     ret, status_expected[i]);
 
 		/* Clean up */
-
 		switch (target_status[i]) {
 		case IHK_STATUS_HUNGUP:
 		case IHK_STATUS_PANIC:
@@ -244,7 +218,7 @@ int main(int argc, char **argv)
 
 		switch (ihk_os_get_status(0)) {
 		case IHK_STATUS_FREEZING:
-			wait_for_status(IHK_STATUS_FROZEN);
+			os_wait_for_status(IHK_STATUS_FROZEN);
 			/* fall through */
 		case IHK_STATUS_FROZEN:
 			ihk_os_thaw(os_set, sizeof(unsigned long) * 8);
@@ -254,7 +228,7 @@ int main(int argc, char **argv)
 		}
 
 		ihk_os_shutdown(0);
-		wait_for_status(IHK_STATUS_INACTIVE);
+		os_wait_for_status(IHK_STATUS_INACTIVE);
 		ihk_destroy_os(0, 0);
 	}
 	cpus_release();
