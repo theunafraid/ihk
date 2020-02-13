@@ -3,14 +3,16 @@
 #include <ihklib.h>
 #include "util.h"
 #include "okng.h"
-#include "cpu.h"
+#include "mem.h"
 #include "params.h"
 #include "init_fini.h"
 
+const char param[] = "Num of memory chunks";
 const char *values[] = {
 	"INT_MIN",
 	"-1",
 	"0",
+	"1",
 	"# of reserved",
 	"# of reserved + 1",
 	"# of reserved - 1",
@@ -24,88 +26,144 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
-	struct cpus cpus_input_reserve_cpu[7] = { 0 };
+	struct mems mems_input_reserve_mem[8] = { 0 };
 
-	/* Both Linux and McKernel cpus */
-	for (i = 0; i < 7; i++) {
-		ret = cpus_ls(&cpus_input_reserve_cpu[i]);
-		INTERR(ret, "cpus_ls returned %d\n", ret);
+	for (i = 0; i < 8; i++) {
+		int excess;
 
-		/* Spare two cpus for Linux */
-		ret = cpus_shift(&cpus_input_reserve_cpu[i], 2);
-		INTERR(ret, "cpus_shift returned %d\n", ret);
+		ret = mems_ls(&mems_input_reserve_mem[i], "MemFree", 0.9);
+		INTERR(ret, "mems_ls returned %d\n", ret);
+
+		excess = mems_input_reserve_mem[i].num_mem_chunks - 4;
+		if (excess > 0) {
+			ret = mems_shift(&mems_input_reserve_mem[i], excess);
+			INTERR(ret, "mems_shift returned %d\n", ret);
+		}
 	}
 
-	struct cpus cpus_input[] = {
-		 { .ncpus = INT_MIN },
-		 { .ncpus = -1 },
-		 { .ncpus = 0 },
-		 { .ncpus = cpus_input_reserve_cpu[3].ncpus },
-		 { .ncpus = cpus_input_reserve_cpu[4].ncpus + 1 },
-		 { .ncpus = cpus_input_reserve_cpu[5].ncpus - 1 },
-		 { .ncpus = INT_MAX },
-		};
+	int ret_expected_reserve_mem[8] = { 0 };
 
-	for (i = 3; i < 6; i++) {
-		ret = cpus_init(&cpus_input[1],
-				cpus_input_reserve_cpu[1].ncpus);
-		INTERR(ret, "cpus_init returned %d\n", ret);
-	}
+	struct mems mems_input[8] = { 0 };
 
-	int ret_expected_reserve_cpu[7] = { 0 };
-	int ret_expected_get_num_reserved_cpus[7] = { 0 };
 	int ret_expected[] = {
 		 -EINVAL,
 		 -EINVAL,
+		 0,
+		 0,
+		 0,
 		 -EINVAL,
 		 0,
 		 -EINVAL,
-		 -EINVAL,
-		 -EINVAL,
-		};
-
-	struct cpus *cpus_expected[] = {
-		  NULL, /* don't care */
-		  NULL, /* don't care */
-		  NULL, /* don't care */
-		  &cpus_input_reserve_cpu[3],
-		  NULL, /* don't care */
-		  NULL, /* don't care */
-		  NULL, /* don't care */
-		};
+	};
+	struct mems mems_after_release[8] = { 0 };
+	struct mems *mems_expected[] = {
+		&mems_after_release[0],
+		&mems_after_release[1],
+		&mems_after_release[2],
+		&mems_after_release[3],
+		&mems_after_release[4],
+		&mems_after_release[5],
+		&mems_after_release[6],
+		&mems_after_release[7],
+	};
 
 	/* Precondition */
 	ret = insmod(params.uid, params.gid);
 	INTERR(ret, "insmod returned %d\n", ret);
 
 	/* Activate and check */
-	for (i = 0; i < 7; i++) {
-		START("test-case: num_cpus: %s\n", values[i]);
+	for (i = 0; i < 8; i++) {
+		int num_mem_chunks;
 
-		ret = ihk_reserve_cpu(0, cpus_input_reserve_cpu[i].cpus,
-				      cpus_input_reserve_cpu[i].ncpus);
-		INTERR(ret != ret_expected_reserve_cpu[i],
-		     "ihk_reserve_cpu returned %d\n", ret);
+		START("test-case: %s: %s\n", param, values[i]);
 
-		ret = ihk_get_num_reserved_cpus(0);
-		INTERR(ret != ret_expected_get_num_reserved_cpus[i],
-		     "ihk_get_num_reserved_cpus returned %d\n", ret);
+		ret = ihk_reserve_mem(0, mems_input_reserve_mem[i].mem_chunks,
+				      mems_input_reserve_mem[i].num_mem_chunks);
+		INTERR(ret != ret_expected_reserve_mem[i],
+		     "ihk_reserve_mem returned %d\n", ret);
 
-		ret = ihk_query_cpu(0, cpus_input[i].cpus,
-				    cpus_input[i].ncpus);
+		ret = ihk_get_num_reserved_mem_chunks(0);
+		INTERR(ret < 0,
+		     "ihk_get_num_reserved_mems returned %d\n", ret);
+		num_mem_chunks = ret;
+
+		ret = mems_init(&mems_input[i], num_mem_chunks);
+		INTERR(ret, "mems_init returned %d\n", ret);
+		ret = ihk_query_mem(0, mems_input[i].mem_chunks,
+				    mems_input[i].num_mem_chunks);
+		INTERR(ret, "ihk_query_mem returned %d\n", ret);
+
+		ret = mems_init(&mems_after_release[i], num_mem_chunks);
+		INTERR(ret, "mems_init returned %d\n", ret);
+		ret = ihk_query_mem(0, mems_after_release[i].mem_chunks,
+				    mems_after_release[i].num_mem_chunks);
+		INTERR(ret, "ihk_query_mem returned %d\n", ret);
+
+
+		if (i == 0) {
+			mems_input[i].num_mem_chunks = INT_MIN;
+		}
+
+		if (i == 1) {
+			mems_input[i].num_mem_chunks = -1;
+		}
+
+		if (i == 2) {
+			mems_input[i].num_mem_chunks = 0;
+		}
+
+		if (i == 3) { /* first chunk */
+			ret = mems_pop(&mems_input[i],
+				       mems_input[i].num_mem_chunks - 1);
+			INTERR(ret, "mems_shift returned %d\n", ret);
+
+			ret = mems_shift(&mems_after_release[i], 1);
+			INTERR(ret, "mems_shift returned %d\n", ret);
+		}
+
+		if (i == 4) { /* reserved */
+			ret = mems_shift(&mems_after_release[i],
+				mems_after_release[i].num_mem_chunks);
+			INTERR(ret, "mems_shift returned %d\n", ret);
+		}
+
+		if (i == 5) { /* plus one */
+			ret = mems_push(&mems_input[i],
+					mems_input[i].mem_chunks[mems_input[i].num_mem_chunks - 1].size,
+					mems_input[i].mem_chunks[mems_input[i].num_mem_chunks - 1].numa_node_number);
+			INTERR(ret, "mems_push returned %d\n", ret);
+			ret = mems_shift(&mems_after_release[i],
+				mems_after_release[i].num_mem_chunks);
+			INTERR(ret, "mems_shift returned %d\n", ret);
+		}
+
+		if (i == 6) { /* minus one */
+			ret = mems_pop(&mems_input[i], 1);
+			INTERR(ret, "mems_pop returned %d\n", ret);
+
+			ret = mems_shift(&mems_after_release[i],
+					 mems_after_release[i].num_mem_chunks - 1);
+			INTERR(ret, "mems_shift returned %d\n", ret);
+		}
+
+		if (i == 7) {
+			mems_input[i].num_mem_chunks = INT_MAX;
+		}
+
+		ret = ihk_release_mem(0, mems_input[i].mem_chunks,
+				      mems_input[i].num_mem_chunks);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		if (cpus_expected[i]) {
-			ret = cpus_compare(&cpus_input[i], cpus_expected[i]);
-			OKNG(ret == 0, "query result matches input\n");
+		if (mems_expected[i]) {
+			ret = mems_check_reserved(mems_expected[i], NULL);
+			OKNG(ret == 0, "released as expected\n");
 		}
 
 		/* Clean up */
-		ret = ihk_release_cpu(0, cpus_input_reserve_cpu[i].cpus,
-				      cpus_input_reserve_cpu[i].ncpus);
-		INTERR(ret, "ihk_release_cpu returned %d\n", ret);
+		ret = mems_release();
+		INTERR(ret, "ihk_release_mem returned %d\n", ret);
 	}
 
 	ret = 0;
