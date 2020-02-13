@@ -80,11 +80,9 @@ int main(int argc, char **argv)
 		}
 	}
 
-	ret = mems_release();
-	INTERR(ret, "mems_release returned %d\n", ret);
-
 	ret = 0;
  out:
+	mems_release();
 	rmmod(0);
 	return ret;
 }
