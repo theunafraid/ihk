@@ -7,10 +7,11 @@
 #include "params.h"
 #include "init_fini.h"
 
-const char param[] = "user privilege";
+const char param[] = "release memory chunks";
 const char *values[] = {
-	"root",
+	"set memory chunk size into -1",
 };
+
 int main(int argc, char **argv)
 {
 	int ret;
@@ -18,9 +19,6 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
-	struct mems mems_input[1] = { 0 };
-
-	/* Precondition */
 	ret = insmod(params.uid, params.gid);
 	INTERR(ret, "insmod returned %d\n", ret);
 
@@ -30,9 +28,9 @@ int main(int argc, char **argv)
 	ret = ihk_create_os(0);
 	INTERR(ret, "ihk_create_os returned %d\n", ret);
 
-	int ret_expected[1] = { 0 };
-
+	struct mems mems_input[1] = { 0 };
 	struct mems mems_after_release[1] = { 0 };
+	struct mems *mems_expected[1] = { &mems_after_release[0] };
 
 	for (i = 0; i < 1; i++) {
 		ret = mems_reserved(&mems_input[i]);
@@ -42,20 +40,20 @@ int main(int argc, char **argv)
 		INTERR(ret, "mems_reserved returned %d\n", ret);
 	}
 
-	/* Empty */
 	ret = mems_shift(&mems_after_release[0],
 			 mems_after_release[0].num_mem_chunks);
 	INTERR(ret, "mems_shift returned %d\n", ret);
 
-	struct mems *mems_expected[] = {
-		 &mems_after_release[0],
-	};
+	int ret_expected[1] = { 0 };
 
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
 		START("test-case: %s: %s\n", param, values[i]);
+
 		ret = mems_os_assign();
 		INTERR(ret, "mems_os_assign returned %d\n", ret);
+
+		mems_input[i].mem_chunks[0].size = -1;
 
 		ret = ihk_os_release_mem(0, mems_input[i].mem_chunks,
 				mems_input[i].num_mem_chunks);
@@ -66,11 +64,8 @@ int main(int argc, char **argv)
 		if (mems_expected[i]) {
 			ret = mems_check_assigned(mems_expected[i]);
 			OKNG(ret == 0, "released as expected\n");
-
-			/* Clean up */
-			ret = mems_os_release();
-			INTERR(ret, "mems_os_release returned %d\n", ret);
 		}
+
 	}
 
 	ret = 0;
