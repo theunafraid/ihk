@@ -1402,11 +1402,7 @@ static int smp_ihk_os_wait_for_status(ihk_os_t ihk_os, void *priv,
 		return -1;
 	} else {
 		/* Polling */
-#if 1
-		while ((s = __ihk_os_status(ihk_os)),
-#else
 		while ((s = smp_ihk_os_query_status(ihk_os, priv)),
-#endif
 		       s != status && s < IHK_OS_STATUS_SHUTDOWN
 		       && timeout > 0) {
 			mdelay(100);
