@@ -1,6 +1,8 @@
 #ifndef __UTIL_H_INCLUDED__
 #define __UTIL_H_INCLUDED__
 
+#include <stdio.h>
+
 //#define DEBUG
 
 #ifdef DEBUG

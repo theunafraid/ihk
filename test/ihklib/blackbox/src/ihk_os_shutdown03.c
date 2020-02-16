@@ -5,7 +5,7 @@
 #include "okng.h"
 #include "mem.h"
 #include "params.h"
-#include "init_fini.h"
+#include "mod.h"
 
 const char *messages[] = {
 	"INT_MIN",

@@ -5,7 +5,7 @@
 #include "okng.h"
 #include "mem.h"
 #include "params.h"
-#include "init_fini.h"
+#include "mod.h"
 
 const char param[] = "Num of memory chunks";
 const char *values[] = {

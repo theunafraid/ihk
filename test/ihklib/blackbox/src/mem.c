@@ -117,7 +117,7 @@ int mems_ls(struct mems *mems, char *type, double ratio)
 			goto out;
 		}
 
-		fclose(fp);
+		pclose(fp);
 		fp = NULL;
 
 #define RESERVE_MEM_GRANULE (1024UL * 1024 * 4)
@@ -147,7 +147,7 @@ int mems_ls(struct mems *mems, char *type, double ratio)
 	ret = 0;
  out:
 	if (fp) {
-		fclose(fp);
+		pclose(fp);
 	}
 
 	if (dp) {
@@ -203,7 +203,7 @@ int mems_free(struct mems *mems)
 			numa_node_number;
 	} while (ret);
 
-	fclose(fp);
+	pclose(fp);
 	fp = NULL;
 
 	mems->mem_chunks = mremap(mems->mem_chunks,
@@ -224,7 +224,7 @@ int mems_free(struct mems *mems)
 	ret = 0;
  out:
 	if (fp) {
-		fclose(fp);
+		pclose(fp);
 	}
 
 	return ret;
@@ -594,7 +594,7 @@ int mems_reserve(void)
 	struct mems mems = { 0 };
 	int excess;
 
-	ret = mems_ls(&mems, "MemFree", 0.9);
+	ret = mems_ls(&mems, "MemFree", 0.1);
 	INTERR(ret, "mems_ls returned %d\n", ret);
 
 	excess = mems.num_mem_chunks - 4;

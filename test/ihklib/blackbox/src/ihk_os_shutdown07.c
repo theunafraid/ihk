@@ -6,7 +6,7 @@
 #include "mem.h"
 #include "os.h"
 #include "params.h"
-#include "init_fini.h"
+#include "mod.h"
 
 const char param[] = "shutdown timing";
 const char *messages[] = {
@@ -81,4 +81,3 @@ int main(int argc, char **argv)
 
 	return ret;
 }
-

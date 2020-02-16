@@ -4,7 +4,7 @@
 #include "okng.h"
 #include "cpu.h"
 #include "params.h"
-#include "init_fini.h"
+#include "mod.h"
 
 const char *messages[] = {
 	"0",
