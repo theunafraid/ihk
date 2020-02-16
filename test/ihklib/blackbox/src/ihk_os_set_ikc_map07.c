@@ -7,7 +7,7 @@
 #include "cpu.h"
 #include "os.h"
 #include "params.h"
-#include "init_fini.h"
+#include "mod.h"
 
 const char param[] = "map";
 const char *values[] = {
@@ -136,7 +136,7 @@ int main(int argc, char **argv)
 		OKNG(ret == 1 && ncpu == map_input[i].ncpus,
 		    "IKCs from all cpus succeeded\n");
 
-		fclose(fp);
+		pclose(fp);
 
 		if (map_expected[i]) {
 			ret = ikc_cpu_map_check(map_expected[i]);

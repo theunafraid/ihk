@@ -7,7 +7,7 @@
 #include "mem.h"
 #include "os.h"
 #include "params.h"
-#include "init_fini.h"
+#include "mod.h"
 
 const char param[] = "os status";
 const char *values[] = {
