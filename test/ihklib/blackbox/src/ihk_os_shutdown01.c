@@ -4,6 +4,7 @@
 #include "okng.h"
 #include "cpu.h"
 #include "mem.h"
+#include "os.h"
 #include "params.h"
 #include "mod.h"
 
@@ -21,6 +22,16 @@ int main(int argc, char **argv)
 	params_getopt(argc, argv);
 
 	int ret_expected[] = { -ENOENT, 0 };
+
+	/* Precondition */
+	ret = insmod(params.uid, params.gid);
+	INTERR(ret, "insmod returned %d\n", ret);
+
+	ret = cpus_reserve();
+	INTERR(ret, "cpus_reserve returned %d\n", ret);
+
+	ret = mems_reserve();
+	INTERR(ret, "mems_reserve returned %d\n", ret);
 
 	/* Activate and check */
 	for (i = 0; i < 2; i++) {
@@ -62,15 +73,6 @@ int main(int argc, char **argv)
 
 		/* Precondition */
 		if (i == 0) {
-			ret = insmod(params.uid, params.gid);
-			INTERR(ret == 0, "insmod returned %d\n", ret);
-
-			ret = cpus_reserve();
-			INTERR(ret, "cpus_reserve returned %d\n", ret);
-
-			ret = mems_reserve();
-			INTERR(ret, "mems_reserve returned %d\n", ret);
-
 			ret = ihk_create_os(0);
 			INTERR(ret, "ihk_create_os returned %d\n", ret);
 
