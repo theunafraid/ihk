@@ -1164,7 +1164,8 @@ int smp_ihk_os_send_multi_intr(ihk_os_t ihk_os, void *priv, int mode)
 #else
 		ihk___smp_cross_call(&cpumask_of_cpu(hwid), INTRID_MULTI_INTR);
 #endif
-		dprintk("send to INTR CPU:%d\n", hwid);
+		pr_info("%s: send to INTR CPU:%d\n",
+			__func__, hwid);
 	}
 	return 0;
 }
@@ -1939,7 +1940,8 @@ static int ihk_smp_cpu_kill(unsigned int hwid, u64 affi)
 		}
 
 		msleep(10);
-		pr_info("IHK-SMP: Retrying again to check for CPU kill\n");
+		pr_info("%s: Retrying again to check for CPU kill\n",
+			__func__);
 	}
 
 	pr_warn("IHK-SMP: CPU HWID %d may not have shut down cleanly (AFFINITY_INFO reports %d)\n",
@@ -2296,7 +2298,7 @@ int ihk_smp_reset_cpu(int hw_id)
 	int i;
 	u64 affi;
 
-	dprintk(KERN_INFO "IHK-SMP: resetting CPU %d.\n", hw_id);
+	pr_info("%s: resetting CPU %d.\n", __func__, hw_id);
 
 	if (!ihk_psci_ops->affinity_info) {
 		pr_warn("IHK-SMP: Undefined reference to 'affinity_info'\n");

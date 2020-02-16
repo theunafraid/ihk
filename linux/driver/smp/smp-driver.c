@@ -1101,23 +1101,26 @@ static int smp_ihk_os_shutdown(ihk_os_t ihk_os, void *priv, int flag)
 	struct ihk_os_mem_chunk *next_chunk = NULL;
 	struct chunk *mem_chunk;
 
+	pr_info("%s: enter\n", __func__);
+
 	if(os->status == BUILTIN_OS_STATUS_SHUTDOWN) {
 		eprintk("%s,already down\n", __FUNCTION__);
 		return 0;
 	}
 	set_os_status(os, BUILTIN_OS_STATUS_SHUTDOWN);
-
+	mdelay(1000);
+	
 	/* Reset CPU cores used by this OS */
 	for (i = 0; i < SMP_MAX_CPUS; ++i) {
 		if (ihk_smp_cpus[i].os != ihk_os)
 			continue;
 
+		pr_info("%s: resetting CPU %d, HWID: %d\n",
+			__func__, ihk_smp_cpus[i].id, ihk_smp_cpus[i].hw_id);
 		ret = ihk_smp_reset_cpu(ihk_smp_cpus[i].hw_id);
 		ihk_smp_cpus[i].status = IHK_SMP_CPU_AVAILABLE;
 		ihk_smp_cpus[i].os = (ihk_os_t)0;
 
-		dprintk("IHK-SMP: CPU %d has been deassigned, HWID: %d\n",
-		       ihk_smp_cpus[i].id, ihk_smp_cpus[i].hw_id);
 	}
 	os->nr_cpus = 0;
 
@@ -1399,11 +1402,15 @@ static int smp_ihk_os_wait_for_status(ihk_os_t ihk_os, void *priv,
 		return -1;
 	} else {
 		/* Polling */
+#if 1
+		while ((s = __ihk_os_status(ihk_os)),
+#else
 		while ((s = smp_ihk_os_query_status(ihk_os, priv)),
+#endif
 		       s != status && s < IHK_OS_STATUS_SHUTDOWN
 		       && timeout > 0) {
 			mdelay(100);
-			dprintk("%s: waiting for: %d, status: %d\n",
+			pr_info("%s: waiting for: %d, status: %d\n",
 				__FUNCTION__, status, s);
 			timeout--;
 		}
@@ -1678,6 +1685,8 @@ static int smp_ihk_os_release_cpu(ihk_os_t ihk_os, void *priv, unsigned long arg
 	spin_lock_irqsave(&os->lock, flags);
 	if (os->status != BUILTIN_OS_STATUS_INITIAL) {
 		spin_unlock_irqrestore(&os->lock, flags);
+		pr_err("%s: error: os status: %d\n",
+		       __func__, os->status);
 		return -EBUSY;
 	}
 	spin_unlock_irqrestore(&os->lock, flags);
@@ -1743,9 +1752,12 @@ static int smp_ihk_os_release_cpu(ihk_os_t ihk_os, void *priv, unsigned long arg
 #endif
 		int lwk_cpu;
 
+		pr_info("%s: releasing CPU HWID %d from %p\n",
+			__func__, ihk_smp_cpus[cpu].hw_id, ihk_os);
 		ret = ihk_smp_reset_cpu(ihk_smp_cpus[cpu].hw_id);
 		CORE_CLR(ihk_smp_cpus[cpu].hw_id, os->cpu_hw_ids_map);
 
+		
 		ihk_smp_cpus[cpu].status = IHK_SMP_CPU_AVAILABLE;
 		ihk_smp_cpus[cpu].os = (ihk_os_t)0;
 
@@ -1767,8 +1779,8 @@ static int smp_ihk_os_release_cpu(ihk_os_t ihk_os, void *priv, unsigned long arg
 			break;
 		}
 
-		dprintk(KERN_INFO "IHK-SMP: CPU HWID %d released from %p\n",
-				ihk_smp_cpus[cpu].hw_id, ihk_os);
+		pr_info("IHK-SMP: CPU HWID %d released from %p\n",
+			ihk_smp_cpus[cpu].hw_id, ihk_os);
 	}
 
 	printk(KERN_INFO "IHK-SMP: released CPUs: %s from OS %p\n",
@@ -3715,10 +3727,10 @@ static int smp_ihk_reserve_cpu(ihk_device_t ihk_dev, unsigned long arg)
 		ihk_smp_cpus[cpu].status = IHK_SMP_CPU_OFFLINED;
 		ihk_smp_cpus[cpu].os = (ihk_os_t)0;
 		
+		pr_info("%s: CPU %d offlined successfully, HWID: %d\n",
+			__func__, ihk_smp_cpus[cpu].id, ihk_smp_cpus[cpu].hw_id);
 		ret = ihk_smp_reset_cpu(ihk_smp_cpus[cpu].hw_id);
 
-		dprintk(KERN_INFO "IHK-SMP: CPU %d offlined successfully, HWID: %d\n",
-		       ihk_smp_cpus[cpu].id, ihk_smp_cpus[cpu].hw_id);
 	}
 
 	/* Offlining CPU cores went well, mark them as available */
@@ -3757,6 +3769,7 @@ out:
 	return ret;
 }
 
+/* online cpu */
 static int _smp_ihk_release_cpu(cpumask_t *cpus_to_online)
 {
 	int ret;
@@ -3815,8 +3828,8 @@ static int _smp_ihk_release_cpu(cpumask_t *cpus_to_online)
 		ihk_smp_cpus[cpu].status = IHK_SMP_CPU_ONLINE;
 		ihk_smp_cpus[cpu].os = (ihk_os_t)0;
 
-		dprintk("IHK-SMP: CPU %d onlined successfully, HWID: %d\n",
-		       ihk_smp_cpus[cpu].id, ihk_smp_cpus[cpu].hw_id);
+		pr_info("IHK-SMP: CPU %d onlined successfully, HWID: %d\n",
+			ihk_smp_cpus[cpu].id, ihk_smp_cpus[cpu].hw_id);
 	}
 
 	ret = 0;
@@ -4608,6 +4621,8 @@ static int smp_ihk_exit(ihk_device_t ihk_dev, void *priv)
 			continue;
 		}
 
+		pr_info("%s: ihk_smp_cpus[%d].hw_id: %d\n",
+			__func__, cpu, ihk_smp_cpus[cpu].hw_id);
 		ret = ihk_smp_reset_cpu(ihk_smp_cpus[cpu].hw_id);
 
 		if (smp_ihk_online_cpu(cpu) != 0) {
@@ -4754,6 +4769,7 @@ static void __exit smp_module_exit(void)
 
 	printk(KERN_INFO "IHK-SMP: finalizing...\n");
 
+#if 1
 	/* release reserved CPUs */
 	memset(&cpus_to_online, 0, sizeof(cpus_to_online));
 
@@ -4761,10 +4777,11 @@ static void __exit smp_module_exit(void)
 		if (ihk_smp_cpus[i].status != IHK_SMP_CPU_AVAILABLE)
 			continue;
 
-		cpumask_set_cpu(i, &cpus_to_online);
+		//cpumask_set_cpu(i, &cpus_to_online);
 	}
 
 	_smp_ihk_release_cpu(&cpus_to_online);
+#endif
 
 	/* release reserved memory chunks */
 	list_for_each_entry_safe(mem_chunk,

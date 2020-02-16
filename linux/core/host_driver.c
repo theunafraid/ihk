@@ -356,12 +356,66 @@ static int release_kmsg_buf(struct ihk_kmsg_buf_container* cont) {
 	return 0;
 }
 
+static int __ihk_os_status(struct ihk_host_linux_os_data *data);
+static int __ihk_os_thaw(struct ihk_host_linux_os_data *data);
+
 /** \brief Shutdown the kernel related to the OS file */
 static int __ihk_os_shutdown(struct ihk_host_linux_os_data *data, int flag)
 {
 	int ret = -EINVAL;
 	struct ihk_os_notifier *_ion;
 	int index = ihk_host_os_get_index(data);
+	enum ihk_os_status status = __ihk_os_status(data);
+
+	switch (status) {
+	case IHK_OS_STATUS_NOT_BOOTED:
+		pr_err("%s: error: invalid os status: %d\n",
+		       __func__, status);
+		ret = -EINVAL;
+		goto out;
+	case IHK_OS_STATUS_SHUTDOWN:
+		pr_err("%s: error: invalid os status: %d\n",
+		       __func__, status);
+		ret = -EBUSY;
+		goto out;
+	case IHK_OS_STATUS_FREEZING:
+		/* wait 10 sec for frozen */
+		pr_info("%s: waiting for frozen...\n", __func__);
+		if (ihk_os_wait_for_status((ihk_os_t)data, IHK_OS_STATUS_FROZEN,
+					   0, 100) != 0) {
+			pr_info("%s: warning: wait for frozen timeouted\n",
+			       __func__);
+		}
+	case IHK_OS_STATUS_FROZEN:
+		pr_info("%s: trying to thaw...\n", __func__);
+		ret = __ihk_os_thaw(data);
+		if (ret) {
+			pr_err("%s: error: __ihk_os_thaw: %d\n",
+			       __func__, ret);
+		}
+		/* fall through */
+	case IHK_OS_STATUS_BOOTING:
+	case IHK_OS_STATUS_BOOTED:
+	case IHK_OS_STATUS_READY:
+		/* wait 20 sec for running */
+		pr_info("%s: waiting for running...\n", __func__);
+		if (ihk_os_wait_for_status((ihk_os_t)data, IHK_OS_STATUS_RUNNING,
+					   0, 200) != 0) {
+			pr_info("%s: warning: wait for running timeouted, "
+			       "trying to shutdown with nmi...\n",
+			       __func__);
+
+			/* send nmi to force shutdown */
+			ihk_os_send_nmi((ihk_os_t)data, 3);
+			mdelay(200);
+		}
+		break;
+	case IHK_OS_STATUS_RUNNING:
+	case IHK_OS_STATUS_FAILED:
+	case IHK_OS_STATUS_HUNGUP:
+	default:
+		break;
+	}
 
 	/* Call OS notifiers */
 	if (down_interruptible(&ihk_os_notifiers_lock)) {
@@ -380,19 +434,29 @@ static int __ihk_os_shutdown(struct ihk_host_linux_os_data *data, int flag)
 
 	if (data->ops->shutdown) {
 		ret = data->ops->shutdown(data, data->priv, flag);
+		if (ret) {
+			pr_err("%s: error: shutdown returned %d\n",
+			       __func__, ret);
+			goto out;
+		}
 	}
 
 	/* Release kmsg_buf */
 	if (data->kmsg_buf_container) {
-		struct ihk_kmsg_buf_container *cont = data->kmsg_buf_container;
+		struct ihk_kmsg_buf_container *cont =
+			data->kmsg_buf_container;
 		data->kmsg_buf_container = NULL;
-		if (release_kmsg_buf(cont)) {
-			return -EINVAL;
+		ret = release_kmsg_buf(cont);
+		if (ret) {
+			dprintf("%s: error: release_kmsg_buf returned %d\n",
+				__func__, ret);
+			goto out;
 		}
 	}
 
 	printk("IHK: OS shutdown OK\n"); 
-
+	ret = 0;
+ out:
 	return ret;
 }
 
@@ -677,7 +741,8 @@ static int detect_hungup(struct ihk_host_linux_os_data *data)
 	int i;
 
 	ret = __ihk_os_query_status(data);
-	dkprintf("%s: __ihk_os_query_status returned %d", __FUNCTION__, ret);
+	pr_info("%s: status before checking monitor info: %d",
+		__func__, ret);
 
 	/* Guard objects referenced here
 	   (1) LWK sets boot_param->status to 1 (__ihk_os_query_status returns IHK_OS_STATUS_BOOTED) in arch_init()
@@ -716,69 +781,92 @@ static int detect_hungup(struct ihk_host_linux_os_data *data)
 				ihk_os_eventfd((ihk_os_t)data, IHK_OS_EVENTFD_TYPE_STATUS);
 			}
 		}
+		pr_info("%s: i: %d, status: %d, ocounter: %ld, counter: %ld\n",
+			__func__, i,
+			data->monitor->cpu[i].status,
+			data->monitor->cpu[i].ocounter,
+			data->monitor->cpu[i].counter);
+
 		data->monitor->cpu[i].ocounter = data->monitor->cpu[i].counter;
 	}
 
  out:
-	dkprintf("%s: returning %d\n", __FUNCTION__, ret);
+	pr_info("%s: status after checking monitor info: %d\n",
+		__func__, ret);
 	return ret;
 }
 
-static int __ihk_os_status(struct ihk_host_linux_os_data *data,
-		char __user *buf)
+static int __ihk_os_status(struct ihk_host_linux_os_data *data)
 {
 	int n;
 	int i;
-	int status;
+	int ret;
 	int freezing;
 
-	status = __ihk_os_query_status(data);
+	ret = __ihk_os_query_status(data);
+	pr_info("%s: status before checking monitor info: %d",
+		__func__, ret);
 
 	/* (1) LWK sets boot_param->status to 1 (__ihk_os_query_status returns IHK_OS_STATUS_BOOTED) in arch_init()
 	   (2) LWK initializes IHK_SPADDR_MONITOR
 	   (3) LWK sets boot_param->status to 2 (__ihk_os_query_status returns IHK_OS_STATUS_READY) in arch_ready()
 	   (4) LWK sets boot_param->status to 3 (__ihk_os_query_status returns IHK_OS_STATUS_RUNNING) in done_init() */
-	if (status != IHK_OS_STATUS_READY && status != IHK_OS_STATUS_RUNNING)
-		return status;
+	if (ret != IHK_OS_STATUS_READY && ret != IHK_OS_STATUS_RUNNING)
+		goto out;
 
 	setup_monitor(data);
 	if (data->monitor == NULL) {
-		return -ENOSYS;
+		ret = -ENOSYS;
+		goto out;
 	}
 
 	n = data->monitor->num_processors;
 	for (i = 0; i < n; i++) {
 		if(data->monitor->cpu[i].status == IHK_OS_MONITOR_PANIC){
 			dkprintf("%s: cpu[%d].status==%d\n", __FUNCTION__, i, data->monitor->cpu[i].status);
-			return IHK_OS_STATUS_FAILED;
+			ret = IHK_OS_STATUS_FAILED;
+			goto out;
 		}
 
 	}
 
 	freezing = data->monitor->cpu[0].status;
-	if (freezing == IHK_OS_MONITOR_KERNEL_FREEZING)
-		return IHK_OS_STATUS_FREEZING;
+	if (freezing == IHK_OS_MONITOR_KERNEL_FREEZING) {
+		ret = IHK_OS_STATUS_FREEZING;
+		goto out;
+	}
+
 	for (i = 1; i < n; i++) {
+		pr_info("%s: i: %d, status: %d\n",
+			__func__, i, data->monitor->cpu[i].status);
 		switch (data->monitor->cpu[i].status) {
 		    case IHK_OS_MONITOR_KERNEL_FREEZING:
-			return IHK_OS_STATUS_FREEZING;
-			break;
+			ret = IHK_OS_STATUS_FREEZING;
+			goto out;
 		    case IHK_OS_MONITOR_KERNEL_FROZEN:
 			if (freezing != IHK_OS_MONITOR_KERNEL_FROZEN) {
-				return IHK_OS_STATUS_FREEZING;
+				ret = IHK_OS_STATUS_FREEZING;
+				goto out;
 			}
 			break;
 		    default:
 			if (freezing == IHK_OS_MONITOR_KERNEL_FROZEN) {
-				return IHK_OS_STATUS_FREEZING;
+				ret = IHK_OS_STATUS_FREEZING;
+				goto out;
 			}
 			break;
 		}
 	}
-	if (freezing == IHK_OS_MONITOR_KERNEL_FROZEN)
-		return IHK_OS_STATUS_FROZEN;
+	if (freezing == IHK_OS_MONITOR_KERNEL_FROZEN) {
+		ret = IHK_OS_STATUS_FROZEN;
+		goto out;
+	}
+		
+ out:
+	pr_info("%s: status after checking monitor info: %d",
+		__func__, ret);
 
-	return status;
+	return ret;
 }
 
 /** \brief Clear the kernel message buffer. */
@@ -888,13 +976,42 @@ static int __ihk_os_freeze(struct ihk_host_linux_os_data *data)
 
 static int __ihk_os_thaw(struct ihk_host_linux_os_data *data)
 {
-	int error = 0;
+	int ret = 0;
+	enum ihk_os_status status = __ihk_os_status(data);
 
-	if (data->ops->thaw) {
-		error = (*data->ops->thaw)(data, data->priv);
+	switch (status) {
+	case IHK_OS_STATUS_NOT_BOOTED:
+	case IHK_OS_STATUS_BOOTING:
+	case IHK_OS_STATUS_BOOTED:
+	case IHK_OS_STATUS_READY:
+	case IHK_OS_STATUS_RUNNING:
+	case IHK_OS_STATUS_SHUTDOWN:
+	case IHK_OS_STATUS_FAILED:
+	case IHK_OS_STATUS_HUNGUP:
+		pr_err("%s: error: invalid os status: %d\n",
+		       __func__, status);
+		ret = -EINVAL;
+		goto out;
+	case IHK_OS_STATUS_FREEZING:
+		/* wait 10 sec for frozen */
+		pr_info("%s: waiting for frozen...\n", __func__);
+		if (ihk_os_wait_for_status((ihk_os_t)data, IHK_OS_STATUS_FROZEN,
+					   0, 100) != 0) {
+			pr_info("%s: warning: wait for frozen timeouted\n",
+			       __func__);
+		}
+		break;
+	case IHK_OS_STATUS_FROZEN:
+	default:
+		break;
 	}
 
-	return error;
+	if (data->ops->thaw) {
+		ret = (*data->ops->thaw)(data, data->priv);
+	}
+
+ out:
+	return ret;
 }
 
 static int __ihk_os_get_usage(struct ihk_host_linux_os_data *data, unsigned long arg)
@@ -1123,7 +1240,7 @@ static long ihk_host_os_ioctl(struct file *file, unsigned int request,
 		break;
 
 	case IHK_OS_STATUS:
-		ret = __ihk_os_status(data, (char * __user)arg);
+		ret = __ihk_os_status(data);
 		dkprintf("%s: __ihk_os_status returned %d\n", __FUNCTION__, ret);
 		break;
 
