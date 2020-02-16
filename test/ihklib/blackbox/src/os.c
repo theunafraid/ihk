@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <ihklib.h>
 #include "util.h"
 #include "okng.h"
 #include "os.h"

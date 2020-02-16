@@ -5,7 +5,7 @@
 #include "okng.h"
 #include "cpu.h"
 #include "params.h"
-#include "init_fini.h"
+#include "mod.h"
 
 const char param[] = "num_cpus";
 const char *values[] = {

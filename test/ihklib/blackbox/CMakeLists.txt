@@ -3,6 +3,9 @@ cmake_policy(SET CMP0005 NEW)
 # Options: -DWITH_MCK=<McKernel install directory>
 add_definitions(-DWITH_MCK=${WITH_MCK})
 
+# Options: -DWITH_MCK_SRC=<McKernel source directory>
+add_definitions(-DWITH_MCK_SRC=${WITH_MCK_SRC})
+
 cmake_minimum_required(VERSION 3.0)
 
 project(ihk_rmif_bbtest C)
@@ -28,43 +31,32 @@ link_directories("${WITH_MCK}/lib64")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 set(CMAKE_INSTALL_RPATH "${WITH_MCK}/lib64")
 
-# Add library
-add_library(init_fini STATIC src/insmod.c src/rmmod.c)
-target_include_directories(init_fini
-  PRIVATE "${PROJECT_SOURCE_DIR}/include"
-  )
+# Add libraries
+foreach(target IN ITEMS
+    cpu
+    mem
+    os
+    )
+  add_library(${target} STATIC src/${target}.c)
+  target_include_directories(${target}
+    PRIVATE "${PROJECT_SOURCE_DIR}/include"
+    PRIVATE "${WITH_MCK}/include"
+    )
+  target_link_libraries(${target}
+    PUBLIC ihk
+    )
+endforeach()
 
-add_library(cpu STATIC src/cpu.c)
-target_include_directories(cpu
-  PRIVATE "${PROJECT_SOURCE_DIR}/include"
-  PRIVATE "${WITH_MCK}/include"
-  )
-target_link_libraries(cpu
-  PUBLIC ihk
-  )
-
-add_library(mem STATIC src/mem.c)
-target_include_directories(mem
-  PRIVATE "${PROJECT_SOURCE_DIR}/include"
-  PRIVATE "${WITH_MCK}/include"
-  )
-target_link_libraries(mem
-  PUBLIC ihk
-  )
-
-add_library(os STATIC src/os.c)
-target_include_directories(os
-  PRIVATE "${PROJECT_SOURCE_DIR}/include"
-  PRIVATE "${WITH_MCK}/include"
-  )
-target_link_libraries(os
-  PUBLIC ihk
-  )
-
-add_library(params STATIC src/params.c)
-target_include_directories(params
-  PRIVATE "${PROJECT_SOURCE_DIR}/include"
-  )
+foreach(target IN ITEMS
+    params
+    mod
+    user
+    )
+  add_library(${target} STATIC src/${target}.c)
+  target_include_directories(${target}
+    PRIVATE "${PROJECT_SOURCE_DIR}/include"
+    )
+endforeach()
 
 foreach(target IN ITEMS
     ihk_reserve_cpu01
@@ -123,6 +115,7 @@ foreach(target IN ITEMS
     ihk_destroy_os05
     ihk_destroy_os06
     ihk_get_num_os_instances01
+    ihk_os_shutdown08
     )
 
   # Add target
@@ -132,11 +125,12 @@ foreach(target IN ITEMS
   target_include_directories(${target}
     PRIVATE "${PROJECT_SOURCE_DIR}/include"
     PRIVATE "${WITH_MCK}/include"
+    PRIVATE "${WITH_MCK_SRC}/ihk/linux/include"
     )
 
   # -l
   target_link_libraries(${target}
-    PRIVATE params cpu mem os init_fini
+    PRIVATE params cpu mem os user mod
     )
 
   # String replacement
@@ -145,6 +139,20 @@ foreach(target IN ITEMS
   # Install
   install(TARGETS ${target} DESTINATION bin)
   install(PROGRAMS ${CMAKE_BINARY_DIR}/${target}.sh DESTINATION bin)
+
+endforeach()
+
+# programs to run on McKernel
+foreach(target IN ITEMS
+    panic
+    hungup
+    )
+
+  # Add target
+  add_executable(${target} src/${target}.c)
+
+  # Install
+  install(TARGETS ${target} DESTINATION bin)
 
 endforeach()
 

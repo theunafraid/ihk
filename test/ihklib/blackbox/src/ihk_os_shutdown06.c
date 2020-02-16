@@ -6,7 +6,7 @@
 #include "okng.h"
 #include "mem.h"
 #include "params.h"
-#include "init_fini.h"
+#include "mod.h"
 
 int main(int argc, char **argv)
 {

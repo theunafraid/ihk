@@ -3,7 +3,7 @@
 #include "util.h"
 #include "okng.h"
 #include "params.h"
-#include "init_fini.h"
+#include "mod.h"
 #include <unistd.h>
 
 const char param[] = "/dev/mcd0";

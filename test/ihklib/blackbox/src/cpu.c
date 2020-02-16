@@ -107,7 +107,7 @@ int cpus_ls(struct cpus *cpus)
 	ret = 0;
  out:
 	if (fp) {
-		fclose(fp);
+		pclose(fp);
 	}
 	return ret;
 }
@@ -391,17 +391,19 @@ int cpus_release(void)
 	INTERR(ret < 0, "ihk_get_num_reserved_cpus returned %d\n",
 	       ret);
 
-	if (ret > 0) {
-		ret = cpus_init(&cpus, ret);
-		INTERR(ret, "cpus_init returned %d\n", ret);
-
-		ret = ihk_query_cpu(0, cpus.cpus, cpus.ncpus);
-		INTERR(ret, "ihk_os_query_cpu returned %d\n",
-		       ret);
+	if (ret == 0) {
+		goto out;
 	}
 
+	ret = cpus_init(&cpus, ret);
+	INTERR(ret, "cpus_init returned %d\n", ret);
+	
+	ret = ihk_query_cpu(0, cpus.cpus, cpus.ncpus);
+	INTERR(ret, "ihk_query_cpu returned %d\n",
+	       ret);
+
 	ret = ihk_release_cpu(0, cpus.cpus, cpus.ncpus);
-	INTERR(ret, "ihk_os_release_cpu returned %d\n", ret);
+	INTERR(ret, "ihk_release_cpu returned %d\n", ret);
 
 	ret = 0;
  out:
