@@ -23,6 +23,11 @@ int main(int argc, char **argv)
 
 	int ret_expected[] = { -ENOENT, 0 };
 
+	enum ihklib_os_status status_expected[] = {
+		IHK_STATUS_RUNNING,
+		IHK_STATUS_INACTIVE,
+	};
+
 	/* Precondition */
 	ret = insmod(params.uid, params.gid);
 	INTERR(ret, "insmod returned %d\n", ret);
@@ -50,13 +55,13 @@ int main(int argc, char **argv)
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
+		/* check if os status changed to the expected one */
 		if (ihk_get_num_os_instances(0)) {
-			/* wait until os status changes to inactive */
-			os_wait_for_status(IHK_STATUS_INACTIVE);
+			os_wait_for_status(status_expected[i]);
 			ret = ihk_os_get_status(0);
-			OKNG(ret == IHK_STATUS_INACTIVE,
+			OKNG(ret == status_expected[i],
 			     "status: %d, expected: %d\n",
-			     ret, IHK_STATUS_INACTIVE);
+			     ret, status_expected[i]);
 		}
 
 		/* Clean up */
