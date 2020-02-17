@@ -1664,7 +1664,8 @@ static int __ihk_device_destroy_os(struct ihk_host_linux_device_data *data,
 	}
 	
 	if (atomic_read(&os->refcount) > 0) {
-		dkprintf("%s: refcount != 0\n", __FUNCTION__);
+		pr_err("%s: error: refcount != 0 (%d)\n",
+		       __func__, atomic_read(&os->refcount));
 		return -EBUSY;
 	}
 
@@ -1672,11 +1673,13 @@ static int __ihk_device_destroy_os(struct ihk_host_linux_device_data *data,
 
 	if (data->ops->destroy_os) {
 		ret = data->ops->destroy_os(data, data->priv, os, os->priv);
+		if (ret) {
+			pr_err("%s: error: destroy_os: ret: %d\n",
+			       __func__, ret);
+			return -EINVAL;
+		}
 	}
 
-	if (ret != 0) {
-		return -EINVAL;
-	}
 
 	while (!list_empty(&os->event_list)) {
 		struct ihk_event *ep;
