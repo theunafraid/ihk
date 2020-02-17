@@ -23,7 +23,7 @@ int main(int argc, char **argv)
 	params_getopt(argc, argv);
 
 	int ret_expected[] = {
-		-EACCES,
+		-EPERM,
 	};
 
 	enum ihklib_os_status status_expected[] = {
@@ -48,6 +48,9 @@ int main(int argc, char **argv)
 
 			ret = ihk_create_os(0);
 			INTERR(ret, "ihk_create_os returned %d\n", ret);
+
+			ret = mod_chmod(params.uid, params.gid);
+			INTERR(ret, "mod_chmod returned %d\n", ret);
 
 			ret = cpus_os_assign();
 			INTERR(ret, "cpus_os_assign returned %d\n", ret);
@@ -75,6 +78,9 @@ int main(int argc, char **argv)
 			     ret, status_expected[0]);
 
 			/* Clean up */
+			ret = ihk_os_shutdown(0);
+			INTERR(ret, "ihk_os_shutdown returned %d\n", ret);
+
 			ret = cpus_os_release();
 			INTERR(ret, "cpus_os_assign returned %d\n", ret);
 
