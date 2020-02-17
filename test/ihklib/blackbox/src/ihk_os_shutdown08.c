@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 		0,
 	};
 
-	enum ihklib_os_status status_expected[] = {
+	enum ihklib_os_status status_after_shutdown[] = {
 		IHK_STATUS_INACTIVE,
 		IHK_STATUS_INACTIVE,
 		IHK_STATUS_INACTIVE,
@@ -180,11 +180,11 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 
 		/* wait until os status stablizes */
-		os_wait_for_status(status_expected[i]);
+		os_wait_for_status(status_after_shutdown[i]);
 		ret = ihk_os_get_status(0);
-		OKNG(ret == status_expected[i],
+		OKNG(ret == status_after_shutdown[i],
 		     "status: %d, expected: %d\n",
-		     ret, status_expected[i]);
+		     ret, status_after_shutdown[i]);
 
 		/* Clean up */
 		switch (target_status[i]) {
