@@ -3,9 +3,16 @@
 #include <ihklib.h>
 #include "util.h"
 #include "okng.h"
+#include "cpu.h"
 #include "mem.h"
+#include "os.h"
 #include "params.h"
 #include "mod.h"
+
+const char param[] = "user privilege";
+const char *messages[] = {
+	"root",
+};
 
 int main(int argc, char **argv)
 {
@@ -14,78 +21,77 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
-	const char *messages[] = {
-		 "root",
-		};
+	int ret_expected[] = {
+		0,
+	};
 
-	struct mems mems_input[1] = { 0 };
-
-	/* Both Linux and McKernel mem_chunks */
-	for (i = 0; i < 1; i++) {
-		ret = mem_chunks_ls(&mems_input[i]);
-		INTERR(ret, "mem_chunks_ls returned %d\n", ret);
-	}
-
-	/* Spare two mem_chunks for Linux */
-	for (i = 0; i < 1; i++) {
-		ret = mems_shift(&mems_input[i], 2);
-		INTERR(ret, "mems_shift returned %d\n", ret);
-	}
-
-	int ret_expected_reserve_cpu[] = { 0 };
-	int ret_expected[] = { 0 };
-
-	struct mems mems_after_release[1] = { 0 };
-
-	/* Copy reserved */
-	for (i = 0; i < 1; i++) {
-		ret = mem_chunks_copy(&mems_after_release[i], &mems_input[i]);
-		INTERR(ret, "mem_chunks_copy returned %d\n", ret);
-	}
-
-	/* Empty */
-	ret = mems_shift(&mems_after_release[0],
-			 mems_after_release[0].num_mem_chunks);
-	INTERR(ret, "mems_shift returned %d\n", ret);
-
-	struct mems *mems_expected[] = {
-		 &mems_after_release[0],
-		};
+	enum ihklib_os_status status_expected[] = {
+		IHK_STATUS_INACTIVE,
+	};
 
 	/* Precondition */
-	ret = insmod(params.uid, params.gid);
+	ret = insmod();
 	INTERR(ret, "insmod returned %d\n", ret);
+
+	ret = cpus_reserve();
+	INTERR(ret, "cpus_reserve returned %d\n", ret);
+
+	ret = mems_reserve();
+	INTERR(ret, "mems_reserve returned %d\n", ret);
 
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
-		int num_mem_chunks;
+		START("test-case: %s: %s\n", param, messages[i]);
 
-		START("test-case: user privilege: %s\n", messages[i]);
+		ret = ihk_create_os(0);
+		INTERR(ret, "ihk_create_os returned %d\n", ret);
 
-		ret = ihk_reserve_cpu(0, mems_input[i].mem_chunks,
-				      mems_input[i].num_mem_chunks);
-		INTERR(ret != ret_expected_reserve_cpu[i],
-		     "ihk_reserve_cpu returned %d\n", ret);
+		ret = cpus_os_assign();
+		INTERR(ret, "cpus_os_assign returned %d\n", ret);
 
-		ret = ihk_release_cpu(0, mems_input[i].mem_chunks,
-				      mems_input[i].num_mem_chunks);
+		ret = mems_os_assign();
+		INTERR(ret, "mems_os_assign returned %d\n", ret);
+
+		ret = os_load();
+		INTERR(ret, "os_load returned %d\n", ret);
+
+		ret = os_kargs();
+		INTERR(ret, "os_kargs returned %d\n", ret);
+
+		ret = ihk_os_boot(0);
+		INTERR(ret, "ihk_os_boot returned %d\n", ret);
+
+		INFO("trying to shutdown os\n");
+		ret = ihk_os_shutdown(0);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		if (mem_chunks_expected[i]) {
-			ret = mem_chunks_check_reserved(mems_expected[i]);
-			OKNG(ret == 0, "reserved as expected\n");
+		/* check if os status changed to the expected one */
+		os_wait_for_status(status_expected[i]);
+		ret = ihk_os_get_status(0);
+		OKNG(ret == status_expected[i],
+		     "status: %d, expected: %d\n",
+		     ret, status_expected[i]);
 
-			/* Clean up */
-			ret = ihk_release_cpu(0, mems_after_release[i].mem_chunks,
-					      mems_after_release[i].num_mem_chunks);
-			INTERR(ret, "ihk_release_cpu returned %d\n", ret);
-		}
+		ret = cpus_os_release();
+		INTERR(ret, "cpus_os_assign returned %d\n", ret);
+
+		ret = mems_os_release();
+		INTERR(ret, "mems_os_assign returned %d\n", ret);
+
+		ret = ihk_destroy_os(0, 0);
+		INTERR(ret, "ihk_destroy_os returned %d\n", ret);
 	}
 
 	ret = 0;
  out:
+	if (ihk_get_num_os_instances(0)) {
+		ihk_destroy_os(0, 0);
+	}
+	cpus_release();
+	mems_release();
 	rmmod(0);
+
 	return ret;
 }

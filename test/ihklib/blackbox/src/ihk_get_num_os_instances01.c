@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
-	ret = insmod(params.uid, params.gid);
+	ret = insmod();
 	INTERR(ret, "insmod returned %d\n", ret);
 
 	int ret_expected[2] = { 0, 1 };

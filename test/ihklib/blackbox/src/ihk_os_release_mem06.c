@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 		switch (opt) {
 		case 'i':
 			/* Precondition */
-			ret = insmod(params.uid, params.gid);
+			ret = insmod();
 			INTERR(ret, "insmod returned %d\n", ret);
 
 			ret = mems_reserve();

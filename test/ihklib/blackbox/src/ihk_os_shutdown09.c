@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 	};
 
 	/* Precondition */
-	ret = insmod(params.uid, params.gid);
+	ret = insmod();
 	INTERR(ret, "insmod returned %d\n", ret);
 
 	ret = cpus_reserve();
@@ -73,6 +73,8 @@ int main(int argc, char **argv)
 					     &pid);
 			INTERR(ret < 0, "user_fork_exec returned %d\n");
 		}
+
+		/* wait until McKernel waits with interrupt disabled */
 		usleep(1000000);
 
 		INFO("trying to shutdown os\n");

@@ -76,7 +76,7 @@ int main(int argc, char **argv)
 
 		/* Precondition */
 		if (i == 0) {
-			ret = insmod(params.uid, params.gid);
+			ret = insmod();
 			INTERR(ret == 0, "insmod returned %d\n", ret);
 		}
 	}
