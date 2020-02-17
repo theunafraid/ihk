@@ -8,6 +8,11 @@
 #include "params.h"
 #include "mod.h"
 
+const char param[] = "user privilege";
+const char *values[] = {
+	"non-root",
+};
+
 int main(int argc, char **argv)
 {
 	int ret;
@@ -24,10 +29,26 @@ int main(int argc, char **argv)
 			/* Precondition */
 			ret = insmod(params.uid, params.gid);
 			INTERR(ret, "insmod returned %d\n", ret);
+
+			ret = cpus_reserve();
+			INTERR(ret, "cpus_reserve returned %d\n", ret);
+
+			ret = ihk_create_os(0);
+			INTERR(ret, "ihk_create_os returned %d\n", ret);
+
+			ret = cpus_os_assign();
+			INTERR(ret, "cpus_os_assign returned %d\n", ret);
+
 			exit(0);
 			break;
 		case 'r':
 			/* Clean up */
+			ret = cpus_os_release();
+			INTERR(ret, "cpus_os_release returned %d\n", ret);
+
+			ret = cpus_release();
+			INTERR(ret, "cpus_release returned %d\n", ret);
+
 			ret = rmmod(1);
 			INTERR(ret, "rmmod returned %d\n", ret);
 			exit(0);
@@ -38,68 +59,22 @@ int main(int argc, char **argv)
 		}
 	}
 
-	const char *messages[] = {
-		 "non-root",
-		};
-
 	struct cpus cpus_input[1] = { 0 };
-
-	/* Both Linux and McKernel cpus */
-	for (i = 0; i < 1; i++) {
-		ret = cpus_ls(&cpus_input[i]);
-		INTERR(ret, "cpus_ls returned %d\n", ret);
-	}
-
-	/* Spare two cpus for Linux */
-	for (i = 0; i < 1; i++) {
-		ret = cpus_shift(&cpus_input[i], 2);
-		INTERR(ret, "cpus_shift returned %d\n", ret);
-	}
-
-	int ret_expected_reserve_cpu[] = { -EACCES };
-	int ret_expected[] = { -EACCES };
-
-	struct cpus cpus_after_release[1] = { 0 };
-
-	/* Copy reserved */
-	for (i = 0; i < 1; i++) {
-		ret = cpus_copy(&cpus_after_release[i], &cpus_input[i]);
-		INTERR(ret, "cpus_copy returned %d\n", ret);
-	}
-
-	/* Empty */
-	ret = cpus_shift(&cpus_after_release[0],
-			 cpus_after_release[0].ncpus);
-	INTERR(ret, "cpus_shift returned %d\n", ret);
-
-	struct cpus *cpus_expected[] = {
-		 NULL, /* don't care */
-		};
+	int ret_expected[1] = { -EACCES };
 
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
-		START("test-case: user privilege: %s\n", messages[i]);
+		START("test-case: user privilege: %s\n", values[i]);
 
-		ret = ihk_reserve_cpu(0, cpus_input[i].cpus,
-				      cpus_input[i].ncpus);
-		INTERR(ret != ret_expected_reserve_cpu[i],
-		     "ihk_reserve_cpu returned %d\n", ret);
+		/* cpus are dummy because we can't query */
+		ret = cpus_push(&cpus_input[i], 0);
+		INTERR(ret, "cpus_push returned %d\n", ret);
 
-		ret = ihk_release_cpu(0, cpus_input[i].cpus,
+		ret = ihk_os_release_cpu(0, cpus_input[i].cpus,
 				      cpus_input[i].ncpus);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
-
-		if (cpus_expected[i]) {
-			ret = cpus_check_reserved(cpus_expected[i]);
-			OKNG(ret == 0, "reserved as expected\n");
-
-			/* Clean up */
-			ret = ihk_release_cpu(0, cpus_after_release[i].cpus,
-					      cpus_after_release[i].ncpus);
-			INTERR(ret, "ihk_release_cpu returned %d\n", ret);
-		}
 	}
 
 	ret = 0;
