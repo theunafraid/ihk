@@ -115,7 +115,7 @@ int main(int argc, char **argv)
 		if (i == 3) { /* first chunk */
 			ret = mems_pop(&mems_input[i],
 				       mems_input[i].num_mem_chunks - 1);
-			INTERR(ret, "mems_shift returned %d\n", ret);
+			INTERR(ret, "mems_pop returned %d\n", ret);
 
 			ret = mems_shift(&mems_after_release[i], 1);
 			INTERR(ret, "mems_shift returned %d\n", ret);

@@ -69,7 +69,6 @@ int main(int argc, char **argv)
 
 	struct mems mems_input[1] = { 0 };
 
-	int ret_expected_query_mem[1] = { -EACCES };
 	int ret_expected[1] = { -EACCES };
 
 	/* Activate and check */
@@ -78,7 +77,7 @@ int main(int argc, char **argv)
 
 		START("test-case: %s: %s\n", param, values[i]);
 
-		ret = mems_push(&mems_input[i], 4096, 0);
+		ret = mems_push(&mems_input[i], -1, 0);
 		INTERR(ret, "mems_push returned %d\n", ret);
 
 		ret = ihk_release_mem(0, mems_input[i].mem_chunks,
