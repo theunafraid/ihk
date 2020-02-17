@@ -143,6 +143,13 @@ foreach(target IN ITEMS
 
 endforeach()
 
+# patches
+foreach(target IN ITEMS
+    status_mckernel status_ihk
+    )
+  install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/src/${target}.patch DESTINATION bin)
+endforeach()
+
 # programs to run on McKernel
 foreach(target IN ITEMS
     panic
