@@ -63,10 +63,9 @@ int main(int argc, char **argv)
 
 		num_mem_chunks = ret;
 
-		ret = mems_init(&mems_input[i], 1);
-		INTERR(ret, "mems_init returned %d\n", ret);
+		ret = mems_reserved(&mems_input[i]);
+		INTERR(ret, "mems_reserved returned %d\n", ret);
 		mems_input[i].mem_chunks[0].size = -1;
-		mems_input[i].mem_chunks[0].numa_node_number = 0;
 
 		ret = mems_init(&mems_after_release[i], num_mem_chunks);
 		INTERR(ret, "mems_init returned %d\n", ret);
