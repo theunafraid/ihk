@@ -136,6 +136,8 @@ foreach(target IN ITEMS
     ihk_os_release_cpu05
     ihk_os_release_cpu06
     ihk_os_release_cpu07
+    ihk_os_shutdown03
+    ihk_os_shutdown09
     )
 
   # Add target
@@ -169,6 +171,7 @@ install(PROGRAMS ${CMAKE_BINARY_DIR}/util.sh DESTINATION bin)
 # patches
 foreach(target IN ITEMS
     status_mckernel status_ihk
+    delay_with_interrupt_disabled_mckernel
     )
   install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/src/${target}.patch DESTINATION bin)
 endforeach()
@@ -177,6 +180,7 @@ endforeach()
 foreach(target IN ITEMS
     panic
     hungup
+    delay_with_interrupt_disabled
     )
 
   # Add target
