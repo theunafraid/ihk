@@ -36,6 +36,10 @@ int main(int argc, char **argv)
 			ret = ihk_create_os(0);
 			INTERR(ret, "ihk_create_os returned %d\n", ret);
 
+			/* make /dev/mcos0 accessible to non-root */
+			ret = mod_chmod(params.uid, params.gid);
+			INTERR(ret, "mod_chmod returned %d\n", ret);
+
 			ret = cpus_os_assign();
 			INTERR(ret, "cpus_os_assign returned %d\n", ret);
 
@@ -60,7 +64,7 @@ int main(int argc, char **argv)
 	}
 
 	struct cpus cpus_input[1] = { 0 };
-	int ret_expected[1] = { -EACCES };
+	int ret_expected[1] = { -EPERM };
 
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
