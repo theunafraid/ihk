@@ -73,7 +73,7 @@ int main(int argc, char **argv)
 	INTERR(ret, "cpus_shift returned %d\n", ret);
 
 	int ret_expected_assign_cpu[] = {
-		0, 
+		0,
 		0,
 		-EINVAL,
 		0,
