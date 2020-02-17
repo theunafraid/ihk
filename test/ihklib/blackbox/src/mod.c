@@ -90,16 +90,26 @@ static int mod_loaded(const char *name)
 	return ret;
 }
 
+int kill_mcexec(void)
+{
+	int ret;
+	char cmd[1024];
+	int wstatus;
+
+	sprintf(cmd, "pidof mcexec | xargs -r kill -9");
+	ret = system(cmd);
+	wstatus = WEXITSTATUS(ret);
+	INFO("kill mcexec returned %d\n", wstatus);
+
+	return wstatus;
+}
+
 int rmmod(int verbose)
 {
 	int ret;
 	char cmd[1024];
 	char name[1024];
 
-	sprintf(cmd, "pidof mcexec | xargs -r kill -9");
-	ret = system(cmd);
-	INFO("kill mcexec returned %d\n", WEXITSTATUS(ret));
-	
 	ret = mod_loaded("mcctrl");
 	INTERR(ret < 0, "mod_loaded mcctrl returned %d\n", ret);
 

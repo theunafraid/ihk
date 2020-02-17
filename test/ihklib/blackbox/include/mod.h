@@ -3,5 +3,6 @@
 
 int insmod(uid_t uid, gid_t gid);
 int rmmod(int verbose);
+int kill_mcexec(void);
 
 #endif

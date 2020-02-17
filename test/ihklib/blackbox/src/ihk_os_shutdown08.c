@@ -34,16 +34,6 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
-	/* Precondition */
-	ret = insmod(params.uid, params.gid);
-	INTERR(ret, "insmod returned %d\n", ret);
-
-	ret = cpus_reserve();
-	INTERR(ret, "cpus_reserve returned %d\n", ret);
-
-	ret = mems_reserve();
-	INTERR(ret, "mems_reserve returned %d\n", ret);
-
 	enum ihklib_os_status target_status[] = {
 		IHK_STATUS_INACTIVE,
 		IHK_STATUS_BOOTING,
@@ -76,6 +66,16 @@ int main(int argc, char **argv)
 		IHK_STATUS_INACTIVE,
 		IHK_STATUS_INACTIVE,
 	};
+
+	/* Precondition */
+	ret = insmod(params.uid, params.gid);
+	INTERR(ret, "insmod returned %d\n", ret);
+
+	ret = cpus_reserve();
+	INTERR(ret, "cpus_reserve returned %d\n", ret);
+
+	ret = mems_reserve();
+	INTERR(ret, "mems_reserve returned %d\n", ret);
 
 	int fd;
 	unsigned long os_set[1] = { 1 };

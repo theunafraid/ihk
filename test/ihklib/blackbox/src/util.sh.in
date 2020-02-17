@@ -3,12 +3,17 @@ function patch_and_build()
     fn_mckernel=$1
     fn_ihk=$2
 
-    pushd @WITH_MCK_SRC@
+    if [ -n $fn_mckernel ]; then
+	pushd @WITH_MCK_SRC@
         patch -p1 < @CMAKE_INSTALL_PREFIX@/bin/${fn_mckernel}.patch
-        pushd ihk
-            patch -p1 < @CMAKE_INSTALL_PREFIX@/bin/${fn_ihk}.patch
-        popd
-    popd
+	popd
+    fi
+
+    if [ -n $fn_ihk ]; then
+	pushd @WITH_MCK_SRC@/ihk
+        patch -p1 < @CMAKE_INSTALL_PREFIX@/bin/${fn_ihk}.patch
+	popd
+    fi
 
     pushd /tmp
         rm -rf build
@@ -18,10 +23,15 @@ function patch_and_build()
         make -j install
     popd
 
-    pushd @WITH_MCK_SRC@
+    if [ -n $fn_mckernel ]; then
+	pushd @WITH_MCK_SRC@
         patch -R -p1 < @CMAKE_INSTALL_PREFIX@/bin/${fn_mckernel}.patch
-        pushd ihk
-            patch -R -p1 < @CMAKE_INSTALL_PREFIX@/bin/${fn_ihk}.patch
+	popd
+    fi
+
+    if [ -n $fn_ihk ]; then
+	pushd @WITH_MCK_SRC@/ihk
+        patch -R -p1 < @CMAKE_INSTALL_PREFIX@/bin/${fn_ihk}.patch
         popd
-    popd
+    fi
 }
