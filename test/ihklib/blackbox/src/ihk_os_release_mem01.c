@@ -29,7 +29,7 @@ int main(int argc, char **argv)
 	struct mems mems_input_assign_mem[2] = { 0 };
 	struct mems mems_after_release[] = { 0 };
 
-	for (i = 1; i < 2; i++) {
+	for (i = 0; i < 2; i++) {
 		ret = mems_reserved(&mems_input[i]);
 		INTERR(ret, "mems_reserved returned %d\n", ret);
 

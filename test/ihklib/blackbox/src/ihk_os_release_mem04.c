@@ -149,6 +149,7 @@ int main(int argc, char **argv)
 
 	ret = 0;
  out:
+	mems_release();
 	rmmod(0);
 	return ret;
 }
