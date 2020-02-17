@@ -34,16 +34,16 @@ int main(int argc, char **argv)
 	}
 
 	int ret_expected_reserve_cpu[] = {
-	       	-ENOENT, 
-		0 
+		-ENOENT,
+		0
 	};
 	int ret_expected[] = {
-	       	-ENOENT, 
-		mems_input[1].ncpus 
+		-ENOENT,
+		mems_input[1].ncpus
 	};
 	struct cpus *cpus_expected[] = {
-	       	NULL, 
-		&mems_input[1] 
+		NULL,
+		&mems_input[1]
 	};
 
 	/* Activate and check */
