@@ -7,6 +7,11 @@
 #include "params.h"
 #include "mod.h"
 
+const char param[] = "user privilege";
+const char *messages[] = {
+	"root",
+};
+
 int main(int argc, char **argv)
 {
 	int ret;
@@ -14,34 +19,29 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
-	const char *messages[] = {
-		 "root",
-		};
+	/* Precondition */
+	ret = insmod(params.uid, params.gid);
+	INTERR(ret, "insmod returned %d\n", ret);
+
+	ret = cpus_reserve();
+	INTERR(ret, "cpus_reserve returned %d\n", ret);
+
+	ret = ihk_create_os(0);
+	INTERR(ret, "ihk_create_os returned %d\n", ret);
 
 	struct cpus cpus_input[1] = { 0 };
+	struct cpus cpus_after_release[1] = { 0 };
+	int ret_expected[1] = { 0 };
 
 	/* Both Linux and McKernel cpus */
 	for (i = 0; i < 1; i++) {
-		ret = cpus_ls(&cpus_input[i]);
-		INTERR(ret, "cpus_ls returned %d\n", ret);
+		ret = cpus_reserved(&cpus_input[i]);
+		INTERR(ret, "cpus_reserved returned %d\n", ret);
+
+		ret = cpus_reserved(&cpus_after_release[i]);
+		INTERR(ret, "cpus_reserved returned %d\n", ret);
 	}
 
-	/* Spare two cpus for Linux */
-	for (i = 0; i < 1; i++) {
-		ret = cpus_shift(&cpus_input[i], 2);
-		INTERR(ret, "cpus_shift returned %d\n", ret);
-	}
-
-	int ret_expected_reserve_cpu[] = { 0 };
-	int ret_expected[] = { 0 };
-
-	struct cpus cpus_after_release[1] = { 0 };
-
-	/* Copy reserved */
-	for (i = 0; i < 1; i++) {
-		ret = cpus_copy(&cpus_after_release[i], &cpus_input[i]);
-		INTERR(ret, "cpus_copy returned %d\n", ret);
-	}
 
 	/* Empty */
 	ret = cpus_shift(&cpus_after_release[0],
@@ -50,35 +50,27 @@ int main(int argc, char **argv)
 
 	struct cpus *cpus_expected[] = {
 		 &cpus_after_release[0],
-		};
-
-	/* Precondition */
-	ret = insmod(params.uid, params.gid);
-	INTERR(ret, "insmod returned %d\n", ret);
+	};
 
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
-		int ncpus;
+		START("test-case: %s: %s\n", param, messages[i]);
 
-		START("test-case: user privilege: %s\n", messages[i]);
+		ret = cpus_os_assign();
+		INTERR(ret, "cpus_os_assign returned %d\n", ret);
 
-		ret = ihk_reserve_cpu(0, cpus_input[i].cpus,
-				      cpus_input[i].ncpus);
-		INTERR(ret != ret_expected_reserve_cpu[i],
-		     "ihk_reserve_cpu returned %d\n", ret);
-
-		ret = ihk_release_cpu(0, cpus_input[i].cpus,
+		ret = ihk_os_release_cpu(0, cpus_input[i].cpus,
 				      cpus_input[i].ncpus);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
 		if (cpus_expected[i]) {
-			ret = cpus_check_reserved(cpus_expected[i]);
-			OKNG(ret == 0, "reserved as expected\n");
+			ret = cpus_check_assigned(cpus_expected[i]);
+			OKNG(ret == 0, "released as expected\n");
 
 			/* Clean up */
-			ret = ihk_release_cpu(0, cpus_after_release[i].cpus,
+			ret = ihk_os_release_cpu(0, cpus_after_release[i].cpus,
 					      cpus_after_release[i].ncpus);
 			INTERR(ret, "ihk_release_cpu returned %d\n", ret);
 		}
@@ -86,6 +78,7 @@ int main(int argc, char **argv)
 
 	ret = 0;
  out:
+	cpus_release();
 	rmmod(0);
 	return ret;
 }
