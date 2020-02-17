@@ -37,17 +37,16 @@ out:
 	return ret;
 }
 
-int chmod(uid_t uid, gid_t git)
+int mod_chmod(uid_t uid, gid_t gid)
 {
 	int ret;
 	char cmd[1024];
 
-	sprintf(cmd, "chown %d:%d /dev/mcd*", uid, gid);
+	sprintf(cmd, "chmod og+rw /dev/mcos*", uid, gid);
 	INFO("%s\n", cmd);
 	ret = system(cmd);
 	ret = WEXITSTATUS(ret);
 	INTERR(ret, "%s returned %d\n", cmd, ret);
-
 out:
 	return ret;
 
