@@ -49,6 +49,7 @@ int main(int argc, char **argv)
 			ret = ihk_create_os(0);
 			INTERR(ret, "ihk_create_os returned %d\n", ret);
 
+			/* make /dev/mcos0 accessible to non-root */
 			ret = mod_chmod(params.uid, params.gid);
 			INTERR(ret, "mod_chmod returned %d\n", ret);
 
