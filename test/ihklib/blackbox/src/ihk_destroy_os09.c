@@ -56,7 +56,16 @@ int main(int argc, char **argv)
 		0,
 	};
 
-	int num_os_instances_after_destroy[8] = { 0 };
+	int num_os_instances_after_destroy[8] = {
+		0,
+		0,
+		0,
+		1,
+		0,
+		0,
+		0,
+		0,
+	};
 
 	/* Precondition */
 	ret = insmod();
@@ -72,7 +81,7 @@ int main(int argc, char **argv)
 	unsigned long os_set[1] = { 1 };
 
 	/* Activate and check */
-	for (i = 0; i < 2; i++) {
+	for (i = 0; i < 8; i++) {
 		START("test-case: %s: %s\n", param, messages[i]);
 
 		ret = ihk_create_os(0);
@@ -169,6 +178,10 @@ int main(int argc, char **argv)
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
+		ret = ihk_get_num_os_instances(0);
+		OKNG(ret == num_os_instances_after_destroy[i],
+		     "os is destroyed as expected\n");
+
 		/* wait until parallel shutdown finishes */
 		if (target_status[i] == IHK_STATUS_SHUTDOWN) {
 			ret = os_wait_for_status(IHK_STATUS_INACTIVE);
@@ -179,10 +192,6 @@ int main(int argc, char **argv)
 			INTERR(ret, "ihk_destroy_os returned %d\n",
 			       ret);
 		}
-
-		ret = ihk_get_num_os_instances(0);
-		OKNG(ret == num_os_instances_after_destroy[i],
-		     "os is destroyed as expected\n");
 
 		/* Clean up */
 		switch (target_status[i]) {
