@@ -8,7 +8,7 @@
 #include "okng.h"
 #include "mod.h"
 
-int insmod(uid_t uid, gid_t gid)
+int insmod(void)
 {
 	int ret;
 	char cmd[1024];
@@ -17,7 +17,7 @@ int insmod(uid_t uid, gid_t gid)
 	INFO("%s\n", cmd);
 	ret = system(cmd);
 	ret = WEXITSTATUS(ret);
-	NG(ret == 0, "%s returned %d\n", cmd, ret);
+	INTERR(ret, "%s returned %d\n", cmd, ret);
 
 	sprintf(cmd,
 		"insmod %s/kmod/ihk-%s.ko ihk_start_irq=240 ihk_ikc_irq_core=0",
@@ -25,24 +25,32 @@ int insmod(uid_t uid, gid_t gid)
 	INFO("%s\n", cmd);
 	ret = system(cmd);
 	ret = WEXITSTATUS(ret);
-	NG(ret == 0, "%s returned %d\n", cmd, ret);
-
-#if 0
-	sprintf(cmd, "chown %d:%d /dev/mcd*", uid, gid);
-	INFO("%s\n", cmd);
-	ret = system(cmd);
-	ret = WEXITSTATUS(ret);
-	NG(ret == 0, "%s returned %d\n", cmd, ret);
-#endif
+	INTERR(ret, "%s returned %d\n", cmd, ret);
 
 	sprintf(cmd, "insmod %s/kmod/mcctrl.ko", QUOTE(WITH_MCK));
 	INFO("%s\n", cmd);
 	ret = system(cmd);
 	ret = WEXITSTATUS(ret);
-	NG(ret == 0, "%s returned %d\n", cmd, ret);
+	INTERR(ret, "%s returned %d\n", cmd, ret);
 
 out:
 	return ret;
+}
+
+int chmod(uid_t uid, gid_t git)
+{
+	int ret;
+	char cmd[1024];
+
+	sprintf(cmd, "chown %d:%d /dev/mcd*", uid, gid);
+	INFO("%s\n", cmd);
+	ret = system(cmd);
+	ret = WEXITSTATUS(ret);
+	INTERR(ret, "%s returned %d\n", cmd, ret);
+
+out:
+	return ret;
+
 }
 
 static int mod_loaded(const char *name)

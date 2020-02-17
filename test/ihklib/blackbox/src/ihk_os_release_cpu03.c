@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 	params_getopt(argc, argv);
 
 	/* Precondition */
-	ret = insmod(params.uid, params.gid);
+	ret = insmod();
 	INTERR(ret, "insmod returned %d\n", ret);
 
 	ret = cpus_reserve();

@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 
 		if (i == 0) {
 			/* Precondition */
-			ret = insmod(params.uid, params.gid);
+			ret = insmod();
 			INTERR(ret, "insmod returned %d\n", ret);
 		}
 	}

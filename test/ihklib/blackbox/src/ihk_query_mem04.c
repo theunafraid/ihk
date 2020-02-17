@@ -75,7 +75,7 @@ int main(int argc, char **argv)
 		};
 
 	/* Precondition */
-	ret = insmod(params.uid, params.gid);
+	ret = insmod();
 	INTERR(ret, "insmod returned %d\n", ret);
 
 	/* Activate and check */
