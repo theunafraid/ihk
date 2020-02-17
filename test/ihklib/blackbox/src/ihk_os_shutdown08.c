@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 	unsigned long os_set[1] = { 1 };
 
 	/* Activate and check */
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < 8; i++) {
 		START("test-case: : %s\n", messages[i]);
 
 		ret = ihk_create_os(0);
