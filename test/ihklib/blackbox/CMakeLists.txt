@@ -85,6 +85,11 @@ foreach(target IN ITEMS
     ihk_release_cpu06
     ihk_release_mem01
     ihk_release_mem02
+    ihk_release_mem03
+    ihk_release_mem04
+    ihk_release_mem05
+    ihk_release_mem06
+    ihk_release_mem07
     ihk_reserve_mem01
     ihk_reserve_mem02
     ihk_reserve_mem07
@@ -99,24 +104,37 @@ foreach(target IN ITEMS
     ihk_os_assign_mem04
     ihk_os_get_num_assigned_cpus02
     ihk_os_get_num_assigned_mem_chunks02
-    ihk_os_release_cpu02
     ihk_os_query_mem02
     ihk_os_query_cpu02
-    ihk_os_release_mem02
     ihk_get_num_reserved_mem_chunks02
     ihk_os_shutdown07
     ihk_os_set_ikc_map07
     ikc_map
     ihk_create_os01
-    ihk_destroy_os07
-    ihk_os_get_ikc_map07
+    #  ihk_destroy_os07
+    #ihk_os_get_ikc_map07
     ihk_destroy_os03
-    ihk_destroy_os08
+    #ihk_destroy_os08
     ihk_destroy_os05
     ihk_destroy_os06
     ihk_get_num_os_instances01
     ihk_os_shutdown08
     ihk_os_shutdown01
+    ihk_os_release_mem01
+    ihk_os_release_mem02
+    ihk_os_release_mem03
+    ihk_os_release_mem04
+    ihk_os_release_mem05
+    ihk_os_release_mem06
+    ihk_os_release_mem07
+    ihk_os_release_mem08
+    ihk_os_release_cpu01
+    ihk_os_release_cpu02
+    ihk_os_release_cpu03
+    ihk_os_release_cpu04
+    ihk_os_release_cpu05
+    ihk_os_release_cpu06
+    ihk_os_release_cpu07
     )
 
   # Add target
