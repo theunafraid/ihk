@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 8; i++) {
-		START("test-case: : %s\n", messages[i]);
+		START("test-case: %s: %s\n", param, messages[i]);
 
 		ret = ihk_create_os(0);
 		INTERR(ret, "ihk_create_os returned %d\n", ret);

@@ -1,0 +1,27 @@
+function patch_and_build()
+{
+    fn_mckernel=$1
+    fn_ihk=$2
+
+    pushd @WITH_MCK_SRC@
+        patch -p1 < @CMAKE_INSTALL_PREFIX@/bin/${fn_mckernel}.patch
+        pushd ihk
+            patch -p1 < @CMAKE_INSTALL_PREFIX@/bin/${fn_ihk}.patch
+        popd
+    popd
+
+    pushd /tmp
+        rm -rf build
+        mkdir build
+        cd build
+        cmake @WITH_MCK_SRC@ -DCMAKE_INSTALL_PREFIX=@WITH_MCK@
+        make -j install
+    popd
+
+    pushd @WITH_MCK_SRC@
+        patch -R -p1 < @CMAKE_INSTALL_PREFIX@/bin/${fn_mckernel}.patch
+        pushd ihk
+            patch -R -p1 < @CMAKE_INSTALL_PREFIX@/bin/${fn_ihk}.patch
+        popd
+    popd
+}

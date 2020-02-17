@@ -162,6 +162,10 @@ foreach(target IN ITEMS
 
 endforeach()
 
+# utility shell functions
+configure_file(src/util.sh.in util.sh @ONLY)
+install(PROGRAMS ${CMAKE_BINARY_DIR}/util.sh DESTINATION bin)
+
 # patches
 foreach(target IN ITEMS
     status_mckernel status_ihk
