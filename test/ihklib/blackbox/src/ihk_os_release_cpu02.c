@@ -7,7 +7,7 @@
 #include "mod.h"
 
 const char param[] = "cpus";
-const char *messages[] = {
+const char *values[] = {
 	 "NULL",
 	 "assigned",
 	 "assigned + 1",
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 4; i++) {
-		START("test-case: : %s\n", messages[i]);
+		START("test-case: : %s\n", values[i]);
 
 		ret = cpus_os_assign();
 		INTERR(ret, "cpus_os_assign returned %d\n", ret);
