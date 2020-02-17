@@ -82,6 +82,3 @@ int user_wait(pid_t *pid)
  out:
 	return ret;
 }
-
-
-
