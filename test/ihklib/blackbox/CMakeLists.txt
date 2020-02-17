@@ -116,6 +116,7 @@ foreach(target IN ITEMS
     ihk_destroy_os06
     ihk_get_num_os_instances01
     ihk_os_shutdown08
+    ihk_os_shutdown01
     )
 
   # Add target
