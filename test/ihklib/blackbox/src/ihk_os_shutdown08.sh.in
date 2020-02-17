@@ -5,6 +5,28 @@ if [ "${AUTOTEST_HOME}" != "" ]; then
     . ${AUTOTEST_HOME}/bin/config.sh
 fi
 
+pushd @WITH_MCK_SRC@
+    patch -p1 < @CMAKE_INSTALL_PREFIX@/bin/status_mckernel.patch
+    pushd ihk
+        patch -p1 < @CMAKE_INSTALL_PREFIX@/bin/status_ihk.patch
+    popd
+popd
+
+pushd /tmp
+    rm -rf build
+    mkdir build
+    cd build
+    cmake @WITH_MCK_SRC@ -DCMAKE_INSTALL_PREFIX=@WITH_MCK@
+    make -j install
+popd
+
+pushd @WITH_MCK_SRC@
+    patch -R -p1 < @CMAKE_INSTALL_PREFIX@/bin/status_mckernel.patch
+    pushd ihk
+        patch -R -p1 < @CMAKE_INSTALL_PREFIX@/bin/status_ihk.patch
+    popd
+popd
+
 sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_os_shutdown08 -u $(id -u) -g $(id -g)
 ret=$?
 
