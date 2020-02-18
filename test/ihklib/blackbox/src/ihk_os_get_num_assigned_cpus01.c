@@ -18,6 +18,7 @@ int main(int argc, char **argv)
 	int i;
 
 	params_getopt(argc, argv);
+
 	/* Precondition */
 	ret = insmod();
 	INTERR(ret == 0, "insmod returned %d\n", ret);
