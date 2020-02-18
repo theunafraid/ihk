@@ -6,7 +6,7 @@
 #include "params.h"
 #include "mod.h"
 
-const char param[] = "IHK_RESERVE_MEM_ALL_SIZE_LIMIT";
+const char param[] = "IHK_RESERVE_MEM_ALL_SIZE_LIMIT for all";
 const char *values[] = {
 	"100\%",
 	"90\%",
@@ -21,9 +21,9 @@ int main(int argc, char **argv)
 
 	/* Prepare one with NULL and zero-clear others */
 
-	struct mems mems_input[1] = { 0 };
+	struct mems mems_input[2] = { 0 };
 
-	for (i = 0; i < 1; i++) {
+	for (i = 0; i < 2; i++) {
 		int j;
 		int excess;
 
@@ -42,19 +42,33 @@ int main(int argc, char **argv)
 		}
 	}
 
-	int ret_expected[1] = { 0 };
-	struct mems mems_free_on_reserve[1] = { 0 };
-	struct mems mems_ratio[1] = { 0 };
+	int mem_conf_keys[2] = {
+		IHK_RESERVE_MEM_MAX_SIZE_RATIO_ALL,
+		IHK_RESERVE_MEM_MAX_SIZE_RATIO_ALL,
+	};
+
+	int mem_conf_values[2] = { 100, 90 };
+
+	int ret_expected[2] = { 0, 0 };
+	struct mems mems_free_on_reserve[2] = { 0 };
+
+	struct mems mems_ratio[2] = { 0 };
+	unsigned long mems_ratio_expected[2] = { 98, 90 };
 
 	/* Precondition */
 	ret = insmod();
 	INTERR(ret, "insmod returned %d\n", ret);
 
 	/* Activate and check */
-	for (i = 0; i < 1; i++) {
+	for (i = 0; i < 2; i++) {
 		int excess;
 
 		START("test-case: %s: %s\n", param, values[i]);
+
+		ret = ihk_reserve_mem_conf(0, mem_conf_keys[i],
+					   &mem_conf_values[i]);
+		INTERR(ret, "ihk_reserve_mem_conf returned %d\n",
+		       ret);
 
 		ret = ihk_reserve_mem(0, mems_input[i].mem_chunks,
 				      mems_input[i].num_mem_chunks);
@@ -72,20 +86,16 @@ int main(int argc, char **argv)
 			INTERR(ret, "mems_shift returned %d\n", ret);
 		}
 
+		/* Check memory size measured as the ratio of free memory */
 		ret = mems_copy(&mems_ratio[i],
 				&mems_free_on_reserve[i]);
 		INTERR(ret, "mems_copy returned %d\n", ret);
 
-		mems_fill(&mems_ratio[i], 98);
+		mems_fill(&mems_ratio[i], mems_ratio_expected[i]);
 
 		ret = mems_check_ratio(&mems_free_on_reserve[i],
 				       &mems_ratio[i]);
 		OKNG(ret == 0, "ratio of reserved to NR_FREE_PAGES\n");
-
-#define LOWER_BOUND 30782652416UL
-		ret = mems_check_total(LOWER_BOUND);
-		OKNG(ret == 0, "total amount reserved\n",
-		     LOWER_BOUND);
 
 		/* Clean up */
 		ret = mems_release();
