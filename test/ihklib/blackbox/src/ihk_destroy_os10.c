@@ -105,7 +105,6 @@ int main(int argc, char **argv)
 
 	if (ihk_get_num_os_instances(0)) {
 		ihk_os_shutdown(0);
-		os_wait_for_status(IHK_STATUS_INACTIVE);
 		ihk_destroy_os(0, 0);
 	}
 	cpus_release();
