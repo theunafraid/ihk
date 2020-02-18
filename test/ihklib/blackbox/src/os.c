@@ -48,7 +48,7 @@ int os_wait_for_status(int status)
 			ret = 0;
 			goto out;
 		}
-		printf("status: %d\n", ret);
+		INFO("os status: %d\n", ret);
 		usleep(400000);
 	}
 	ret = -ETIMEDOUT;
