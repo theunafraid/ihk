@@ -6,9 +6,10 @@
 #include "params.h"
 #include "mod.h"
 
+const char param[] = "existence of IHK device file";
 const char *messages[] = {
-	"before insmod",
-	"after insmod",
+	"without IHK device file",
+	"with IHK device file",
 };
 
 int main(int argc, char **argv)
@@ -33,7 +34,7 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 2; i++) {
-		START("test-case: /dev/mcd0: %s\n", messages[i]);
+		START("test-case: %s: %s\n", param, messages[i]);
 
 		ret = ihk_reserve_cpu(0, cpus_input[i].cpus,
 				      cpus_input[i].ncpus);

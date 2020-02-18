@@ -6,7 +6,7 @@
 #include "mod.h"
 #include <unistd.h>
 
-const char param[] = "/dev/mcd0";
+const char param[] = "exsitence of IHK device file";
 const char *values[] = {
 	"with no os instance",
 	"with one os instance",

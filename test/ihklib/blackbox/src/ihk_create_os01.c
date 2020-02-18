@@ -6,10 +6,10 @@
 #include "mod.h"
 #include <unistd.h>
 
-const char param[] = "/dev/mcd0";
+const char param[] = "exsitence of IHK device file";
 const char *values[] = {
-	"No /dev/mcd0 exists"
-	"/dev/mcd0 exists",
+	"without IHK device file",
+	"with IHK device file",
 };
 
 int main(int argc, char **argv)
@@ -23,6 +23,8 @@ int main(int argc, char **argv)
 	int ret_expected_os_instances[2] = { -ENOENT, 1 };
 
 	for (i = 0; i < 2; i++) {
+		START("test-case: %s: %s\n", param, messages[i]);
+
 		ret = ihk_create_os(0);
 		OKNG(ret == ret_expected[i],
 		     "return value (os index when positive): %d, expected: %d\n",

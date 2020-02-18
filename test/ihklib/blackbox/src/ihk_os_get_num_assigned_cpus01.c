@@ -6,10 +6,10 @@
 #include "params.h"
 #include "mod.h"
 
-const char param[] = "/dev/mcd0";
+const char param[] = "exsitence of IHK device file";
 const char *values[] = {
-	"before insmod",
-	"after insmod",
+	"without IHK device file",
+	"with IHK device file",
 };
 
 int main(int argc, char **argv)

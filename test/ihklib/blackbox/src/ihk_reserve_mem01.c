@@ -13,10 +13,10 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
-	const char param[] = "/dev/mcd0";
+	const char param[] = "exsitence of IHK device file";
 	const char *values[] = {
-		 "before insmod",
-		 "after insmod",
+		 "without IHK device file",
+		 "with IHK device file",
 		};
 
 	struct mems mems_input[2] = { 0 };
