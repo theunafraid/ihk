@@ -7,6 +7,7 @@
 #include "params.h"
 #include "mod.h"
 
+const char param[] = "os_index";
 const char *values[] = {
 	"INT_MIN",
 	"-1",
@@ -22,13 +23,13 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
-	int dev_index_input[] = {
-		 INT_MIN,
-		 -1,
-		 0,
-		 1,
-		 INT_MAX
-		};
+	int os_index_input[] = {
+		INT_MIN,
+		-1,
+		0,
+		1,
+		INT_MAX
+	};
 
 	struct cpus cpus_input[5] = { 0 };
 
