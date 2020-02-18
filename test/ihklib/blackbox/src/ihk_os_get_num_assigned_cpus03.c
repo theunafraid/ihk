@@ -71,7 +71,7 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 5; i++) {
-		START("test-case: dev_index: %s\n", values[i]);
+		START("test-case: %s: %s\n", param, values[i]);
 
 		ret = ihk_reserve_cpu(dev_index_input[i],
 				      cpus_input[i].cpus, cpus_input[i].ncpus);

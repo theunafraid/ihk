@@ -68,7 +68,7 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
-		START("test-case: user privilege: %s\n", values[i]);
+		START("test-case: %s: %s\n", param, values[i]);
 
 		/* cpus are dummy because we can't query */
 		ret = cpus_push(&cpus_input[i], 0);
