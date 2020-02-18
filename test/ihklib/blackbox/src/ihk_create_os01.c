@@ -23,7 +23,7 @@ int main(int argc, char **argv)
 	int ret_expected_os_instances[2] = { -ENOENT, 1 };
 
 	for (i = 0; i < 2; i++) {
-		START("test-case: %s: %s\n", param, messages[i]);
+		START("test-case: %s: %s\n", param, values[i]);
 
 		ret = ihk_create_os(0);
 		OKNG(ret == ret_expected[i],
