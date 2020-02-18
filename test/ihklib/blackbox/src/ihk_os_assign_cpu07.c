@@ -31,10 +31,10 @@ int main(int argc, char **argv)
 
 	ret = mems_reserve();
 	INTERR(ret, "mems_reserve returned %d\n", ret);
-	
+
 	ret = ihk_create_os(0);
 	INTERR(ret, "ihk_create_os returned %d\n", ret);
-	
+
 	ret = mems_os_assign();
 	INTERR(ret, "mems_os_assign returned %d\n", ret);
 
@@ -86,14 +86,14 @@ int main(int argc, char **argv)
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
-		
+
 		if (cpus_expected[i]) {
 			ret = cpus_check_assigned(cpus_expected[i]);
 			OKNG(ret == 0, "released as expected\n");
 		}
 
 		/* Clean up */
-		if (ihk_os_get_status(0) != IHK_STATUS_INACTIVE) {
+		if (i == 1) {
 			ret = ihk_os_shutdown(0);
 			INTERR(ret, "ihk_os_boot returned %d\n", ret);
 		}
@@ -104,7 +104,7 @@ int main(int argc, char **argv)
 
 	ret = mems_os_release();
 	INTERR(ret, "mems_os_release returned %d\n", ret);
-	
+
 	ret = ihk_destroy_os(0, 0);
 	INTERR(ret, "ihk_destroy_os returned %d\n", ret);
 

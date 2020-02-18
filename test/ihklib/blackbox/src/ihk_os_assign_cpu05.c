@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 	for (i = 0; i < 1; i++) {
 		ret = cpus_reserved(&cpus_input[i]);
 		INTERR(ret, "cpus_reserved returned %d\n", ret);
-		
+
 		ret = cpus_reserved(&cpus_after_assign[i]);
 		INTERR(ret, "cpus_reserved returned %d\n", ret);
 	}
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 			OKNG(ret == 0, "assigned as expected\n");
 
 			/* Clean up */
-			ret = cpus_os_release();		
+			ret = cpus_os_release();
 			INTERR(ret, "cpus_release returned %d\n", ret);
 		}
 	}
