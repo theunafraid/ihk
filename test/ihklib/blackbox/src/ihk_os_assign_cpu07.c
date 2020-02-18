@@ -40,6 +40,7 @@ int main(int argc, char **argv)
 
 	struct cpus cpus_input[2] = { 0 };
 	struct cpus cpus_after_assign[2] = { 0 };
+
 	/* All */
 	for (i = 0; i < 2; i++) {
 		ret = cpus_reserved(&cpus_input[i]);
@@ -95,13 +96,12 @@ int main(int argc, char **argv)
 		if (ihk_os_get_status(0) != IHK_STATUS_INACTIVE) {
 			ret = ihk_os_shutdown(0);
 			INTERR(ret, "ihk_os_boot returned %d\n", ret);
-
 		}
 
 		ret = cpus_os_release();
 		INTERR(ret, "cpus_os_release returned %d\n", ret);
-
 	}
+
 	ret = mems_os_release();
 	INTERR(ret, "mems_os_release returned %d\n", ret);
 	
@@ -112,7 +112,7 @@ int main(int argc, char **argv)
  out:
 	cpus_release();
 	mems_release();
-
 	rmmod(0);
+
 	return ret;
 }
