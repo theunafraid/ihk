@@ -105,7 +105,6 @@ foreach(target IN ITEMS
     ihk_os_assign_mem02
     ihk_os_assign_mem03
     ihk_os_assign_mem04
-    ihk_os_get_num_assigned_cpus02
     ihk_os_get_num_assigned_mem_chunks02
     ihk_os_query_mem02
     ihk_os_query_cpu02
@@ -145,6 +144,13 @@ foreach(target IN ITEMS
     ihk_destroy_os09
     ihk_destroy_os10
     ihk_destroy_os01
+    ihk_os_get_num_assigned_cpus01
+    ihk_os_get_num_assigned_cpus02
+    ihk_os_get_eventfd01
+    ihk_os_get_eventfd02
+    ihk_os_get_eventfd03
+    ihk_os_get_eventfd05
+    ihk_os_get_eventfd06
     )
 
   # Add target
