@@ -8,6 +8,10 @@
 #include "params.h"
 #include "mod.h"
 
+const char param[] = "user privilege";
+const char *values[] = {
+	"non-root",
+};
 int main(int argc, char **argv)
 {
 	int ret;
@@ -24,10 +28,19 @@ int main(int argc, char **argv)
 			/* Precondition */
 			ret = insmod();
 			INTERR(ret, "insmod returned %d\n", ret);
+
+			ret = cpus_reserve();
+			INTERR(ret, "cpus_reserve returned %d\n", ret);
+
+			ret = ihk_create_os(0);
+			INTERR(ret, "ihk_create_os returned %d\n", ret);
 			exit(0);
 			break;
 		case 'r':
 			/* Clean up */
+			ret = cpus_release();
+			INTERR(ret, "cpus_release returned %d\n", ret);
+
 			ret = rmmod(1);
 			INTERR(ret, "rmmod returned %d\n", ret);
 			exit(0);
@@ -38,48 +51,26 @@ int main(int argc, char **argv)
 		}
 	}
 
-	const char *values[] = {
-		 "non-root",
-		};
-
 	struct cpus cpus_input[1] = { 0 };
-
-	/* Both Linux and McKernel cpus */
-	for (i = 0; i < 1; i++) {
-		ret = cpus_reserved(&cpus_input[i]);
-		INTERR(ret, "cpus_reserved returned %d\n", ret);
-	}
-
-	/* Spare two cpus for Linux */
-	for (i = 0; i < 1; i++) {
-		ret = cpus_shift(&cpus_input[i], 2);
-		INTERR(ret, "cpus_shift returned %d\n", ret);
-	}
-
 	int ret_expected[] = { -EACCES };
 
 	struct cpus *cpus_expected[] = {
 		 NULL, /* don't care */
-		};
+	};
 
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
-		START("test-case: user privilege: %s\n", values[i]);
+		START("test-case: %s: %s\n", param, values[i]);
 
-		ret = ihk_os_assign_cpu(0, cpus_input[i].cpus, cpus_input[i].ncpus);
+		/* cpus are dummy because we can't query */
+		ret = cpus_push(&cpus_input[i], 0);
+		INTERR(ret, "cpus_push returned %d\n", ret);
+
+		ret = ihk_os_assign_cpu(0, cpus_input[i].cpus, 
+				cpus_input[i].ncpus);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
-
-		if (cpus_expected[i]) {
-			ret = cpus_check_assigned(cpus_expected[i]);
-			OKNG(ret == 0, "assigned as expected\n");
-
-			/* Clean up */
-			ret = ihk_os_release_cpu(0, cpus_input[i].cpus,
-					      cpus_input[i].ncpus);
-			INTERR(ret, "ihk_os_release_cpu returned %d\n", ret);
-		}
 	}
 
 	ret = 0;
