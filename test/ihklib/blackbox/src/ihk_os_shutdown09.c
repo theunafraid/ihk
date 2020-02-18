@@ -14,8 +14,8 @@
 
 const char param[] = "interrupt enabled / disabled";
 const char *messages[] = {
-	"interrupt enabled",
-	"interrupt disabled"
+	"enabled",
+	"disabled"
 };
 
 int main(int argc, char **argv)
