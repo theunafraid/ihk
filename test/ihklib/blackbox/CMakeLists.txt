@@ -98,6 +98,9 @@ foreach(target IN ITEMS
     ihk_os_assign_cpu02
     ihk_os_assign_cpu03
     ihk_os_assign_cpu04
+    ihk_os_assign_cpu05
+    ihk_os_assign_cpu06
+    ihk_os_assign_cpu07
     ihk_os_assign_mem01
     ihk_os_assign_mem02
     ihk_os_assign_mem03

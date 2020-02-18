@@ -7,6 +7,11 @@
 #include "params.h"
 #include "mod.h"
 
+const char param[] = "user privilege";
+const char *values[] = {
+	"root",
+};
+
 int main(int argc, char **argv)
 {
 	int ret;
@@ -14,39 +19,41 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
-	const char *values[] = {
-		 "root",
-		};
+	/* Precondition */
+	ret = insmod();
+	INTERR(ret, "insmod returned %d\n", ret);
+
+	ret = cpus_reserve();
+	INTERR(ret, "cpus_reserve returned %d\n", ret);
+
+	ret = ihk_create_os(0);
+	INTERR(ret, "ihk_create_os returned %d\n", ret);
 
 	struct cpus cpus_input[1] = { 0 };
+	struct cpus cpus_after_assign[1] = { 0 };
+	int ret_expected[1] = { 0 };
 
 	/* Both Linux and McKernel cpus */
 	for (i = 0; i < 1; i++) {
 		ret = cpus_reserved(&cpus_input[i]);
 		INTERR(ret, "cpus_reserved returned %d\n", ret);
+		
+		ret = cpus_reserved(&cpus_after_assign[i]);
+		INTERR(ret, "cpus_reserved returned %d\n", ret);
 	}
 
-	/* Spare two cpus for Linux */
-	for (i = 0; i < 1; i++) {
-		ret = cpus_shift(&cpus_input[i], 2);
-		INTERR(ret, "cpus_shift returned %d\n", ret);
-	}
-
-	int ret_expected[] = { 0 };
 
 	struct cpus *cpus_expected[] = {
-		 &cpus_input[0],
-		};
+		&cpus_after_assign[0],
+	};
 
-	/* Precondition */
-	ret = insmod();
-	INTERR(ret, "insmod returned %d\n", ret);
 
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
 		START("test-case: user privilege: %s\n", values[i]);
 
-		ret = ihk_os_assign_cpu(0, cpus_input[i].cpus, cpus_input[i].ncpus);
+		ret = ihk_os_assign_cpu(0, cpus_input[i].cpus, 
+				cpus_input[i].ncpus);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
@@ -56,14 +63,14 @@ int main(int argc, char **argv)
 			OKNG(ret == 0, "assigned as expected\n");
 
 			/* Clean up */
-			ret = ihk_os_release_cpu(0, cpus_input[i].cpus,
-					      cpus_input[i].ncpus);
-			INTERR(ret, "ihk_os_release_cpu returned %d\n", ret);
+			ret = cpus_os_release();		
+			INTERR(ret, "cpus_release returned %d\n", ret);
 		}
 	}
 
 	ret = 0;
  out:
+	cpus_release();
 	rmmod(0);
 	return ret;
 }
