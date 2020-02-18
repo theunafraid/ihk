@@ -102,14 +102,10 @@ int main(int argc, char **argv)
 		INTERR(ret, "cpus_os_release returned %d\n", ret);
 	}
 
-	ret = mems_os_release();
-	INTERR(ret, "mems_os_release returned %d\n", ret);
-
-	ret = ihk_destroy_os(0, 0);
-	INTERR(ret, "ihk_destroy_os returned %d\n", ret);
-
 	ret = 0;
  out:
+	mems_os_release();
+	ihk_destroy_os(0, 0);
 	cpus_release();
 	mems_release();
 	rmmod(0);
