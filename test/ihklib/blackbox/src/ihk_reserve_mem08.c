@@ -6,6 +6,11 @@
 #include "params.h"
 #include "mod.h"
 
+const char param[] = "memory chunk size";
+const char *values[] = {
+	"all (-1)",
+};
+
 int main(int argc, char **argv)
 {
 	int ret;
@@ -14,12 +19,6 @@ int main(int argc, char **argv)
 	params_getopt(argc, argv);
 
 	/* Prepare one with NULL and zero-clear others */
-
-	const char param[] = "struct ihk_mem_chunk::size";
-	const char *values[] =
-		{
-		 "all (-1)",
-		};
 
 	struct mems mems_input[1] = { 0 };
 
