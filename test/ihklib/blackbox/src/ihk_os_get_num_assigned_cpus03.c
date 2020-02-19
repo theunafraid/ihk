@@ -23,6 +23,16 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
+	/* Precondition */
+	ret = insmod();
+	INTERR(ret, "insmod returned %d\n", ret);
+
+	ret = cpus_reserve();
+	INTERR(ret, "cpus_reserve returned %d\n", ret);
+
+	ret = ihk_create_os(0);
+	INTERR(ret, "ihk_create_os returned %d\n", ret);
+
 	int os_index_input[] = {
 		INT_MIN,
 		-1,
@@ -35,68 +45,37 @@ int main(int argc, char **argv)
 
 	/* All of McKernel CPUs */
 	for (i = 0; i < 5; i++) {
-		ret = cpus_ls(&cpus_input[i]);
-		INTERR(ret, "cpus_ls returned %d\n", ret);
-
-		ret = cpus_shift(&cpus_input[i], 2);
-		INTERR(ret, "cpus_shift returned %d\n", ret);
+		ret = cpus_reserved(&cpus_input[i]);
+		INTERR(ret, "cpus_reserved returned %d\n", ret);
 	}
 
-	int ret_expected_reserve_cpu[] = {
-		  -ENOENT,
-		  -ENOENT,
-		  0,
-		  -ENOENT,
-		  -ENOENT,
-		};
-
 	int ret_expected[] = {
-		  -ENOENT,
-		  -ENOENT,
-		  cpus_input[2].ncpus,
-		  -ENOENT,
-		  -ENOENT,
-		};
-
-	struct cpus *cpus_expected[] = {
-		  NULL, /* don't care */
-		  NULL, /* don't care */
-		  &cpus_input[2],
-		  NULL, /* don't care */
-		  NULL, /* don't care */
-		};
-
-	/* Precondition */
-	ret = insmod();
-	INTERR(ret, "insmod returned %d\n", ret);
+		-ENOENT,
+		-ENOENT,
+		cpus_input[2].ncpus,
+		-ENOENT,
+		-ENOENT,
+	};
 
 	/* Activate and check */
 	for (i = 0; i < 5; i++) {
 		START("test-case: %s: %s\n", param, values[i]);
 
-		ret = ihk_reserve_cpu(dev_index_input[i],
-				      cpus_input[i].cpus, cpus_input[i].ncpus);
-		INTERR(ret != ret_expected_reserve_cpu[i],
-		     "ihk_reserve_cpu returned %d\n", ret);
+		ret = cpus_os_assign();
+		INTERR(ret, "cpus_os_assign returned %d\n", ret);
 
-		ret = ihk_get_num_reserved_cpus(dev_index_input[i]);
+		ret = ihk_os_get_num_assigned_cpus(os_index_input[i]);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		if (cpus_expected[i]) {
-			ret = cpus_check_reserved(cpus_expected[i]);
-			OKNG(ret == 0, "reserved as expected\n");
-
-			/* Clean up */
-			ret = ihk_release_cpu(0, cpus_input[i].cpus,
-					      cpus_input[i].ncpus);
-			INTERR(ret, "ihk_release_cpu returned %d\n", ret);
-		}
+		ret = cpus_os_release();
+		INTERR(ret, "cpus_os_release returned %d\n", ret);
 	}
 
 	ret = 0;
  out:
+	cpus_release();
 	rmmod(0);
 	return ret;
 }

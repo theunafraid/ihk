@@ -65,10 +65,10 @@ int main(int argc, char **argv)
 	struct cpus cpus_after_assign[4] = {0};
 
 	ret = cpus_reserved(&cpus_after_assign[1]);
-	INTERR(ret, "cpus_after_assign returned %d\n", ret);
+	INTERR(ret, "cpus_reserved returned %d\n", ret);
 
 	ret = cpus_reserved(&cpus_after_assign[3]);
-	INTERR(ret, "cpus_after_assign returned %d\n", ret);
+	INTERR(ret, "cpus_reserved returned %d\n", ret);
 	ret = cpus_shift(&cpus_after_assign[3], 1);
 	INTERR(ret, "cpus_shift returned %d\n", ret);
 
