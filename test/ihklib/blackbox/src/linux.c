@@ -136,9 +136,9 @@ int linux_rmmod(int verbose)
 	} else {
 		INFO("trying to rmmod %s.ko...\n", name);
 
-		sprintf(cmd, "rmmod %s/kmod/%s-%s.ko",
-			QUOTE(WITH_MCK), name,
-			QUOTE(BUILD_TARGET));
+		sprintf(name, "ihk-%s", QUOTE(BUILD_TARGET));
+		sprintf(cmd, "rmmod %s/kmod/%s.ko",
+			QUOTE(WITH_MCK), name);
 		if (verbose)
 			INFO("%s\n", cmd);
 		ret = system(cmd);
