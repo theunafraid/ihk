@@ -7,7 +7,7 @@
 #include "cpu.h"
 #include "mem.h"
 #include "params.h"
-#include "mod.h"
+#include "linux.h"
 
 const char param[] = "user privilege";
 const char *values[] = {
@@ -30,8 +30,8 @@ int main(int argc, char **argv)
 		switch (opt) {
 		case 'i':
 			/* Precondition */
-			ret = insmod();
-			INTERR(ret, "insmod returned %d\n", ret);
+			ret = linux_insmod();
+			INTERR(ret, "linux_insmod returned %d\n", ret);
 
 			ret = cpus_reserve();
 			INTERR(ret, "cpus_reserve returned %d\n", ret);
@@ -53,7 +53,7 @@ int main(int argc, char **argv)
 			ret = ihk_destroy_os(0, 0);
 			INTERR(ret, "ihk_destroy_os returned %d\n", ret);
 
-			ret = rmmod(0);
+			ret = linux_rmmod(0);
 			INTERR(ret, "rmmod returned %d\n", ret);
 			exit(0);
 			break;

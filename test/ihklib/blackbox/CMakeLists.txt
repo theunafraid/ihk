@@ -49,7 +49,7 @@ endforeach()
 
 foreach(target IN ITEMS
     params
-    mod
+    linux
     user
     )
   add_library(${target} STATIC src/${target}.c)
@@ -151,6 +151,7 @@ foreach(target IN ITEMS
     ihk_os_get_eventfd03
     ihk_os_get_eventfd05
     ihk_os_get_eventfd06
+    ihk_reserve_mem09
     )
 
   # Add target
@@ -165,7 +166,7 @@ foreach(target IN ITEMS
 
   # -l
   target_link_libraries(${target}
-    PRIVATE params cpu mem os user mod
+    PRIVATE params cpu mem os user linux
     )
 
   # String replacement

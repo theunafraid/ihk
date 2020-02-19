@@ -5,7 +5,7 @@
 #include "okng.h"
 #include "mem.h"
 #include "params.h"
-#include "mod.h"
+#include "linux.h"
 
 int main(int argc, char **argv)
 {
@@ -72,8 +72,8 @@ int main(int argc, char **argv)
 		};
 
 	/* Precondition */
-	ret = insmod();
-	INTERR(ret, "insmod returned %d\n", ret);
+	ret = linux_insmod();
+	INTERR(ret, "linux_insmod returned %d\n", ret);
 
 	/* Activate and check */
 	for (i = 0; i < 7; i++) {
@@ -98,6 +98,6 @@ int main(int argc, char **argv)
 
 	ret = 0;
  out:
-	rmmod(0);
+	linux_rmmod(0);
 	return ret;
 }

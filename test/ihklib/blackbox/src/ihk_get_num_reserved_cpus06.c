@@ -6,7 +6,7 @@
 #include "okng.h"
 #include "cpu.h"
 #include "params.h"
-#include "mod.h"
+#include "linux.h"
 
 const char *messages[] = {
 	"non-root",
@@ -26,13 +26,13 @@ int main(int argc, char **argv)
 		switch (opt) {
 		case 'i':
 			/* Precondition */
-			ret = insmod();
-			INTERR(ret, "insmod returned %d\n", ret);
+			ret = linux_insmod();
+			INTERR(ret, "linux_insmod returned %d\n", ret);
 			exit(0);
 			break;
 		case 'r':
 			/* Clean up */
-			ret = rmmod(1);
+			ret = linux_rmmod(1);
 			INTERR(ret, "rmmod returned %d\n", ret);
 			exit(0);
 			break;

@@ -3,7 +3,7 @@
 #include "util.h"
 #include "okng.h"
 #include "params.h"
-#include "mod.h"
+#include "linux.h"
 #include <unistd.h>
 
 const char param[] = "exsitence of IHK device file";
@@ -19,8 +19,8 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
-	ret = insmod();
-	INTERR(ret, "insmod returned %d\n", ret);
+	ret = linux_insmod();
+	INTERR(ret, "linux_insmod returned %d\n", ret);
 
 	int ret_expected[2] = { 0, 1 };
 
@@ -38,6 +38,6 @@ int main(int argc, char **argv)
 	}
 
 out:
-	rmmod(0);
+	linux_rmmod(0);
 	return ret;
 }

@@ -3,7 +3,7 @@
 #include "util.h"
 #include "okng.h"
 #include "params.h"
-#include "mod.h"
+#include "linux.h"
 #include <unistd.h>
 
 const char param[] = "exsitence of IHK device file";
@@ -39,13 +39,13 @@ int main(int argc, char **argv)
 
 		/* Precondition */
 		if (i == 0) {
-			ret = insmod();
-			INTERR(ret, "insmod returned %d\n", ret);
+			ret = linux_insmod();
+			INTERR(ret, "linux_insmod returned %d\n", ret);
 		}
 	}
 
 out:
-	rmmod(0);
+	linux_rmmod(0);
 	return ret;
 }
 

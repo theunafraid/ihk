@@ -5,7 +5,7 @@
 #include "okng.h"
 #include "cpu.h"
 #include "params.h"
-#include "mod.h"
+#include "linux.h"
 
 const char param[] = "os_index";
 const char *values[] = {
@@ -76,6 +76,6 @@ int main(int argc, char **argv)
 	ret = 0;
  out:
 	cpus_release();
-	rmmod(0);
+	linux_rmmod(0);
 	return ret;
 }

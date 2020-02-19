@@ -5,7 +5,7 @@
 #include "okng.h"
 #include "mem.h"
 #include "params.h"
-#include "mod.h"
+#include "linux.h"
 
 const char param[] = "release memory chunks";
 const char *values[] = {
@@ -19,8 +19,8 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
-	ret = insmod();
-	INTERR(ret, "insmod returned %d\n", ret);
+	ret = linux_insmod();
+	INTERR(ret, "linux_insmod returned %d\n", ret);
 
 	ret = mems_reserve();
 	INTERR(ret, "mems_reserve returned %d\n", ret);
@@ -71,6 +71,6 @@ int main(int argc, char **argv)
 	ret = 0;
  out:
 	mems_release();
-	rmmod(0);
+	linux_rmmod(0);
 	return ret;
 }
