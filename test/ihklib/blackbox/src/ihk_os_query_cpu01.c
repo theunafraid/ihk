@@ -6,10 +6,10 @@
 #include "params.h"
 #include "linux.h"
 
-const char param[] = "exsitence of IHK device file";
+const char param[] = "existence of os instance";
 const char *values[] = {
-	"without IHK device file",
-	"with IHK device file",
+	"without os instance",
+	"with os instance",
 };
 
 int main(int argc, char **argv)
@@ -19,77 +19,76 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
+	/* Precondition */
+	ret = insmod();
+	INTERR(ret, "insmod returned %d\n", ret);
+
+	ret = cpus_reserve();
+	INTERR(ret, "cpus_reserve returned %d\n", ret);
+
 	/* All of McKernel CPUs */
 	struct cpus cpus_input[2] = { 0 };
+	struct cpus cpus_assigned[2] = { 0 };
 
-	for (i = 1; i < 2; i++) {
-		ret = cpus_ls(&cpus_input[i]);
-		INTERR(ret, "cpus_ls returned %d\n", ret);
+	for (i = 0; i < 2; i++) {
+		ret = cpus_reserved(&cpus_input[i]);
+		INTERR(ret, "cpus_reserved returned %d\n", ret);
 
-		ret = cpus_shift(&cpus_input[i], 2);
-		INTERR(ret, "cpus_shift returned %d\n", ret);
+		ret = cpus_reserved(&cpus_assigned[i]);
+		INTERR(ret, "cpus_reserved returned %d\n", ret);
 	}
 
-	int ret_expected_reserve_cpu[] = { -ENOENT, 0 };
-	int ret_expected_get_num_reserved_cpus[] = {
+	int ret_expected_assign_cpu[] = { -ENOENT, 0 };
+	int ret_expected_get_num_assigned_cpu[] = {
 		-ENOENT,
-		cpus_input[1].ncpus
+		cpus_assigned[1].ncpus
 	};
 	int ret_expected[] = { -ENOENT, 0 };
-	struct cpus *cpus_expected[] = { NULL, &cpus_input[1] };
+
+	struct cpus *cpus_expected[] = {
+		NULL,
+		&cpus_assigned[1],
+	};
 
 	/* Activate and check */
 	for (i = 0; i < 2; i++) {
-		struct cpus cpus;
+		int ncpus;
 
 		START("test-case: %s: %s\n", param, values[i]);
 
-		ret = ihk_reserve_cpu(0, cpus_input[i].cpus,
+		/* Precondition */
+		if (i == 1) {
+			ret = ihk_create_os(0);
+			INTERR(ret, "ihk_create_os returned %d\n", ret);
+		}
+		ret = ihk_os_assign_cpu(0, cpus_input[i].cpus,
 				      cpus_input[i].ncpus);
-		INTERR(ret != ret_expected_reserve_cpu[i],
-		       "ihk_reserve_cpu returned %d\n", ret);
+		INTERR(ret != ret_expected_assign_cpu[i],
+		       "ihk_os_assign_cpu returned %d\n", ret);
 
-		ret = ihk_get_num_reserved_cpus(0);
-		INTERR(ret != ret_expected_get_num_reserved_cpus[i],
-		       "ihk_get_num_reserved_cpus returned %d\n", ret);
+		ret = ihk_os_get_num_assigned_cpus(0);
+		INTERR(ret != ret_expected_get_num_assigned_cpu[i],
+		       "ihk_os_get_num_assigned_cpus returned %d\n", ret);
+		ncpus = ret;
 
-		if (!cpus_expected[i]) {
-			ret = cpus_init(&cpus, 1);
-			INTERR(ret, "cpus_init returned %d\n", ret);
+		ret = ihk_os_query_cpu(0, cpus_input[i].cpus, ncpus);
+		OKNG(ret == ret_expected[i],
+			"return value: %d, expected: %d\n",
+			ret, ret_expected[i]);
 
-			ret = ihk_query_cpu(0, cpus.cpus, cpus.ncpus);
-			OKNG(ret == ret_expected[i],
-			     "return value: %d, expected: %d\n",
-			     ret, ret_expected[i]);
-		} else {
-			cpus.ncpus = ret;
-
-			ret = cpus_init(&cpus, cpus.ncpus);
-			INTERR(ret, "cpus_init returned %d\n", ret);
-
-			ret = ihk_query_cpu(0, cpus.cpus, cpus.ncpus);
-			OKNG(ret == ret_expected[i],
-			     "return value: %d, expected: %d\n",
-			     ret, ret_expected[i]);
-
-			ret = cpus_compare(&cpus, cpus_expected[i]);
-			OKNG(ret == 0, "query result matches input\n");
+		if (cpus_expected[i]) {
+			ret = cpus_compare(&cpus_input[i], cpus_expected[i]);
+			OKNG(ret == 0, "query result matches assigned\n");
 
 			/* Clean up */
-			ret = ihk_release_cpu(0, cpus_input[i].cpus,
-					      cpus_input[i].ncpus);
+			ret = cpus_os_release();
 			INTERR(ret, "ihk_release_cpu returned %d\n", ret);
-		}
-
-		/* Precondition */
-		if (i == 0) {
-			ret = linux_insmod();
-			INTERR(ret == 0, "linux_insmod returned %d\n", ret);
 		}
 	}
 
 	ret = 0;
  out:
+	cpus_release();
 	linux_rmmod(0);
 	return ret;
 }
