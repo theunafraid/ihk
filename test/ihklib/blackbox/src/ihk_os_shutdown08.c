@@ -82,6 +82,14 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 8; i++) {
+		/* There's no way to destroy os in BOOTING state
+		 * because ihk_os_boot() returns after os status
+		 * changes to RUNNING
+		 */
+		if (i == 1) {
+			continue;
+		}
+
 		START("test-case: %s: %s\n", param, messages[i]);
 
 		ret = ihk_create_os(0);
