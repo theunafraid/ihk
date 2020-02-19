@@ -7,7 +7,7 @@
 #include "mem.h"
 #include "os.h"
 #include "params.h"
-#include "mod.h"
+#include "linux.h"
 
 const char param[] = "os status";
 const char *values[] = {
@@ -23,7 +23,7 @@ int main(int argc, char **argv)
 	params_getopt(argc, argv);
 
 	/* Precondition */
-	ret = insmod();
+	ret = linux_insmod();
 	INTERR(ret, "insmod returned %d\n", ret);
 
 	ret = cpus_reserve();
@@ -105,7 +105,7 @@ int main(int argc, char **argv)
 	ihk_destroy_os(0, 0);
 	cpus_release();
 	mems_release();
-	rmmod(0);
+	linux_rmmod(0);
 
 	return ret;
 }
