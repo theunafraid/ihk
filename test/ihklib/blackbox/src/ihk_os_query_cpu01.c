@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 	params_getopt(argc, argv);
 
 	/* Precondition */
-	ret = insmod();
+	ret = linux_insmod();
 	INTERR(ret, "insmod returned %d\n", ret);
 
 	ret = cpus_reserve();
