@@ -7,13 +7,15 @@
 #include "params.h"
 #include "linux.h"
 
+const char param[] = "num_cpus";
 const char *values[] = {
 	"INT_MIN",
 	"-1",
 	"0",
+	"1",
 	"# of reserved",
-	"# of reserved + 1",
 	"# of reserved - 1",
+	"# of reserved + 1",
 	"INT_MAX",
 };
 
@@ -24,92 +26,87 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
-	struct cpus cpus_input_reserve_cpu[7] = { 0 };
+	/* Precondition */
+	ret = insmod();
+	INTERR(ret, "insmod returned %d\n", ret);
 
-	/* Both Linux and McKernel cpus */
-	for (i = 0; i < 7; i++) {
-		ret = cpus_ls(&cpus_input_reserve_cpu[i]);
-		INTERR(ret, "cpus_ls returned %d\n", ret);
+	ret = cpus_reserve();
+	INTERR(ret, "cpus_reserve returned %d\n", ret);
 
-		/* Spare two cpus for Linux */
-		ret = cpus_shift(&cpus_input_reserve_cpu[i], 2);
-		INTERR(ret, "cpus_shift returned %d\n", ret);
-	}
+	ret = ihk_create_os(0);
+	INTERR(ret, "ihk_create_os returned %d\n", ret);
 
-	struct cpus cpus_input[] = {
+	int ncpus;
+
+	ncpus = ihk_get_num_reserved_cpus(0);
+	INTERR(ncpus < 0, "ihk_get_num_reserved_cpus returned %d\n", ret);
+
+	struct cpus cpus_input[8] = {
 		 { .ncpus = INT_MIN },
 		 { .ncpus = -1 },
 		 { .ncpus = 0 },
-		 { .ncpus = cpus_input_reserve_cpu[3].ncpus },
-		 { .ncpus = cpus_input_reserve_cpu[4].ncpus + 1 },
-		 { .ncpus = cpus_input_reserve_cpu[5].ncpus - 1 },
+		 { .ncpus = 1 },
+		 { .ncpus = ncpus }, /* reserved */
+		 { .ncpus = ncpus - 1 }, /* reserved - 1 */
+		 { .ncpus = ncpus + 1 }, /* reserved + 1 */
 		 { .ncpus = INT_MAX },
-		};
+	};
 
-	for (i = 3; i < 6; i++) {
-		ret = cpus_init(&cpus_input[1],
-				cpus_input_reserve_cpu[1].ncpus);
-		INTERR(ret, "cpus_init returned %d\n", ret);
-	}
+	ret = cpus_init(&cpus_input[4], ncpus);
+	INTERR(ret, "cpus_init returned %d\n", ret);
 
-	int ret_expected_reserve_cpu[7] = { 0 };
-	int ret_expected_get_num_reserved_cpus[7] = { 0 };
+	struct cpus cpus_assigned[8] = { 0 };
+
+	ret = cpus_reserved(&cpus_assigned[4]);
+	INTERR(ret, "cpus_reserved returned %d\n", ret);
+
 	int ret_expected[] = {
-		 -EINVAL,
-		 -EINVAL,
-		 -EINVAL,
-		 0,
-		 -EINVAL,
-		 -EINVAL,
-		 -EINVAL,
-		};
+		-EINVAL,
+		-EINVAL,
+		-EINVAL,
+		-EINVAL,
+		0,
+		-EINVAL,
+		-EINVAL,
+		-EINVAL,
+	};
 
 	struct cpus *cpus_expected[] = {
-		  NULL, /* don't care */
-		  NULL, /* don't care */
-		  NULL, /* don't care */
-		  &cpus_input_reserve_cpu[3],
-		  NULL, /* don't care */
-		  NULL, /* don't care */
-		  NULL, /* don't care */
-		};
-
-	/* Precondition */
-	ret = linux_insmod();
-	INTERR(ret, "linux_insmod returned %d\n", ret);
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		&cpus_assigned[4],
+		NULL,
+		NULL,
+		NULL,
+	};
 
 	/* Activate and check */
-	for (i = 0; i < 7; i++) {
+	for (i = 0; i < 8; i++) {
 		START("test-case: num_cpus: %s\n", values[i]);
 
-		ret = ihk_reserve_cpu(0, cpus_input_reserve_cpu[i].cpus,
-				      cpus_input_reserve_cpu[i].ncpus);
-		INTERR(ret != ret_expected_reserve_cpu[i],
-		     "ihk_reserve_cpu returned %d\n", ret);
+		ret = cpus_os_assign();
+		INTERR(ret, "cpus_os_assign returned %d\n", ret);
 
-		ret = ihk_get_num_reserved_cpus(0);
-		INTERR(ret != ret_expected_get_num_reserved_cpus[i],
-		     "ihk_get_num_reserved_cpus returned %d\n", ret);
-
-		ret = ihk_query_cpu(0, cpus_input[i].cpus,
-				    cpus_input[i].ncpus);
+		ret = ihk_os_query_cpu(0, cpus_input[i].cpus,
+				cpus_input[i].ncpus);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
 		if (cpus_expected[i]) {
 			ret = cpus_compare(&cpus_input[i], cpus_expected[i]);
-			OKNG(ret == 0, "query result matches input\n");
+			OKNG(ret == 0, "query result matches assigned\n");
 		}
 
-		/* Clean up */
-		ret = ihk_release_cpu(0, cpus_input_reserve_cpu[i].cpus,
-				      cpus_input_reserve_cpu[i].ncpus);
-		INTERR(ret, "ihk_release_cpu returned %d\n", ret);
+		ret = cpus_os_release();
+		INTERR(ret, "cpus_os_release returned %d\n", ret);
 	}
 
 	ret = 0;
  out:
+	cpus_release();
 	linux_rmmod(0);
 	return ret;
 }
