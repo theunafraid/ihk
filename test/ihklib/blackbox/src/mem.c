@@ -80,15 +80,14 @@ int mems_ls(struct mems *mems, char *type, double ratio)
 		goto out;
 	}
 
-	entp = readdir(dp);
-	while (entp) {
+	while (entp = readdir(dp)) {
 		char cmd[4096];
 		unsigned long memfree;
 		int numa_node_number;
 
 		ret = strncmp(entp->d_name, "node", 4);
 		if (ret) {
-			goto next;
+			continue;
 		}
 
 		numa_node_number = atoi(entp->d_name + 4);
@@ -126,8 +125,6 @@ int mems_ls(struct mems *mems, char *type, double ratio)
 			 ~(RESERVE_MEM_GRANULE - 1));
 		mems->mem_chunks[numa_node_number].numa_node_number =
 			numa_node_number;
- next:
-		entp = readdir(dp);
 	}
 	mems->mem_chunks = mremap(mems->mem_chunks,
 				  sizeof(struct ihk_mem_chunk) *
@@ -144,6 +141,7 @@ int mems_ls(struct mems *mems, char *type, double ratio)
 	}
 
 	mems->num_mem_chunks = max_numa_node_number + 1;
+	INFO("# of NUMA nodes: %d\n", mems->num_mem_chunks);
 	ret = 0;
  out:
 	if (fp) {
