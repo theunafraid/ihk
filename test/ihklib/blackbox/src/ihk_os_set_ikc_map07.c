@@ -32,58 +32,12 @@ int main(int argc, char **argv)
 	ret = mems_reserve();
 	INTERR(ret, "mems_reserve returned %d\n", ret);
 
-	struct cpus cpus_lwk_1st = { 0 };
-	struct cpus cpus_lwk_2nd = { 0 };
-
-	/* first half */
-	ret = cpus_reserved(&cpus_lwk_1st);
-	INTERR(ret, "cpus_reserved returned %d\n", ret);
-	ret = cpus_pop(&cpus_lwk_1st,
-		       cpus_lwk_1st.ncpus / 2);
-	INTERR(ret, "cpus_pop returned %d\n", ret);
-
-	/* others */
-	ret = cpus_reserved(&cpus_lwk_2nd);
-	INTERR(ret, "cpus_reserved returned %d\n", ret);
-	ret = cpus_shift(&cpus_lwk_2nd,
-			 cpus_lwk_1st.ncpus);
-	INTERR(ret, "cpus_shift returned %d\n", ret);
-
-	struct cpus cpus_linux_1st = { 0 };
-	struct cpus cpus_linux_2nd = { 0 };
-
-	/* array of first cpu */
-	ret = cpus_ls(&cpus_linux_1st);
-	INTERR(ret, "cpus_reserved returned %d\n", ret);
-	ret = cpus_at(&cpus_linux_1st, 0);
-	INTERR(ret, "cpus_at returned %d\n", ret);
-	ret = cpus_broadcast(&cpus_linux_1st, cpus_lwk_1st.ncpus);
-	INTERR(ret, "cpus_broadcast returned %d\n", ret);
-
-	/* array of second cpu */
-	ret = cpus_ls(&cpus_linux_2nd);
-	INTERR(ret, "cpus_reserved returned %d\n", ret);
-	ret = cpus_at(&cpus_linux_2nd, 1);
-	INTERR(ret, "cpus_at returned %d\n", ret);
-	ret = cpus_broadcast(&cpus_linux_2nd, cpus_lwk_2nd.ncpus);
-	INTERR(ret, "cpus_broadcast returned %d\n", ret);
-
-	/* transform into array of <ikc_src, ikc_dst> */
-	struct ikc_cpu_map map_1st = { 0 };
-	struct ikc_cpu_map map_2nd = { 0 };
-
-	ret = ikc_cpu_map_copy(&map_1st, &cpus_lwk_1st, &cpus_linux_1st);
-	INTERR(ret, "ihc_cpu_map_copy returned %d\n", ret);
-
-	ret = ikc_cpu_map_copy(&map_2nd, &cpus_lwk_2nd, &cpus_linux_2nd);
-	INTERR(ret, "ihc_cpu_map_copy returned %d\n", ret);
-
-	/* cat 1st and 2nd */
 	struct ikc_cpu_map map_input[1] = { 0 };
 
-	ret = ikc_cpu_map_cat(&map_input[0], &map_1st, &map_2nd);
-	INTERR(ret, "ihc_cpu_map_cat returned %d\n", ret);
-	ikc_cpu_map_dump(&map_input[0]);
+	for (i = 0; i < 1; i++) {
+		ret = ikc_cpu_map_2toN(&map_input[i]);
+		INTERR(ret, "ikc_cpu_map_2toN returned %d\n", ret);
+	}
 
 	int ret_expected[1] = { 0 };
 
