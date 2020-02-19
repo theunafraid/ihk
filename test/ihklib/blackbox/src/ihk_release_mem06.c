@@ -6,7 +6,7 @@
 #include "okng.h"
 #include "mem.h"
 #include "params.h"
-#include "mod.h"
+#include "linux.h"
 
 const char param[] = "user privilege";
 const char *values[] = {
@@ -42,8 +42,8 @@ int main(int argc, char **argv)
 		switch (opt) {
 		case 'i':
 			/* Precondition */
-			ret = insmod();
-			INTERR(ret, "insmod returned %d\n", ret);
+			ret = linux_insmod();
+			INTERR(ret, "linux_insmod returned %d\n", ret);
 
 			ret = ihk_reserve_mem(0,
 					      mems_input_reserve_mem[i].mem_chunks,
@@ -57,7 +57,7 @@ int main(int argc, char **argv)
 			ret = mems_release();
 			INTERR(ret, "mems_release returned %d\n", ret);
 
-			ret = rmmod(1);
+			ret = linux_rmmod(1);
 			INTERR(ret, "rmmod returned %d\n", ret);
 			exit(0);
 			break;

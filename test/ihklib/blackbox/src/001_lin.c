@@ -11,7 +11,7 @@
 #include "okng.h"
 #include "cpu.h"
 #include "params.h"
-#include "mod.h"
+#include "linux.h"
 
 #define DEBUG
 
@@ -68,8 +68,8 @@ int main(int argc, char **argv)
 	OKNG(ret != 0, "ihk_release_cpu (1)\n");
 
 	/* Expected to succeed */
-	ret = insmod(params.uid, params.gid);
-	INTERR(ret == 0, "insmod returned %d\n", ret);
+	ret = linux_insmod(params.uid, params.gid);
+	INTERR(ret == 0, "linux_insmod returned %d\n", ret);
 
 	// reserve cpu
 	cpus[0] = 3;
@@ -167,7 +167,7 @@ int main(int argc, char **argv)
 	     "ihkconfig 0 get os_instances (4) returned:\n%s\n", buf);
 
 
-	ret = rmmod(0);
+	ret = linux_rmmod(0);
 	NG(ret == 0, "rmmod returned %d\n", ret);
 
 	printf("[INFO] All tests finished\n");

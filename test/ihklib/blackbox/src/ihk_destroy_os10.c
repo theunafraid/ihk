@@ -10,7 +10,7 @@
 #include "os.h"
 #include "user.h"
 #include "params.h"
-#include "mod.h"
+#include "linux.h"
 
 const char param[] = "interrupt enabled / disabled";
 const char *messages[] = {
@@ -42,8 +42,8 @@ int main(int argc, char **argv)
 	};
 
 	/* Precondition */
-	ret = insmod();
-	INTERR(ret, "insmod returned %d\n", ret);
+	ret = linux_insmod();
+	INTERR(ret, "linux_insmod returned %d\n", ret);
 
 	ret = cpus_reserve();
 	INTERR(ret, "cpus_reserve returned %d\n", ret);
@@ -83,7 +83,7 @@ int main(int argc, char **argv)
 
 			/* Kill mcexec to decrement reference count of OS */
 			user_wait(&pid);
-			kill_mcexec();
+			linux_kill_mcexec();
 		}
 
 		INFO("trying to destroy os\n");
@@ -109,7 +109,7 @@ int main(int argc, char **argv)
 	}
 	cpus_release();
 	mems_release();
-	rmmod(1);
+	linux_rmmod(1);
 
 	return ret;
 }

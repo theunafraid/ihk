@@ -5,7 +5,7 @@
 #include "okng.h"
 #include "cpu.h"
 #include "params.h"
-#include "mod.h"
+#include "linux.h"
 
 const char param[] = "user privilege";
 const char *values[] = {
@@ -20,8 +20,8 @@ int main(int argc, char **argv)
 	params_getopt(argc, argv);
 
 	/* Precondition */
-	ret = insmod();
-	INTERR(ret, "insmod returned %d\n", ret);
+	ret = linux_insmod();
+	INTERR(ret, "linux_insmod returned %d\n", ret);
 
 	ret = ihk_create_os(0);
 	INTERR(ret, "ihk_create_os returned %d\n", ret);
@@ -42,6 +42,6 @@ int main(int argc, char **argv)
 	ret = 0;
  out:
 	ihk_destroy_os(0, 0);
-	rmmod(0);
+	linux_rmmod(0);
 	return ret;
 }

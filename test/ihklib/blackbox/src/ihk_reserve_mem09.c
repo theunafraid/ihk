@@ -4,7 +4,7 @@
 #include "okng.h"
 #include "mem.h"
 #include "params.h"
-#include "mod.h"
+#include "linux.h"
 
 const char param[] = "IHK_RESERVE_MEM_ALL_SIZE_LIMIT for all";
 const char *values[] = {
@@ -56,8 +56,8 @@ int main(int argc, char **argv)
 	unsigned long mems_ratio_expected[2] = { 98, 90 };
 
 	/* Precondition */
-	ret = insmod();
-	INTERR(ret, "insmod returned %d\n", ret);
+	ret = linux_insmod();
+	INTERR(ret, "linux_insmod returned %d\n", ret);
 
 	/* Activate and check */
 	for (i = 0; i < 2; i++) {
@@ -103,7 +103,7 @@ int main(int argc, char **argv)
 	}
 	ret = 0;
  out:
-	rmmod(0);
+	linux_rmmod(0);
 	return ret;
 }
 

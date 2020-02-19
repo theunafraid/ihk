@@ -6,8 +6,6 @@
 #include <getopt.h>
 #include <ihklib.h>
 #include "util.h"
-#include "okng.h"
-#include "test.h"
 
 #define DEBUG
 
@@ -21,6 +19,7 @@ int main(int argc, char **argv)
 	char cmd[1024];
 	char fn[256];
 	char kargs[256];
+	char logname[256], *envstr, *groups;
 
 	int cpus[4];
 	int num_cpus;
@@ -40,11 +39,9 @@ int main(int argc, char **argv)
 	int boot_shutdown = 0;
 	int mcexec_shutdown = 0;
 	int ikc_map_by_func = 0;
-	uid_t uid;
-	gid_t gid;
 	int opt;
 
-	while ((opt = getopt(argc, argv, "bxmu:g:")) != -1) {
+	while ((opt = getopt(argc, argv, "bxm")) != -1) {
 		switch (opt) {
 		case 'b':
 			boot_shutdown = 1;
@@ -55,16 +52,35 @@ int main(int argc, char **argv)
 		case 'm':
 			ikc_map_by_func = 1;
 			break;
-		case 'u':
-			uid = atoi(optarg);
-			break;
-		case 'g':
-			gid = atoi(optarg);
-			break;
 		default: /* '?' */
 			printf("unknown option %c\n", optopt);
 			exit(1);
 		}
+	}
+
+
+	fp = popen("logname", "r");
+	nread = fread(logname, 1, sizeof(logname), fp);
+	CHKANDJUMP(nread == 0, -1, "%s: ERROR: fread\n",
+		   __func__);
+	retstr = strrchr(logname, '\n');
+	if (retstr) {
+		*retstr = 0;
+	}
+	printf("logname=%s\n", logname);
+
+	envstr = getenv("MYGROUPS");
+	CHKANDJUMP(envstr == NULL, -1, "%s: ERROR: MYGROUPS not defined\n",
+		   __func__);
+	groups = strdup(envstr);
+	retstr = strrchr(groups, '\n');
+	if (retstr) {
+		*retstr = 0;
+	}
+	printf("groups=%s\n", groups);
+
+	if (geteuid() != 0) {
+		printf("Execute as a root\n");
 	}
 
 	/* Test error handling */
@@ -97,8 +113,8 @@ int main(int argc, char **argv)
 	mem_chunks[0].numa_node_number = 0;
 	mem_chunks[1].size = 64*1024*1024ULL;
 	mem_chunks[1].numa_node_number = 0;
-	ret = ihk_reserve_cpu(0, mem_chunks, num_mem_chunks);
-	OKNG(ret != 0, "ihk_reserve_cpu w/o /dev/mcd0\n");
+	ret = ihk_reserve_mem(0, mem_chunks, num_mem_chunks);
+	OKNG(ret != 0, "ihk_reserve_mem w/o /dev/mcd0\n");
 
 	// get # of reserved mem chunks: exptected to fail
 	num_mem_chunks = ihk_get_num_reserved_mem_chunks(0);
@@ -130,7 +146,7 @@ int main(int argc, char **argv)
 	OKNG(ret != 0, "ihk_get_os_instances (1)\n");
 
 	// get os_instances
-	sprintf(cmd, "%s/sbin/ihkconfig 0 get os_instances", QUOTE(WITH_MCK));
+	sprintf(cmd, "%s/sbin/ihkconfig 0 get os_instances", QUOTE(MCK_DIR));
 	fp = popen(cmd, "r");
 	nread = fread(buf, 1, sizeof(buf), fp);
 	buf[nread] = 0;
@@ -142,8 +158,25 @@ int main(int argc, char **argv)
 	OKNG(ret != 0, "ihk_destroy_os (1)\n");
 
 	/* Expected to succeed */
-	ret = linux_insmod(uid, gid);
-	INTERR(ret == 0, "linux_insmod returned %d\n", ret);
+
+	sprintf(cmd, "linux_insmod %s/kmod/ihk.ko", QUOTE(MCK_DIR));
+	status = system(cmd);
+	CHKANDJUMP(WEXITSTATUS(status) != 0, -1, "system");
+
+	sprintf(cmd,
+		"linux_insmod %s/kmod/ihk-smp-%s.ko ihk_start_irq=240 ihk_ikc_irq_core=0",
+		QUOTE(MCK_DIR), QUOTE(ARCH));
+	status = system(cmd);
+	CHKANDJUMP(WEXITSTATUS(status) != 0, -1, "system");
+
+	sprintf(cmd, "chown %s:%s /dev/mcd*\n", logname, groups);
+	printf("%s\n", cmd);
+	status = system(cmd);
+	CHKANDJUMP(WEXITSTATUS(status) != 0, -1, "system");
+
+	sprintf(cmd, "linux_insmod %s/kmod/mcctrl.ko", QUOTE(MCK_DIR));
+	status = system(cmd);
+	CHKANDJUMP(WEXITSTATUS(status) != 0, -1, "system");
 
 	// reserve cpu
 	cpus[0] = 3;
@@ -199,8 +232,8 @@ int main(int argc, char **argv)
 	mem_chunks[0].numa_node_number = 0;
 	mem_chunks[1].size = 64*1024*1024ULL;
 	mem_chunks[1].numa_node_number = 0;
-	ret = ihk_reserve_cpu(0, mem_chunks, num_mem_chunks);
-	OKNG(ret == 0, "ihk_reserve_cpu\n");
+	ret = ihk_reserve_mem(0, mem_chunks, num_mem_chunks);
+	OKNG(ret == 0, "ihk_reserve_mem\n");
 
 	// get # of reserved mem chunks
 	num_mem_chunks = ihk_get_num_reserved_mem_chunks(0);
@@ -239,8 +272,8 @@ int main(int argc, char **argv)
 	num_mem_chunks = 1;
 	mem_chunks[0].size = 128*1024*1024ULL;
 	mem_chunks[0].numa_node_number = 0;
-	ret = ihk_reserve_cpu(0, mem_chunks, num_mem_chunks);
-	OKNG(ret == 0, "ihk_reserve_cpu\n");
+	ret = ihk_reserve_mem(0, mem_chunks, num_mem_chunks);
+	OKNG(ret == 0, "ihk_reserve_mem\n");
 
 	// get # of reserved mem chunks
 	num_mem_chunks = ihk_get_num_reserved_mem_chunks(0);
@@ -320,7 +353,7 @@ int main(int argc, char **argv)
 	} else {
 		// set ikc_map
 		sprintf(cmd, "%s/sbin/ihkosctl 0 set ikc_map 3:0+1:2 2>&1",
-			QUOTE(WITH_MCK));
+			QUOTE(MCK_DIR));
 		fp = popen(cmd, "r");
 		nread = fread(buf, 1, sizeof(buf), fp);
 		buf[nread] = 0;
@@ -329,7 +362,7 @@ int main(int argc, char **argv)
 
 		// get ikc_map
 		sprintf(cmd, "%s/sbin/ihkosctl 0 get ikc_map 2>&1",
-			QUOTE(WITH_MCK));
+			QUOTE(MCK_DIR));
 		fp = popen(cmd, "r");
 		nread = fread(buf, 1, sizeof(buf), fp);
 		buf[nread] = 0;
@@ -339,7 +372,7 @@ int main(int argc, char **argv)
 
 	// load
 	sprintf(fn, "%s/%s/kernel/mckernel.img",
-		QUOTE(WITH_MCK), QUOTE(TARGET));
+		QUOTE(MCK_DIR), QUOTE(TARGET));
 	ret = ihk_os_load(0, fn);
 	OKNG(ret != 0, "ihk_os_load\n");
 
@@ -357,7 +390,7 @@ int main(int argc, char **argv)
 	OKNG(ret < 0, "ihk_os_get_status (1)\n");
 
 	// get status
-	sprintf(cmd, "%s//sbin/ihkosctl 0 get status 2>&1", QUOTE(WITH_MCK));
+	sprintf(cmd, "%s//sbin/ihkosctl 0 get status 2>&1", QUOTE(MCK_DIR));
 	fp = popen(cmd, "r");
 	nread = fread(buf, 1, sizeof(buf), fp);
 	buf[nread] = 0;
@@ -426,7 +459,7 @@ int main(int argc, char **argv)
 	     indices[1] == 0, "ihk_get_os_instances (2)\n");
 
 	// get os_instances
-	sprintf(cmd, "%s//sbin/ihkconfig 0 get os_instances", QUOTE(WITH_MCK));
+	sprintf(cmd, "%s//sbin/ihkconfig 0 get os_instances", QUOTE(MCK_DIR));
 	fp = popen(cmd, "r");
 	nread = fread(buf, 1, sizeof(buf), fp);
 	buf[nread] = 0;
@@ -449,7 +482,7 @@ int main(int argc, char **argv)
 	     indices[0] == 0, "ihk_get_os_instances (2)\n");
 
 	// get os_instances
-	sprintf(cmd, "%s//sbin/ihkconfig 0 get os_instances", QUOTE(WITH_MCK));
+	sprintf(cmd, "%s//sbin/ihkconfig 0 get os_instances", QUOTE(MCK_DIR));
 	fp = popen(cmd, "r");
 	nread = fread(buf, 1, sizeof(buf), fp);
 	buf[nread] = 0;
@@ -462,14 +495,14 @@ int main(int argc, char **argv)
 	OKNG(ret == IHK_STATUS_INACTIVE, "ihk_os_get_status (2)\n");
 
 	// get status
-	sprintf(cmd, "%s/sbin/ihkosctl 0 get status 2>&1", QUOTE(WITH_MCK));
+	sprintf(cmd, "%s/sbin/ihkosctl 0 get status 2>&1", QUOTE(MCK_DIR));
 	fp = popen(cmd, "r");
 	nread = fread(buf, 1, sizeof(buf), fp);
 	buf[nread] = 0;
 	OKNG(strstr(buf, "INACTIVE") != NULL,
 	     "ihkconfig 0 get status (2) returned:\n%s\n", buf);
 
-	sprintf(cmd, "chown %s:%s /dev/mcos*\n", uid, gid);
+	sprintf(cmd, "chown %s:%s /dev/mcos*\n", logname, groups);
 	status = system(cmd);
 	CHKANDJUMP(WEXITSTATUS(status) != 0, -1, "system");
 
@@ -538,7 +571,7 @@ int main(int argc, char **argv)
 	} else {
 		// set ikc_map
 		sprintf(cmd, "%s/sbin/ihkosctl 0 set ikc_map 3:0+1:2 2>&1",
-			QUOTE(WITH_MCK));
+			QUOTE(MCK_DIR));
 		fp = popen(cmd, "r");
 		nread = fread(buf, 1, sizeof(buf), fp);
 		buf[nread] = 0;
@@ -547,7 +580,7 @@ int main(int argc, char **argv)
 
 		// get ikc_map
 		sprintf(cmd, "%s/sbin/ihkosctl 0 get ikc_map 2>&1",
-			QUOTE(WITH_MCK));
+			QUOTE(MCK_DIR));
 		fp = popen(cmd, "r");
 		nread = fread(buf, 1, sizeof(buf), fp);
 		buf[nread] = 0;
@@ -623,7 +656,7 @@ int main(int argc, char **argv)
 
 	// load
 	sprintf(fn, "%s/%s/kernel/mckernel.img",
-		QUOTE(WITH_MCK), QUOTE(TARGET));
+		QUOTE(MCK_DIR), QUOTE(TARGET));
 	ret = ihk_os_load(0, fn);
 	OKNG(ret == 0, "ihk_os_load\n");
 
@@ -645,7 +678,7 @@ int main(int argc, char **argv)
 	     ret == IHK_STATUS_RUNNING, "ihk_os_get_status (3)\n");
 
 	// get status
-	sprintf(cmd, "%s/sbin/ihkosctl 0 get status 2>&1", QUOTE(WITH_MCK));
+	sprintf(cmd, "%s/sbin/ihkosctl 0 get status 2>&1", QUOTE(MCK_DIR));
 	fp = popen(cmd, "r");
 	nread = fread(buf, 1, sizeof(buf), fp);
 	buf[nread] = 0;
@@ -668,7 +701,7 @@ int main(int argc, char **argv)
 	OKNG(ret == IHK_STATUS_RUNNING, "ihk_os_get_status (4)\n");
 
 	// get status
-	sprintf(cmd, "%s/sbin/ihkosctl 0 get status 2>&1", QUOTE(WITH_MCK));
+	sprintf(cmd, "%s/sbin/ihkosctl 0 get status 2>&1", QUOTE(MCK_DIR));
 	fp = popen(cmd, "r");
 	nread = fread(buf, 1, sizeof(buf), fp);
 	buf[nread] = 0;
@@ -698,7 +731,7 @@ int main(int argc, char **argv)
 #endif
 
 	// mcexec
-	sprintf(cmd, "%s/bin/mcexec ls -l | grep Makefile", QUOTE(WITH_MCK));
+	sprintf(cmd, "%s/bin/mcexec ls -l | grep Makefile", QUOTE(MCK_DIR));
 	if (mcexec_shutdown) { /* #928 */
 		status = system(cmd);
 		goto shutdown;
@@ -709,7 +742,7 @@ int main(int argc, char **argv)
 	OKNG(strstr(buf, "Makefile") != NULL, "mcexec\n");
 
 	// /proc
-	sprintf(cmd, "%s/bin/mcexec cat /proc/stat", QUOTE(WITH_MCK));
+	sprintf(cmd, "%s/bin/mcexec cat /proc/stat", QUOTE(MCK_DIR));
 	fp1 = popen(cmd, "r");
 	nread = fread(buf1, 1, sizeof(buf1), fp1);
 	buf1[nread] = 0;
@@ -754,7 +787,7 @@ int main(int argc, char **argv)
 	     "ihk_os_get_status (5) returned %d\n", ret);
 
 	// get status
-	sprintf(cmd, "%s/sbin/ihkosctl 0 get status 2>&1", QUOTE(WITH_MCK));
+	sprintf(cmd, "%s/sbin/ihkosctl 0 get status 2>&1", QUOTE(MCK_DIR));
 	fp = popen(cmd, "r");
 	nread = fread(buf, 1, sizeof(buf), fp);
 	buf[nread] = 0;
@@ -771,7 +804,7 @@ int main(int argc, char **argv)
 #else
 	// destroy os
 	usleep(250*1000); // Wait for nothing is in-flight
-	sprintf(cmd, "%s/sbin/ihkconfig 0 destroy 0 2>&1", QUOTE(WITH_MCK));
+	sprintf(cmd, "%s/sbin/ihkconfig 0 destroy 0 2>&1", QUOTE(MCK_DIR));
 	fp = popen(cmd, "r");
 	nread = fread(buf, 1, sizeof(buf), fp);
 	buf[nread] = 0;
@@ -788,23 +821,23 @@ int main(int argc, char **argv)
 	OKNG(ret == 0, "ihk_get_os_instances (3)\n");
 
 	// get os_instances
-	sprintf(cmd, "%s/sbin/ihkconfig 0 get os_instances", QUOTE(WITH_MCK));
+	sprintf(cmd, "%s/sbin/ihkconfig 0 get os_instances", QUOTE(MCK_DIR));
 	fp = popen(cmd, "r");
 	nread = fread(buf, 1, sizeof(buf), fp);
 	buf[nread] = 0;
 	OKNG(strstr(buf, "0") == NULL,
 	     "ihkconfig 0 get os_instances (4) returned:\n%s\n", buf);
 
-	sprintf(cmd, "rmmod %s/kmod/mcctrl.ko", QUOTE(WITH_MCK));
+	sprintf(cmd, "rmmod %s/kmod/mcctrl.ko", QUOTE(MCK_DIR));
 	status = system(cmd);
 	CHKANDJUMP(WEXITSTATUS(status) != 0, -1, "system");
 
-	sprintf(cmd, "rmmod %s/kmod/ihk-%s.ko",
-		QUOTE(WITH_MCK), QUOTE(BUILD_TARGET));
+	sprintf(cmd, "rmmod %s/kmod/ihk-smp-%s.ko",
+		QUOTE(MCK_DIR), QUOTE(ARCH));
 	status = system(cmd);
 	CHKANDJUMP(WEXITSTATUS(status) != 0, -1, "system");
 
-	sprintf(cmd, "rmmod %s/kmod/ihk.ko", QUOTE(WITH_MCK));
+	sprintf(cmd, "rmmod %s/kmod/ihk.ko", QUOTE(MCK_DIR));
 	status = system(cmd);
 	CHKANDJUMP(WEXITSTATUS(status) != 0, -1, "system");
 
@@ -813,6 +846,6 @@ int main(int argc, char **argv)
 
  fn_exit:
 	return ret;
- out:
+ fn_fail:
 	goto fn_exit;
 }

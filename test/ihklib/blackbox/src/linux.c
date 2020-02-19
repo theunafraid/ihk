@@ -6,9 +6,9 @@
 #include <errno.h>
 #include "util.h"
 #include "okng.h"
-#include "mod.h"
+#include "linux.h"
 
-int insmod(void)
+int linux_insmod(void)
 {
 	int ret;
 	char cmd[1024];
@@ -37,7 +37,7 @@ out:
 	return ret;
 }
 
-int mod_chmod(uid_t uid, gid_t gid)
+int linux_chmod(uid_t uid, gid_t gid)
 {
 	int ret;
 	char cmd[1024];
@@ -52,9 +52,9 @@ out:
 
 }
 
-static int mod_loaded(const char *name)
+static int linux_lsmod(const char *name)
 {
-	int count = 0; 
+	int count = 0;
 	int ret;
 	FILE *st = NULL;
 	char cmd[1024];
@@ -97,7 +97,86 @@ static int mod_loaded(const char *name)
 	return ret;
 }
 
-int kill_mcexec(void)
+int linux_rmmod(int verbose)
+{
+	int ret;
+	char cmd[1024];
+	char name[1024];
+
+	sprintf(name, "mcctrl");
+	ret = linux_lsmod(name);
+	if (ret < 0) {
+		printf("%s: error: linux_lsmod %s returned %d\n",
+		       __func__, name, ret);
+		goto out;
+	} else if (ret == 0) {
+		INFO("warning: %s is not loaded\n", name);
+	} else {
+		INFO("trying to rmmod %s.ko...\n", name);
+
+		sprintf(cmd, "rmmod %s/kmod/%s.ko",
+			QUOTE(WITH_MCK), name);
+		if (verbose)
+			INFO("%s\n", cmd);
+		ret = system(cmd);
+		ret = WEXITSTATUS(ret);
+		if (ret != 0) {
+			INFO("%s returned %d\n", cmd, ret);
+		}
+	}
+
+	sprintf(name, "ihk_%s", QUOTE(KMOD_POSTFIX));
+	ret = linux_lsmod(name);
+	if (ret < 0) {
+		printf("%s: error: linux_lsmod %s returned %d\n",
+		       __func__, name, ret);
+		goto out;
+	} else if (ret == 0) {
+		INFO("warning: %s is not loaded\n", name);
+	} else {
+		INFO("trying to rmmod %s.ko...\n", name);
+
+		sprintf(cmd, "rmmod %s/kmod/%s-%s.ko",
+			QUOTE(WITH_MCK), name,
+			QUOTE(BUILD_TARGET));
+		if (verbose)
+			INFO("%s\n", cmd);
+		ret = system(cmd);
+		ret = WEXITSTATUS(ret);
+		if (ret != 0) {
+			INFO("%s returned %d\n", cmd, ret);
+		}
+	}
+
+	sprintf(name, "ihk");
+	ret = linux_lsmod(name);
+
+	if (ret < 0) {
+		printf("%s: error: linux_lsmod %s returned %d\n",
+		       __func__, name, ret);
+		goto out;
+	} else if (ret == 0) {
+		INFO("warning: %s is not loaded\n", name);
+	} else {
+		INFO("trying to rmmod %s.ko...\n", name);
+
+		sprintf(cmd, "rmmod %s/kmod/%s.ko",
+			QUOTE(WITH_MCK), name);
+		if (verbose)
+			INFO("%s\n", cmd);
+		ret = system(cmd);
+		ret = WEXITSTATUS(ret);
+		if (ret != 0) {
+			INFO("%s returned %d\n", cmd, ret);
+		}
+	}
+
+	ret = 0;
+out:
+	return ret;
+}
+
+int linux_kill_mcexec(void)
 {
 	int ret;
 	char cmd[1024];
@@ -109,58 +188,4 @@ int kill_mcexec(void)
 	INFO("kill mcexec returned %d\n", wstatus);
 
 	return wstatus;
-}
-
-int rmmod(int verbose)
-{
-	int ret;
-	char cmd[1024];
-	char name[1024];
-
-	ret = mod_loaded("mcctrl");
-	INTERR(ret < 0, "mod_loaded mcctrl returned %d\n", ret);
-
-	if (ret == 1) {
-		sprintf(cmd, "rmmod %s/kmod/mcctrl.ko", QUOTE(WITH_MCK));
-		if (verbose)
-			INFO("%s\n", cmd);
-		ret = system(cmd);
-		ret = WEXITSTATUS(ret);
-		if (ret != 0) {
-			INFO("%s returned %d\n", cmd, ret);
-		}
-	}
-
-	sprintf(name, "ihk_%s", QUOTE(KMOD_POSTFIX));
-	ret = mod_loaded(name);
-	INTERR(ret < 0, "mod_loaded %s returned %d\n",
-	       name, ret);
-
-	if (ret == 1) {
-		sprintf(cmd, "rmmod %s/kmod/ihk-%s.ko",
-			QUOTE(WITH_MCK), QUOTE(BUILD_TARGET));
-		if (verbose)
-			INFO("%s\n", cmd);
-		ret = system(cmd);
-		ret = WEXITSTATUS(ret);
-		if (ret != 0) {
-			INFO("%s returned %d\n", cmd, ret);
-		}
-	}
-
-	ret = mod_loaded("ihk");
-	INTERR(ret < 0, "mod_loaded ihk returned %d\n", ret);
-
-	if (ret == 1) {
-		sprintf(cmd, "rmmod %s/kmod/ihk.ko", QUOTE(WITH_MCK));
-		if (verbose)
-			INFO("%s\n", cmd);
-		ret = system(cmd);
-		ret = WEXITSTATUS(ret);
-		if (ret != 0) {
-			INFO("%s returned %d\n", cmd, ret);
-		}
-	}
-out:
-	return ret;
 }

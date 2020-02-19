@@ -6,7 +6,7 @@
 #include "mem.h"
 #include "os.h"
 #include "params.h"
-#include "mod.h"
+#include "linux.h"
 
 const char param[] = "existence of IHK device file";
 const char *messages[] = {
@@ -31,8 +31,8 @@ int main(int argc, char **argv)
 
 		/* Precondition */
 		if (i == 1) {
-			ret = insmod();
-			INTERR(ret, "insmod returned %d\n", ret);
+			ret = linux_insmod();
+			INTERR(ret, "linux_insmod returned %d\n", ret);
 
 			ret = cpus_reserve();
 			INTERR(ret, "cpus_reserve returned %d\n", ret);
@@ -64,7 +64,7 @@ int main(int argc, char **argv)
 	}
 	cpus_release();
 	mems_release();
-	rmmod(0);
+	linux_rmmod(0);
 
 	return ret;
 }

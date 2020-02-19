@@ -4,7 +4,7 @@
 #include "okng.h"
 #include "cpu.h"
 #include "params.h"
-#include "mod.h"
+#include "linux.h"
 
 const char param[] = "existence of os instance";
 const char *values[] = {
@@ -20,8 +20,8 @@ int main(int argc, char **argv)
 	params_getopt(argc, argv);
 
 	/* Precondition */
-	ret = insmod();
-	INTERR(ret, "insmod returned %d\n", ret);
+	ret = linux_insmod();
+	INTERR(ret, "linux_insmod returned %d\n", ret);
 
 	ret = cpus_reserve();
 	INTERR(ret, "cpus_reserve returned %d\n", ret);
@@ -77,7 +77,7 @@ int main(int argc, char **argv)
 	ret = 0;
  out:
 	cpus_release();
-	rmmod(0);
+	linux_rmmod(0);
 
 	return ret;
 }

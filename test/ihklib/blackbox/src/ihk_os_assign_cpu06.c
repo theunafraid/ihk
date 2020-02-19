@@ -6,7 +6,7 @@
 #include "okng.h"
 #include "cpu.h"
 #include "params.h"
-#include "mod.h"
+#include "linux.h"
 
 const char param[] = "user privilege";
 const char *values[] = {
@@ -26,8 +26,8 @@ int main(int argc, char **argv)
 		switch (opt) {
 		case 'i':
 			/* Precondition */
-			ret = insmod();
-			INTERR(ret, "insmod returned %d\n", ret);
+			ret = linux_insmod();
+			INTERR(ret, "linux_insmod returned %d\n", ret);
 
 			ret = cpus_reserve();
 			INTERR(ret, "cpus_reserve returned %d\n", ret);
@@ -36,8 +36,8 @@ int main(int argc, char **argv)
 			INTERR(ret, "ihk_create_os returned %d\n", ret);
 
 			/* make /dev/mcos0 accessible to non-root */
-			ret = mod_chmod(params.uid, params.gid);
-			INTERR(ret, "mod_chmod returned %d\n", ret);
+			ret = linux_chmod(params.uid, params.gid);
+			INTERR(ret, "linux_chmod returned %d\n", ret);
 
 			exit(0);
 			break;
@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 			ret = cpus_release();
 			INTERR(ret, "cpus_release returned %d\n", ret);
 
-			ret = rmmod(1);
+			ret = linux_rmmod(1);
 			INTERR(ret, "rmmod returned %d\n", ret);
 			exit(0);
 			break;

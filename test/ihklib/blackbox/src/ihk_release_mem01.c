@@ -4,7 +4,7 @@
 #include "okng.h"
 #include "mem.h"
 #include "params.h"
-#include "mod.h"
+#include "linux.h"
 
 const char param[] = "exsitence of IHK device file";
 const char *values[] = {
@@ -85,13 +85,13 @@ int main(int argc, char **argv)
 
 		if (i == 0) {
 			/* Precondition */
-			ret = insmod();
-			INTERR(ret, "insmod returned %d\n", ret);
+			ret = linux_insmod();
+			INTERR(ret, "linux_insmod returned %d\n", ret);
 		}
 	}
 
 	ret = 0;
  out:
-	rmmod(0);
+	linux_rmmod(0);
 	return ret;
 }
