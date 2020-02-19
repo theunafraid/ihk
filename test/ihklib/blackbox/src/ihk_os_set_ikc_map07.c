@@ -91,6 +91,7 @@ int main(int argc, char **argv)
 		    "IKCs from all cpus succeeded\n");
 
 		pclose(fp);
+		fp = NULL;
 
 		if (map_expected[i]) {
 			ret = ikc_cpu_map_check(map_expected[i]);
