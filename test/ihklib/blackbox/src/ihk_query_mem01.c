@@ -50,6 +50,7 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 2; i++) {
+		int num_mem_chunks;
 
 		START("test-case: %s: %s\n", param, values[i]);
 
@@ -62,9 +63,6 @@ int main(int argc, char **argv)
 					      mems_expected_size[i].num_mem_chunks);
 			INTERR(ret, "ihk_reserve_mem returned %d\n", ret);
 
-			ret = mems_reserved(&mems_input[i]);
-			INTERR(ret, "mems_reserved returned %d\n", ret);
-
 			ret = mems_reserved(&mems_expected_num_mem_chunks[i]);
 			INTERR(ret, "mems_reserved returned %d\n", ret);
 			ret_expected_get_num[i] =
@@ -74,7 +72,10 @@ int main(int argc, char **argv)
 		ret = ihk_get_num_reserved_mem_chunks(0);
 		INTERR(ret != ret_expected_get_num[i],
 		       "ihk_get_num_reserved_mems returned %d\n", ret);
-		mems_input[i].num_mem_chunks = ret;
+		num_mem_chunks = ret < 0 ? 0 : ret;
+
+		ret = mems_init(&mems_input[i], num_mem_chunks);
+		INTERR(ret, "mems_init returned %d\n", ret);
 
 		ret = ihk_query_mem(0, mems_input[i].mem_chunks,
 				mems_input[i].num_mem_chunks);

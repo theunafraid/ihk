@@ -15,6 +15,11 @@ int mems_init(struct mems *mems, int num_mem_chunks)
 {
 	int ret;
 
+	if (num_mem_chunks == 0) {
+		ret = 0;
+		goto out;
+	}
+
 	mems->mem_chunks = mmap(0,
 				sizeof(struct ihk_mem_chunk) * num_mem_chunks,
 			  PROT_READ | PROT_WRITE,
