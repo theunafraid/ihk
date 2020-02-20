@@ -592,7 +592,7 @@ int mems_reserve(void)
 	struct mems mems = { 0 };
 	int excess;
 
-	ret = mems_ls(&mems, "MemFree", 0.1);
+	ret = mems_ls(&mems, "MemFree", 0.9);
 	INTERR(ret, "mems_ls returned %d\n", ret);
 
 	excess = mems.num_mem_chunks - 4;
