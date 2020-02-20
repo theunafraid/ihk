@@ -76,7 +76,6 @@ foreach(target IN ITEMS
     ihk_query_cpu04
     ihk_query_cpu05
     ihk_query_cpu06
-    ihk_query_mem02
     ihk_release_cpu01
     ihk_release_cpu02
     ihk_release_cpu03
@@ -107,8 +106,6 @@ foreach(target IN ITEMS
     ihk_os_assign_mem04
     ihk_os_get_num_assigned_mem_chunks02
     ihk_os_query_mem02
-    ihk_os_query_cpu02
-    ihk_get_num_reserved_mem_chunks02
     ihk_os_shutdown07
     ihk_os_set_ikc_map07
     ikc_map
@@ -146,12 +143,27 @@ foreach(target IN ITEMS
     ihk_destroy_os01
     ihk_os_get_num_assigned_cpus01
     ihk_os_get_num_assigned_cpus02
+    ihk_os_get_num_assigned_cpus03
+    ihk_os_get_num_assigned_cpus04
     ihk_os_get_eventfd01
     ihk_os_get_eventfd02
     ihk_os_get_eventfd03
     ihk_os_get_eventfd05
     ihk_os_get_eventfd06
     ihk_reserve_mem09
+    ihk_os_get_eventfd07
+    ihk_os_query_cpu01
+    ihk_os_query_cpu02
+    ihk_os_query_cpu03
+    ihk_os_query_cpu04
+    ihk_os_query_cpu07
+    ihk_get_num_reserved_mem_chunks01
+    ihk_get_num_reserved_mem_chunks02
+    ihk_get_num_reserved_mem_chunks03
+    ihk_get_num_reserved_mem_chunks05
+    ihk_get_num_reserved_mem_chunks06
+    ihk_query_mem01
+    ihk_query_mem02
     )
 
   # Add target
