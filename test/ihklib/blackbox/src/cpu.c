@@ -313,13 +313,15 @@ int cpus_check_reserved(struct cpus *expected)
 int cpus_reserved(struct cpus *cpus)
 {
 	int ret;
+	int num_cpus;
 
 	ret = ihk_get_num_reserved_cpus(0);
 	INTERR(ret < 0, "ihk_get_num_reserved_cpus returned %d\n",
 	       ret);
+	num_cpus = ret;
 
-	if (ret > 0) {
-		ret = cpus_init(cpus, ret);
+	if (num_cpus > 0) {
+		ret = cpus_init(cpus, num_cpus);
 		INTERR(ret, "cpus_init returned %d\n", ret);
 
 		ret = ihk_query_cpu(0, cpus->cpus, cpus->ncpus);
@@ -397,7 +399,7 @@ int cpus_release(void)
 
 	ret = cpus_init(&cpus, ret);
 	INTERR(ret, "cpus_init returned %d\n", ret);
-	
+
 	ret = ihk_query_cpu(0, cpus.cpus, cpus.ncpus);
 	INTERR(ret, "ihk_query_cpu returned %d\n",
 	       ret);
