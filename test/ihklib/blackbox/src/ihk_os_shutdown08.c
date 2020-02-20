@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 	};
 
 	int ret_expected[] = {
-		-EINVAL,
+		0,
 		0,
 		0,
 		-EBUSY,
