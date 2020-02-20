@@ -2,7 +2,7 @@
 #include <ihklib.h>
 #include "util.h"
 #include "okng.h"
-#include "cpu.h"
+#include "mem.h"
 #include "params.h"
 #include "linux.h"
 
@@ -18,59 +18,42 @@ int main(int argc, char **argv)
 	int i;
 
 	params_getopt(argc, argv);
-	/* Precondition */
-	ret = linux_insmod();
-	INTERR(ret == 0, "linux_insmod returned %d\n", ret);
 
-	ret = cpus_reserve();
-	INTERR(ret, "cpus_reserve returned %d\n", ret);
+	struct mems mems_after_reserve[2] = { 0 };
 
-	/* All of McKernel CPUs */
-	struct cpus mems_input[2] = { 0 };
-
-	for (i = 1; i < 2; i++) {
-		ret = cpus_reserved(&mems_input[i]);
-		INTERR(ret, "cpus_reserved returned %d\n", ret);
-	}
-
-	int ret_expected_reserve_cpu[] = {
-		-ENOENT,
-		0
-	};
 	int ret_expected[] = {
 		-ENOENT,
-		mems_input[1].ncpus
-	};
-	struct cpus *cpus_expected[] = {
-		NULL,
-		&mems_input[1]
+		0, /* Filled in the loop */
 	};
 
 	/* Activate and check */
 	for (i = 0; i < 2; i++) {
 		START("test-case: %s: %s\n", param, values[i]);
 
-		ret = ihk_reserve_cpu(0, mems_input[i].cpus,
-				      mems_input[i].ncpus);
-		INTERR(ret != ret_expected_reserve_cpu[i],
-		       "ihk_reserve_cpu returned %d\n", ret);
+		/* Precondition */
+		if (i == 1) {
+			ret = linux_insmod();
+			INTERR(ret, "linux_insmod returned %d\n", ret);
 
-		ret = ihk_get_num_reserved_cpus(0);
+			ret = mems_reserve();
+			INTERR(ret, "mems_reserve returned %d\n", ret);
+
+			ret = mems_reserved(&mems_after_reserve[i]);
+			INTERR(ret, "mems_reserved returned %d\n", ret);
+
+			ret_expected[i] = mems_after_reserve[i].num_mem_chunks;
+		}
+
+		ret = ihk_get_num_reserved_mem_chunks(0);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		if (cpus_expected[i]) {
-			ret = cpus_check_reserved(cpus_expected[i]);
-			OKNG(ret == 0, "reserved as expected\n");
-
+		if (i == 1) {
 			/* Clean up */
-			ret = ihk_release_cpu(0, mems_input[i].cpus,
-					      mems_input[i].ncpus);
-			INTERR(ret, "ihk_release_cpu returned %d\n", ret);
+			ret = mems_release();
+			INTERR(ret, "mems_release returned %d\n", ret);
 		}
-
-
 	}
 
 	ret = 0;
