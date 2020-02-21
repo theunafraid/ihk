@@ -1,4 +1,3 @@
-#include <limits.h>
 #include <errno.h>
 #include <ihklib.h>
 #include "util.h"
@@ -7,9 +6,10 @@
 #include "params.h"
 #include "linux.h"
 
-const char param[] = "user privilege";
+const char param[] = "num_chunks";
 const char *values[] = {
-	"root",
+	"NULL",
+	"MemFree * 0.9",
 };
 
 int main(int argc, char **argv)
@@ -23,40 +23,44 @@ int main(int argc, char **argv)
 	ret = linux_insmod();
 	INTERR(ret, "linux_insmod returned %d\n", ret);
 
-	struct mems mems_input_reserve[1] = { 0 };
+	struct mems mems_expected_size[2] = { 0 };
 
-	for (i = 0; i < 1; i++) {
+	for (i = 1; i < 2; i++) {
 		int excess;
 
-		ret = mems_ls(&mems_input_reserve[i], "MemFree", 0.9);
+		ret = mems_ls(&mems_expected_size[i], "MemFree", 0.9); /* 90% */
 		INTERR(ret, "mems_ls returned %d\n", ret);
 
-		excess = mems_input_reserve[i].num_mem_chunks - 4;
+		excess = mems_expected_size[i].num_mem_chunks - 4;
 		if (excess > 0) {
-			ret = mems_shift(&mems_input_reserve[i], excess);
+			ret = mems_shift(&mems_expected_size[i], excess);
 			INTERR(ret, "mems_ls returned %d\n", ret);
 		}
 	}
 
-	struct mems mems_input[1] = { 0 };
-	int ret_expected[1] = { 0 };
+	int ret_expected[2] = { 0 };
 
-	struct mems *mems_expected[1] = {
-		 &mems_input_reserve[0],
+	struct mems mems_input[2] = { 0 };
+	struct mems *mems_expected[2] = {
+		&mems_expected_size[0],
+		&mems_expected_size[1]
 	};
 
 	/* Activate and check */
-	for (i = 0; i < 1; i++) {
+	for (i = 0; i < 2; i++) {
 		int num_mem_chunks;
 
 		START("test-case: %s: %s\n", param, values[i]);
 
-		ret = ihk_reserve_mem(0, mems_input_reserve[i].mem_chunks,
-				      mems_input_reserve[i].num_mem_chunks);
-		INTERR(ret, "ihk_reserve_mem returned %d\n", ret);
+		if (i == 1) {
+			ret = ihk_reserve_mem(0, mems_expected_size[i].mem_chunks,
+					      mems_expected_size[i].num_mem_chunks);
+			INTERR(ret, "ihk_reserve_mem returned %d\n", ret);
+		}
 
 		ret = ihk_get_num_reserved_mem_chunks(0);
-		INTERR(ret < 0, "ihk_get_num_reserved_mems returned %d\n", ret);
+		INTERR(ret < 0,
+		       "ihk_get_num_reserved_mem_chunks returned %d\n", ret);
 		num_mem_chunks = ret;
 
 		ret = mems_init(&mems_input[i], num_mem_chunks);
@@ -68,20 +72,21 @@ int main(int argc, char **argv)
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
+		/* Check the total size to check # of mem chunks */
 		if (mems_expected[i]) {
+
 			ret = mems_compare(&mems_input[i],
 					mems_expected[i], NULL);
-			OKNG(ret == 0, "query result matches reserved\n");
-
-			/* Clean up */
-			ret = mems_release();
-			INTERR(ret, "ihk_release_mem returned %d\n", ret);
+			OKNG(ret == 0,
+			     "total size of query result matches reserved\n");
 		}
+
+		ret = mems_release();
+		INTERR(ret, "mems_reserve returned %d\n", ret);
 	}
 
 	ret = 0;
  out:
-	mems_release();
 	linux_rmmod(0);
 	return ret;
 }
