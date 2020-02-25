@@ -44,6 +44,7 @@ int main(int argc, char **argv)
 	int ret_expected[1] = { 0 };
 	struct mems mems_free_on_reserve[1] = { 0 };
 	struct mems mems_ratio[1] = { 0 };
+	double ratios[1][MAX_NUM_MEM_CHUNKS] = { 0 };
 
 	/* Precondition */
 	ret = linux_insmod();
@@ -78,7 +79,7 @@ int main(int argc, char **argv)
 		mems_fill(&mems_ratio[i], 98);
 
 		ret = mems_check_ratio(&mems_free_on_reserve[i],
-				       &mems_ratio[i]);
+				       &mems_ratio[i], ratios[i]);
 		OKNG(ret == 0, "ratio of reserved to NR_FREE_PAGES\n");
 
 #define LOWER_BOUND 30782652416UL

@@ -487,7 +487,8 @@ int mems_check_reserved(struct mems *expected, struct mems *margin)
 }
 
 /* ratio is represented by percentage */
-int mems_check_ratio(struct mems *divisor, struct mems *ratios)
+int mems_check_ratio(struct mems *divisor, struct mems *ratios,
+		     double *ratios_out)
 {
 	int ret;
 	int num_mem_chunks;
@@ -522,12 +523,12 @@ int mems_check_ratio(struct mems *divisor, struct mems *ratios)
 
 	for (i = 0; i < MAX_NUM_MEM_CHUNKS; i++) {
 		if (sum_divisor[i]) {
-			double ratio = sum_dividend[i] /
+			ratios_out[i] = sum_dividend[i] /
 				(double)sum_divisor[i];
 			double limit = sum_ratios[i] /
 				(double)100;
 
-			if (ratio < limit) {
+			if (ratios_out[i] < limit) {
 				fail = 1;
 			}
 
@@ -539,7 +540,7 @@ int mems_check_ratio(struct mems *divisor, struct mems *ratios)
 			     sum_dividend[i] >> 20,
 			     sum_divisor[i],
 			     sum_divisor[i] >> 20,
-			     ratio, limit);
+			     ratios_out[i], limit);
 		}
 	}
 
