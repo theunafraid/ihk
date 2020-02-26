@@ -72,7 +72,7 @@ int main(int argc, char **argv)
 
 		ret = ihk_get_os_instances(0, index_input, num_os_instances);
 		OKNG(ret == ret_expected[i],
-		     "# of os instances: %d, expected: %d\n",
+		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 		OKNG(index_input[i] == index_expected[i],
 			"get os index as expected\n");
