@@ -22,17 +22,17 @@ int main(int argc, char **argv)
 	struct mems mems_input[2] = { 0 };
 
 	/* Reference for sum of the sizes */
-	struct mems mems_expected_size[2] = { 0 };
+	struct mems mems_input_reserve[2] = { 0 };
 
 	for (i = 0; i < 2; i++) {
 		int excess;
 
-		ret = mems_ls(&mems_expected_size[i], "MemFree", 0.9);
+		ret = mems_ls(&mems_input_reserve[i], "MemFree", 0.9);
 		INTERR(ret, "mems_ls returned %d\n", ret);
 
-		excess = mems_expected_size[i].num_mem_chunks - 4;
+		excess = mems_input_reserve[i].num_mem_chunks - 4;
 		if (excess > 0) {
-			ret = mems_shift(&mems_expected_size[i], excess);
+			ret = mems_shift(&mems_input_reserve[i], excess);
 			INTERR(ret, "mems_ls returned %d\n", ret);
 		}
 	}
@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 	/* Reference for # of memory chunks */
 	struct mems mems_expected_num_mem_chunks[2] = { 0 };
 
-	struct mems *mems_expected[] = { NULL, &mems_expected_size[1] };
+	struct mems *mems_expected[] = { NULL, &mems_input_reserve[1] };
 
 	int ret_expected_get_num[] = {
 		-ENOENT,
@@ -59,8 +59,9 @@ int main(int argc, char **argv)
 			ret = linux_insmod();
 			INTERR(ret, "linux_insmod returned %d\n", ret);
 
-			ret = ihk_reserve_mem(0, mems_expected_size[i].mem_chunks,
-					      mems_expected_size[i].num_mem_chunks);
+			ret = ihk_reserve_mem(0,
+					mems_input_reserve[i].mem_chunks,
+					mems_input_reserve[i].num_mem_chunks);
 			INTERR(ret, "ihk_reserve_mem returned %d\n", ret);
 
 			ret = mems_reserved(&mems_expected_num_mem_chunks[i]);
