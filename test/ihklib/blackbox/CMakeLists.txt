@@ -165,6 +165,7 @@ foreach(target IN ITEMS
     ihk_query_mem01
     ihk_query_mem02
     ihk_reserve_mem10
+    ihk_reserve_mem11
     )
 
   # Add target

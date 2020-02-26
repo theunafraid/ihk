@@ -7,11 +7,11 @@
 #include "linux.h"
 
 const char param[] =
-	"all with different"
-	" IHK_RESERVE_MEM_MIN_CHUNK_SIZE values";
+	"all with different "
+	"IHK_RESERVE_MEM_TIMEOUT values";
 const char *values[] = {
-	"64 KiB",
-	"4 MiB",
+	"180 sec",
+	"0 sec (only 4 MiB chunks are searched)",
 };
 
 int main(int argc, char **argv)
@@ -45,11 +45,11 @@ int main(int argc, char **argv)
 	}
 
 	int mem_conf_keys[2] = {
-		IHK_RESERVE_MEM_MIN_CHUNK_SIZE,
-		IHK_RESERVE_MEM_MIN_CHUNK_SIZE,
+		IHK_RESERVE_MEM_TIMEOUT,
+		IHK_RESERVE_MEM_TIMEOUT,
 	};
 
-	int mem_conf_values[2] = { 1UL << 16, 4UL << 20 };
+	int mem_conf_values[2] = { 180, 0 };
 
 	int ret_expected[2] = { 0, 0 };
 	struct mems mems_free_on_reserve[2] = { 0 };
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 				}
 			}
 			OKNG(fail == 0, "less memory reserved with"
-			     " smaller MIN_CHUNK_SIZE\n");
+			     " smaller TIMEOUT\n");
 		}
 
 		/* Clean up */

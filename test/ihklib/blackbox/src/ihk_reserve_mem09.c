@@ -6,7 +6,9 @@
 #include "params.h"
 #include "linux.h"
 
-const char param[] = "IHK_RESERVE_MEM_ALL_SIZE_LIMIT for all";
+const char param[] =
+	"all with different "
+	"IHK_RESERVE_MEM_ALL_SIZE_LIMIT values";
 const char *values[] = {
 	"100\%",
 	"90\%",
