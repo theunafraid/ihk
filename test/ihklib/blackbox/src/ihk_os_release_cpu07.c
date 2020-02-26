@@ -95,7 +95,8 @@ int main(int argc, char **argv)
 			/* Clean up */
 			if (i == 1) {
 				ret = ihk_os_shutdown(0);
-				INTERR(ret, "ihk_os_boot returned %d\n", ret);
+				INTERR(ret, "ihk_os_shutdown returned %d\n",
+				       ret);
 			}
 
 			ret = cpus_os_release();
