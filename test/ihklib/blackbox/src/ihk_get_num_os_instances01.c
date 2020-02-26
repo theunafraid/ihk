@@ -6,7 +6,7 @@
 #include "linux.h"
 #include <unistd.h>
 
-const char param[] = "exsitence of IHK device file";
+const char param[] = "exsitence of OS instance";
 const char *values[] = {
 	"with no os instance",
 	"with one os instance",
