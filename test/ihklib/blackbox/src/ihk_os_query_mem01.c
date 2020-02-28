@@ -2,14 +2,14 @@
 #include <ihklib.h>
 #include "util.h"
 #include "okng.h"
-#include "cpu.h"
+#include "mem.h"
 #include "params.h"
 #include "linux.h"
 
-const char param[] = "exsitence of IHK device file";
+const char param[] = "existence of os instance";
 const char *values[] = {
-	"without IHK device file",
-	"with IHK device file",
+	"with zero os instance",
+	"with one os instance",
 };
 
 int main(int argc, char **argv)
@@ -19,77 +19,70 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
+	/* Precondition */
+	ret = linux_insmod();
+	INTERR(ret, "linux_insmod returned %d\n", ret);
+
+	ret = mems_reserve();
+	INTERR(ret, "mems_reserve returned %d\n", ret);
+
 	/* All of McKernel CPUs */
 	struct mems mems_input[2] = { 0 };
+	struct mems mems_after_assign[2] = { 0 };
 
-	for (i = 1; i < 2; i++) {
-		ret = cpus_ls(&mems_input[i]);
-		INTERR(ret, "cpus_ls returned %d\n", ret);
+	for (i = 0; i < 2; i++) {
+		ret = mems_reserved(&mems_input[i]);
+		INTERR(ret, "mems_reserved returned %d\n", ret);
 
-		ret = cpus_shift(&mems_input[i], 2);
-		INTERR(ret, "cpus_shift returned %d\n", ret);
+		ret = mems_reserved(&mems_after_assign[i]);
+		INTERR(ret, "mems_reserved returned %d\n", ret);
 	}
 
-	int ret_expected_reserve_cpu[] = { -ENOENT, 0 };
-	int ret_expected_get_num_reserved_cpus[] = {
+	ret = mems_shift(&mems_after_assign[0],
+			mems_after_assign[0].num_mem_chunks);
+	INTERR(ret, "mems_shift returned %d\n", ret);
+
+	int ret_expected[] = {
 		-ENOENT,
-		mems_input[1].ncpus
+		0,
 	};
-	int ret_expected[] = { -ENOENT, 0 };
-	struct mems *mems_expected[] = { NULL, &mems_input[1] };
+
+	struct mems *mems_expected[] = {
+		NULL,
+		&mems_after_assign[1],
+	};
 
 	/* Activate and check */
 	for (i = 0; i < 2; i++) {
-		struct mems cpus;
-
 		START("test-case: %s: %s\n", param, values[i]);
 
-		ret = ihk_reserve_cpu(0, mems_input[i].cpus,
-				      mems_input[i].ncpus);
-		INTERR(ret != ret_expected_reserve_cpu[i],
-		       "ihk_reserve_cpu returned %d\n", ret);
+		if (i == 1) {
+			ret = ihk_create_os(0);
+			INTERR(ret, "ihk_create_os returned %d\n", ret);
 
-		ret = ihk_get_num_reserved_cpus(0);
-		INTERR(ret != ret_expected_get_num_reserved_cpus[i],
-		       "ihk_get_num_reserved_cpus returned %d\n", ret);
-
-		if (!mems_expected[i]) {
-			ret = cpus_init(&cpus, 1);
-			INTERR(ret, "cpus_init returned %d\n", ret);
-
-			ret = ihk_query_cpu(0, cpus.cpus, cpus.ncpus);
-			OKNG(ret == ret_expected[i],
-			     "return value: %d, expected: %d\n",
-			     ret, ret_expected[i]);
-		} else {
-			cpus.ncpus = ret;
-
-			ret = cpus_init(&cpus, cpus.ncpus);
-			INTERR(ret, "cpus_init returned %d\n", ret);
-
-			ret = ihk_query_cpu(0, cpus.cpus, cpus.ncpus);
-			OKNG(ret == ret_expected[i],
-			     "return value: %d, expected: %d\n",
-			     ret, ret_expected[i]);
-
-			ret = mems_compare(&cpus, mems_expected[i]);
-			OKNG(ret == 0, "query result matches input\n");
-
-			/* Clean up */
-			ret = ihk_release_cpu(0, mems_input[i].cpus,
-					      mems_input[i].ncpus);
-			INTERR(ret, "ihk_release_cpu returned %d\n", ret);
+			ret = mems_os_assign();
+			INTERR(ret, "mems_os_assign returned %d\n", ret);
 		}
 
-		/* Precondition */
-		if (i == 0) {
-			ret = linux_insmod();
-			INTERR(ret == 0, "linux_insmod returned %d\n", ret);
+		ret = ihk_os_query_mem(0, mems_input[i].mem_chunks,
+				mems_input[i].num_mem_chunks);
+		OKNG(ret == ret_expected[i],
+			"return value: %d, expected: %d\n",
+			ret, ret_expected[i]);
+
+		if (mems_expected[i]) {
+			ret = mems_compare(&mems_input[i],
+					mems_expected[i], NULL);
+			OKNG(ret == 0, "query result matches input\n");
+
+			ret = mems_os_release();
+			INTERR(ret, "mems_os_release returned %d\n", ret);
 		}
 	}
 
 	ret = 0;
  out:
+	mems_release();
 	linux_rmmod(0);
 	return ret;
 }

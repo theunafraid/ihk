@@ -7,12 +7,15 @@
 #include "params.h"
 #include "linux.h"
 
-const char param[] = "os_index";
+const char param[] = "num_mem_chunks";
 const char *values[] = {
 	"INT_MIN",
 	"-1",
 	"0",
 	"1",
+	"reserved",
+	"reserved + 1",
+	"reserved - 1",
 	"INT_MAX",
 };
 
@@ -33,41 +36,36 @@ int main(int argc, char **argv)
 	ret = ihk_create_os(0);
 	INTERR(ret, "ihk_create_os returned %d\n", ret);
 
-	int os_index_input[] = {
-		INT_MIN,
-		-1,
+	struct mems mems_input[8] = { 0 };
+	struct mems mems_after_assign[8] = { 0 };
+
+	ret = mems_reserved(&mems_after_assign[4]);
+	INTERR(ret, "mems_reserved returned %d\n", ret);
+
+	int ret_expected[8] = {
+		-EINVAL,
+		-EINVAL,
+		-EINVAL,
+		-EINVAL,
 		0,
-		1,
-		INT_MAX
+		-EINVAL,
+		-EINVAL,
+		-EINVAL,
 	};
 
-	struct mems mems_input[5] = { 0 };
-	struct mems mems_after_assign[5] = { 0 };
-
-	/* All of McKernel CPUs */
-	for (i = 0; i < 5; i++) {
-		ret = mems_reserved(&mems_after_assign[i]);
-		INTERR(ret, "mems_reserved returned %d\n", ret);
-	}
-
-	int ret_expected[] = {
-		-ENOENT,
-		-ENOENT,
-		0,
-		-ENOENT,
-		-ENOENT,
-	};
-
-	struct mems *mems_expected[] = {
-		  NULL, /* don't care */
-		  NULL, /* don't care */
-		  &mems_after_assign[2],
-		  NULL, /* don't care */
-		  NULL, /* don't care */
+	struct mems *mems_expected[8] = {
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		&mems_after_assign[4],
+		NULL,
+		NULL,
+		NULL,
 	};
 
 	/* Activate and check */
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < 8; i++) {
 		int num_mem_chunks;
 
 		START("test-case: %s: %s\n", param, values[i]);
@@ -84,19 +82,44 @@ int main(int argc, char **argv)
 		ret = mems_init(&mems_input[i], num_mem_chunks);
 		INTERR(ret, "mems_init returned %d\n", ret);
 
-		ret = ihk_os_query_mem(os_index_input[i],
-				mems_input[i].mem_chunks,
-				mems_input[i].num_mem_chunks);
+		switch (i) {
+		case 0:
+			mems_input[i].num_mem_chunks = INT_MIN;
+			break;
+		case 1:
+			mems_input[i].num_mem_chunks = -1;
+			break;
+		case 2:
+			mems_input[i].num_mem_chunks = 0;
+			break;
+		case 3:
+			mems_input[i].num_mem_chunks = 1;
+			break;
+		case 5:
+			mems_input[i].num_mem_chunks -= 1;
+			break;
+		case 6:
+			mems_input[i].num_mem_chunks += 1;
+			break;
+		case 7:
+			mems_input[i].num_mem_chunks = INT_MAX;
+			break;
+		default:
+			break;
+		}
+
+		ret = ihk_os_query_mem(0, mems_input[i].mem_chunks,
+			mems_input[i].num_mem_chunks);
 		OKNG(ret == ret_expected[i],
-			"return value: %d, expected: %d\n",
-			ret, ret_expected[i]);
+		     "return value: %d, expected: %d\n",
+		     ret, ret_expected[i]);
 
 		if (mems_expected[i]) {
 			ret = mems_compare(&mems_input[i],
-					mems_expected[i], NULL);
+					   mems_expected[i], NULL);
 			OKNG(ret == 0, "query result matches input\n");
 		}
-
+		/* Clean up */
 		ret = mems_os_release();
 		INTERR(ret, "mems_os_release returned %d\n", ret);
 	}
@@ -107,3 +130,4 @@ int main(int argc, char **argv)
 	linux_rmmod(0);
 	return ret;
 }
+
