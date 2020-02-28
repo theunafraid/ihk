@@ -104,19 +104,15 @@ foreach(target IN ITEMS
     ihk_os_assign_mem02
     ihk_os_assign_mem03
     ihk_os_assign_mem04
-    ihk_os_get_num_assigned_mem_chunks02
-    ihk_os_query_mem02
     ihk_os_shutdown07
     ihk_os_set_ikc_map07
     ikc_map
-    ihk_create_os01
     #  ihk_destroy_os07
     #ihk_os_get_ikc_map07
     ihk_destroy_os03
     #ihk_destroy_os08
     ihk_destroy_os05
     ihk_destroy_os06
-    ihk_get_num_os_instances01
     ihk_os_shutdown08
     ihk_os_shutdown01
     ihk_os_release_mem01
@@ -166,6 +162,43 @@ foreach(target IN ITEMS
     ihk_query_mem02
     ihk_reserve_mem10
     ihk_reserve_mem11
+    ihk_query_mem03
+    ihk_query_mem04
+    ihk_query_mem05
+    ihk_query_mem06
+    ihk_query_mem07
+    ihk_create_os01
+    ihk_create_os02
+    ihk_create_os05
+    ihk_create_os06
+    ihk_get_num_os_instances01
+    ihk_get_num_os_instances02
+    ihk_get_num_os_instances03
+    ihk_get_num_os_instances05
+    ihk_get_num_os_instances06
+    ihk_get_os_instances01
+    ihk_get_os_instances02
+    ihk_get_os_instances03
+    ihk_get_os_instances04
+    ihk_get_os_instances05
+    ihk_get_os_instances06
+    ihk_os_assign_mem05
+    ihk_os_assign_mem06
+    ihk_os_assign_mem07
+    ihk_os_assign_mem08
+    ihk_os_assign_mem09
+    ihk_os_get_num_assigned_mem_chunks01
+    ihk_os_get_num_assigned_mem_chunks02
+    ihk_os_get_num_assigned_mem_chunks03
+    ihk_os_get_num_assigned_mem_chunks04
+    ihk_os_query_mem01
+    ihk_os_query_mem02
+    ihk_os_query_mem03
+    ihk_os_query_mem04
+    ihk_os_query_mem05
+    ihk_os_load01
+    ihk_os_load02
+    ihk_os_load03
     )
 
   # Add target
