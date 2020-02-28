@@ -1,19 +1,17 @@
-#include <limits.h>
 #include <errno.h>
 #include <ihklib.h>
 #include "util.h"
 #include "okng.h"
 #include "mem.h"
+#include "cpu.h"
+#include "os.h"
 #include "params.h"
 #include "linux.h"
 
-const char param[] = "os_index";
+const char param[] = "os status";
 const char *values[] = {
-	"INT_MIN",
-	"-1",
-	"0",
-	"1",
-	"INT_MAX",
+	"before boot",
+	"after boot",
 };
 
 int main(int argc, char **argv)
@@ -27,53 +25,52 @@ int main(int argc, char **argv)
 	ret = linux_insmod();
 	INTERR(ret, "linux_insmod returned %d\n", ret);
 
+	ret = cpus_reserve();
+	INTERR(ret, "cpus_reserve returned %d\n", ret);
+
 	ret = mems_reserve();
 	INTERR(ret, "mems_reserve returned %d\n", ret);
 
-	ret = ihk_create_os(0);
-	INTERR(ret, "ihk_create_os returned %d\n", ret);
+	struct mems mems_input[2] = { 0 };
+	struct mems mems_after_assign[2] = { 0 };
 
-	int os_index_input[] = {
-		INT_MIN,
-		-1,
-		0,
-		1,
-		INT_MAX
-	};
-
-	struct mems mems_input[5] = { 0 };
-	struct mems mems_after_assign[5] = { 0 };
-
-	/* All of McKernel CPUs */
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < 2; i++) {
 		ret = mems_reserved(&mems_after_assign[i]);
 		INTERR(ret, "mems_reserved returned %d\n", ret);
 	}
 
-	int ret_expected[] = {
-		-ENOENT,
-		-ENOENT,
-		0,
-		-ENOENT,
-		-ENOENT,
-	};
+	int ret_expected[2] = { 0 };
 
-	struct mems *mems_expected[] = {
-		  NULL, /* don't care */
-		  NULL, /* don't care */
-		  &mems_after_assign[2],
-		  NULL, /* don't care */
-		  NULL, /* don't care */
+	struct mems *mems_expected[2] = {
+		&mems_after_assign[0],
+		&mems_after_assign[1],
 	};
 
 	/* Activate and check */
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < 2; i++) {
 		int num_mem_chunks;
 
 		START("test-case: %s: %s\n", param, values[i]);
 
+		ret = ihk_create_os(0);
+		INTERR(ret, "ihk_create_os returned %d\n", ret);
+
 		ret = mems_os_assign();
 		INTERR(ret, "mems_os_assign returned %d\n", ret);
+
+		ret = cpus_os_assign();
+		INTERR(ret, "cpus_os_assign returned %d\n", ret);
+
+		if (i == 1) {
+			ret = os_load();
+			INTERR(ret, "os_load returned %d\n", ret);
+
+			ret = os_kargs();
+			INTERR(ret, "os_kargs returned %d\n", ret);
+
+			ret = ihk_os_boot(0);
+			INTERR(ret, "ihk_os_boot returned %d\n", ret);
+		}
 
 		ret = ihk_os_get_num_assigned_mem_chunks(0);
 		INTERR(ret < 0,
@@ -84,12 +81,11 @@ int main(int argc, char **argv)
 		ret = mems_init(&mems_input[i], num_mem_chunks);
 		INTERR(ret, "mems_init returned %d\n", ret);
 
-		ret = ihk_os_query_mem(os_index_input[i],
-				mems_input[i].mem_chunks,
+		ret = ihk_os_query_mem(0, mems_input[i].mem_chunks,
 				mems_input[i].num_mem_chunks);
 		OKNG(ret == ret_expected[i],
-			"return value: %d, expected: %d\n",
-			ret, ret_expected[i]);
+		     "return value: %d, expected: %d\n",
+		     ret, ret_expected[i]);
 
 		if (mems_expected[i]) {
 			ret = mems_compare(&mems_input[i],
@@ -97,13 +93,28 @@ int main(int argc, char **argv)
 			OKNG(ret == 0, "query result matches input\n");
 		}
 
+		/* Clean up */
+		if (i == 1) {
+			ret = ihk_os_shutdown(0);
+			INTERR(ret, "ihk_os_shutdown returned %d\n", ret);
+		}
+
+		ret = cpus_os_release();
+		INTERR(ret, "cpus_os_release returned %d\n", ret);
+
 		ret = mems_os_release();
 		INTERR(ret, "mems_os_release returned %d\n", ret);
+
+		ret = ihk_destroy_os(0, 0);
+		INTERR(ret, "ihk_destroy_os returned %d\n", ret);
 	}
 
 	ret = 0;
  out:
+	cpus_release();
 	mems_release();
+
 	linux_rmmod(0);
 	return ret;
 }
+
