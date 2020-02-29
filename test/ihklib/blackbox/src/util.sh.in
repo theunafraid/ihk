@@ -35,3 +35,18 @@ function patch_and_build()
         popd
     fi
 }
+
+function detect_cpu_model()
+{
+    implementer=$(gawk '/CPU implementer/ { print $4; exit; }' /proc/cpuinfo)
+    arch=$(gawk '/CPU architecture/ { print $3; exit; }' /proc/cpuinfo)
+    var=$(gawk '/CPU variant/ { print $4; exit; }' /proc/cpuinfo)
+    part=$(gawk '/CPU part/ { print $4; exit; }' /proc/cpuinfo)
+
+    if [[ "$implementer" == "0x46" ]] && [[ "$arch" == "8" ]] &&
+	[[ "$var" == "0x0" ]] && [[ "$part" == "0x001" ]]; then
+	cpu_model="a64fx"
+    else
+	cpu_model="unknown"
+    fi
+}

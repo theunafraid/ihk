@@ -199,6 +199,7 @@ foreach(target IN ITEMS
     ihk_os_load01
     ihk_os_load02
     ihk_os_load03
+    ihk_reserve_mem12
     )
 
   # Add target
@@ -213,7 +214,7 @@ foreach(target IN ITEMS
 
   # -l
   target_link_libraries(${target}
-    PRIVATE params cpu mem os user linux
+    PRIVATE params cpu mem os user linux numa
     )
 
   # String replacement
