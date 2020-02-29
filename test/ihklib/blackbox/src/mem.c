@@ -4,6 +4,7 @@
 #include <string.h>
 #include <dirent.h>
 #include <errno.h>
+#include <limits.h>
 #include <sys/types.h>
 #include <sys/mman.h>
 #include "util.h"
@@ -393,11 +394,11 @@ void mems_dump(struct mems *mems)
 	}
 }
 
-static void mems_sum(struct mems *mems, unsigned long *sum)
+static void mems_sum(struct mems *mems, long *sum)
 {
 	int i;
 
-	memset(sum, 0, sizeof(unsigned long) * MAX_NUM_MEM_CHUNKS);
+	memset(sum, 0, sizeof(long) * MAX_NUM_MEM_CHUNKS);
 
 	for (i = 0; i < mems->num_mem_chunks; i++) {
 		sum[mems->mem_chunks[i].numa_node_number] +=
@@ -408,7 +409,7 @@ static void mems_sum(struct mems *mems, unsigned long *sum)
 void mems_dump_sum(struct mems *mems)
 {
 	int i;
-	unsigned long sum[MAX_NUM_MEM_CHUNKS] = { 0 };
+	long sum[MAX_NUM_MEM_CHUNKS] = { 0 };
 
 	if (mems) mems_sum(mems, sum);
 
@@ -424,9 +425,9 @@ int mems_compare(struct mems *result, struct mems *expected,
 		 struct mems *margin)
 {
 	int i;
-	unsigned long sum_result[MAX_NUM_MEM_CHUNKS] = { 0 };
-	unsigned long sum_expected[MAX_NUM_MEM_CHUNKS] = { 0 };
-	unsigned long sum_margin[MAX_NUM_MEM_CHUNKS] = { 0 };
+	long sum_result[MAX_NUM_MEM_CHUNKS] = { 0 };
+	long sum_expected[MAX_NUM_MEM_CHUNKS] = { 0 };
+	long sum_margin[MAX_NUM_MEM_CHUNKS] = { 0 };
 
 	if (result == NULL && expected == NULL) {
 		return 0;
@@ -486,6 +487,70 @@ int mems_check_reserved(struct mems *expected, struct mems *margin)
 	return ret;
 }
 
+int mems_check_var(struct mems *expected, double allowed_var)
+{
+	int ret;
+	int i;
+	int num_mem_chunks;
+	struct mems mems = { 0 };
+	long node_size[MAX_NUM_MEM_CHUNKS] = { 0 };
+	long min = LONG_MAX, max = LONG_MIN, sum = 0;
+	int nnodes = 0;
+
+	ret = ihk_get_num_reserved_mem_chunks(0);
+	INTERR(ret < 0, "ihk_get_num_reserved_mem_chunks returned %d\n",
+	       ret);
+
+	num_mem_chunks = ret;
+
+	if (num_mem_chunks > 0) {
+		ret = mems_init(&mems, num_mem_chunks);
+		INTERR(ret,
+		       "mems_init returned %d, num_mem_chunks: %d\n",
+		       ret, num_mem_chunks);
+
+		ret = ihk_query_mem(0, mems.mem_chunks, mems.num_mem_chunks);
+		INTERR(ret, "ihk_query_cpu returned %d\n",
+		       ret);
+	}
+
+	mems_sum(&mems, node_size);
+
+	for (i = 0; i < MAX_NUM_MEM_CHUNKS; i++) {
+		if (node_size[i] == 0) {
+			continue;
+		}
+
+		if (node_size[i] < min) {
+			min = node_size[i];
+		}
+		if (node_size[i] > max) {
+			max = node_size[i];
+		}
+		sum += node_size[i];
+		nnodes++;
+	}
+
+	ret = 0;
+	for (i = 0; i < MAX_NUM_MEM_CHUNKS; i++) {
+		double var;
+
+		if (node_size[i] == 0) {
+			continue;
+		}
+
+		var = node_size[i] / (sum / (double)nnodes);
+		INFO("id: %d, size: %ld (%ld MiB), size/ave: %1.2f\n",
+		     i, node_size[i], node_size[i] >> 20, var);
+		if (var < 1 - allowed_var ||
+		    var > 1 + allowed_var) {
+			ret = 1;
+		}
+	}
+ out:
+	return ret;
+}
+
 /* ratio is represented by percentage */
 int mems_check_ratio(struct mems *divisor, struct mems *ratios,
 		     double *ratios_out)
@@ -494,9 +559,9 @@ int mems_check_ratio(struct mems *divisor, struct mems *ratios,
 	int num_mem_chunks;
 	struct mems dividend = { 0 };
 	int i;
-	unsigned long sum_dividend[MAX_NUM_MEM_CHUNKS] = { 0 };
-	unsigned long sum_divisor[MAX_NUM_MEM_CHUNKS] = { 0 };
-	unsigned long sum_ratios[MAX_NUM_MEM_CHUNKS] = { 0 };
+	long sum_dividend[MAX_NUM_MEM_CHUNKS] = { 0 };
+	long sum_divisor[MAX_NUM_MEM_CHUNKS] = { 0 };
+	long sum_ratios[MAX_NUM_MEM_CHUNKS] = { 0 };
 	int fail = 0;
 
 	ret = ihk_get_num_reserved_mem_chunks(0);
@@ -555,8 +620,8 @@ int mems_check_total(unsigned long lower_limit)
 	int i;
 	int num_mem_chunks;
 	struct mems mems;
-	unsigned long sums[MAX_NUM_MEM_CHUNKS] = { 0 };
-	unsigned long sum = 0;
+	long sums[MAX_NUM_MEM_CHUNKS] = { 0 };
+	long sum = 0;
 
 	ret = ihk_get_num_reserved_mem_chunks(0);
 	INTERR(ret < 0, "ihk_get_num_reserved_mem_chunks returned %d\n",
