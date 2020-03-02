@@ -46,7 +46,30 @@ function detect_cpu_model()
     if [[ "$implementer" == "0x46" ]] && [[ "$arch" == "8" ]] &&
 	[[ "$var" == "0x0" ]] && [[ "$part" == "0x001" ]]; then
 	cpu_model="a64fx"
+    elif [[ "$implementer" == "0x43" ]] && [[ "$arch" == "8" ]] &&
+	[[ "$var" == "0x1" ]] && [[ "$part" == "0x0a1" ]]; then
+	cpu_model="thunderx"
     else
 	cpu_model="unknown"
+    fi
+}
+
+function init_oom_killer()
+{
+    detect_cpu_model
+    echo "[ INFO ] performing \"echo 0 > /proc/sys/vm/min_free_kbytes\""
+
+    if [[ "$cpu_model" == "a64fx" ]] || [[ "$cpu_model" == "thunderx" ]]; then
+	min_free_kbytes=$(cat /proc/sys/vm/min_free_kbytes)
+	sudo bash -c 'echo 0 > /proc/sys/vm/min_free_kbytes'
+    fi
+}
+
+function fini_oom_killer()
+{
+    echo "[ INFO ] performing \"echo $min_free_kbytes > /proc/sys/vm/min_free_kbytes\""
+
+    if [[ "$cpu_model" == "a64fx" ]] || [[ "$cpu_model" == "thunderx" ]]; then
+	sudo bash -c "echo $min_free_kbytes > /proc/sys/vm/min_free_kbytes"
     fi
 }
