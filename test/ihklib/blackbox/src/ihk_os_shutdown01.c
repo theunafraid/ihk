@@ -8,7 +8,7 @@
 #include "params.h"
 #include "linux.h"
 
-const char param[] = "existance of OS instance";
+const char param[] = "existence of OS instance";
 const char *messages[] = {
 	"wihout OS instance",
 	"with OS instance",
@@ -67,10 +67,10 @@ int main(int argc, char **argv)
 		/* Clean up */
 		if (ihk_get_num_os_instances(0)) {
 			ret = cpus_os_release();
-			INTERR(ret, "cpus_os_assign returned %d\n", ret);
+			INTERR(ret, "cpus_os_release returned %d\n", ret);
 
 			ret = mems_os_release();
-			INTERR(ret, "mems_os_assign returned %d\n", ret);
+			INTERR(ret, "mems_os_release returned %d\n", ret);
 
 			ret = ihk_destroy_os(0, 0);
 			INTERR(ret, "ihk_destroy_os returned %d\n", ret);

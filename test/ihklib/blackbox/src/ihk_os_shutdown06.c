@@ -83,10 +83,10 @@ int main(int argc, char **argv)
 			INTERR(ret, "ihk_os_shutdown returned %d\n", ret);
 
 			ret = cpus_os_release();
-			INTERR(ret, "cpus_os_assign returned %d\n", ret);
+			INTERR(ret, "cpus_os_release returned %d\n", ret);
 
 			ret = mems_os_release();
-			INTERR(ret, "mems_os_assign returned %d\n", ret);
+			INTERR(ret, "mems_os_release returned %d\n", ret);
 
 			ret = ihk_destroy_os(0, 0);
 			INTERR(ret, "ihk_destroy_os returned %d\n", ret);
