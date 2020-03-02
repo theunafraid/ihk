@@ -8,8 +8,8 @@
 
 const char param[] = "existence of os instance";
 const char *values[] = {
-	"with zero os instance",
-	"with one os instance",
+	"with os instance",
+	"without os instance",
 };
 
 int main(int argc, char **argv)
@@ -74,9 +74,14 @@ int main(int argc, char **argv)
 			ret = mems_compare(&mems_input[i],
 					mems_expected[i], NULL);
 			OKNG(ret == 0, "query result matches input\n");
+		}
 
+		if (i == 1) {
 			ret = mems_os_release();
 			INTERR(ret, "mems_os_release returned %d\n", ret);
+
+			ret = ihk_destroy_os(0, 0);
+			INTERR(ret, "ihk_destroy_os returned %d\n", ret);
 		}
 	}
 
