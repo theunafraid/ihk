@@ -97,6 +97,7 @@ int main(int argc, char **argv)
 	ret = 0;
  out:
 	mems_os_release();
+	ihk_destroy_os(0, 0);
 	mems_release();
 	linux_rmmod(0);
 	return ret;
