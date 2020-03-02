@@ -47,7 +47,6 @@ int main(int argc, char **argv)
 	int ret_expected_assign_mem[2] = { -ENOENT, 0 };
 	int ret_expected[2] = { -ENOENT, 0 };
 
-
 	struct mems *mems_expected[] = {
 		NULL,
 		&mems_after_release[1],

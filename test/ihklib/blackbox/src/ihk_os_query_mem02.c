@@ -89,14 +89,14 @@ int main(int argc, char **argv)
 
 		if (mems_expected[i]) {
 			ret = mems_compare(&mems_input[i],
-					   mems_expected[i],
-					   NULL);
+					   mems_expected[i], NULL);
 			OKNG(ret == 0, "query result matches input\n");
 		}
 	}
 
 	ret = 0;
  out:
+	mems_os_release();
 	mems_release();
 	linux_rmmod(0);
 	return ret;

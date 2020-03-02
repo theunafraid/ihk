@@ -66,7 +66,7 @@ int main(int argc, char **argv)
 		  &mems_input_reserve[2],
 		  NULL, /* don't care */
 		  NULL, /* don't care */
-		};
+	};
 
 	/* Activate and check */
 	for (i = 0; i < 5; i++) {
