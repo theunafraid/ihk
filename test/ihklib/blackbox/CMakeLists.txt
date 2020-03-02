@@ -200,6 +200,15 @@ foreach(target IN ITEMS
     ihk_os_load02
     ihk_os_load03
     ihk_reserve_mem12
+    ihk_os_load04
+    ihk_os_load05
+    ihk_os_load06
+    ihk_os_kargs01
+    ihk_os_kargs02
+    ihk_os_kargs03
+    ihk_os_kargs04
+    ihk_os_kargs05
+    ihk_os_kargs06
     )
 
   # Add target
