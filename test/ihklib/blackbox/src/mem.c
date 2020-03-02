@@ -440,6 +440,11 @@ int mems_compare(struct mems *result, struct mems *expected,
 	}
 
 	for (i = 0; i < MAX_NUM_MEM_CHUNKS; i++) {
+		if (sum_result[i] > 0) {
+			INFO("actual: %ld MiB, expected: %ld MiB\n",
+			     sum_result[i], sum_expected[i]);
+		}
+
 		if (sum_result[i] < sum_expected[i] ||
 		    sum_result[i] > sum_expected[i] +
 		    sum_margin[i]) {
