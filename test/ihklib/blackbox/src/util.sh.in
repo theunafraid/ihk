@@ -56,20 +56,13 @@ function detect_cpu_model()
 
 function init_oom_killer()
 {
-    detect_cpu_model
     echo "[ INFO ] performing \"echo 0 > /proc/sys/vm/min_free_kbytes\""
-
-    if [[ "$cpu_model" == "a64fx" ]] || [[ "$cpu_model" == "thunderx" ]]; then
-	min_free_kbytes=$(cat /proc/sys/vm/min_free_kbytes)
-	sudo bash -c 'echo 0 > /proc/sys/vm/min_free_kbytes'
-    fi
+    min_free_kbytes=$(cat /proc/sys/vm/min_free_kbytes)
+    sudo bash -c 'echo 0 > /proc/sys/vm/min_free_kbytes'
 }
 
 function fini_oom_killer()
 {
     echo "[ INFO ] performing \"echo $min_free_kbytes > /proc/sys/vm/min_free_kbytes\""
-
-    if [[ "$cpu_model" == "a64fx" ]] || [[ "$cpu_model" == "thunderx" ]]; then
-	sudo bash -c "echo $min_free_kbytes > /proc/sys/vm/min_free_kbytes"
-    fi
+    sudo bash -c "echo $min_free_kbytes > /proc/sys/vm/min_free_kbytes"
 }
