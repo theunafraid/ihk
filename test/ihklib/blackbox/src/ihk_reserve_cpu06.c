@@ -8,6 +8,11 @@
 #include "params.h"
 #include "linux.h"
 
+const char param[] = "user privilege";
+const char *messages[] = {
+	"non-root",
+};
+
 int main(int argc, char **argv)
 {
 	int ret;
@@ -15,34 +20,8 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
-	/* Parse additional options */
-	int opt;
-
-	while ((opt = getopt(argc, argv, "ir")) != -1) {
-		switch (opt) {
-		case 'i':
-			/* Precondition */
-			ret = linux_insmod();
-			INTERR(ret, "linux_insmod returned %d\n", ret);
-			exit(0);
-			break;
-		case 'r':
-			/* Clean up */
-			ret = linux_rmmod(1);
-			INTERR(ret, "rmmod returned %d\n", ret);
-			exit(0);
-			break;
-		default: /* '?' */
-			printf("unknown option %c\n", optopt);
-			exit(1);
-		}
-	}
-
-	const char *messages[] = {
-		 "non-root",
-		};
-
 	struct cpus cpus_input[1] = { 0 };
+	struct cpus cpus_after_reserve[1] = { 0 };
 
 	/* Both Linux and McKernel cpus */
 	for (i = 0; i < 1; i++) {
@@ -59,27 +38,47 @@ int main(int argc, char **argv)
 	int ret_expected[] = { -EACCES };
 
 	struct cpus *cpus_expected[] = {
-		 NULL, /* don't care */
-		};
+		&cpus_after_reserve[0]
+	};
+
+
+	/* Parse additional options */
+	int opt;
+
+	while ((opt = getopt(argc, argv, "ir")) != -1) {
+		switch (opt) {
+		case 'i':
+			/* Precondition */
+			ret = linux_insmod();
+			INTERR(ret, "linux_insmod returned %d\n", ret);
+			exit(0);
+			break;
+		case 'r':
+			/* Check there's no side effects */
+			if (cpus_expected[0]) {
+				ret = cpus_check_reserved(cpus_expected[0]);
+				OKNG(ret == 0, "reserved as expected\n");
+			}
+
+			/* Clean up */
+			ret = linux_rmmod(1);
+			INTERR(ret, "rmmod returned %d\n", ret);
+			exit(0);
+			break;
+		default: /* '?' */
+			printf("unknown option %c\n", optopt);
+			exit(1);
+		}
+	}
 
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
-		START("test-case: user privilege: %s\n", messages[i]);
+		START("test-case: %s: %s\n", param, messages[i]);
 
 		ret = ihk_reserve_cpu(0, cpus_input[i].cpus, cpus_input[i].ncpus);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
-
-		if (cpus_expected[i]) {
-			ret = cpus_check_reserved(cpus_expected[i]);
-			OKNG(ret == 0, "reserved as expected\n");
-
-			/* Clean up */
-			ret = ihk_release_cpu(0, cpus_input[i].cpus,
-					      cpus_input[i].ncpus);
-			INTERR(ret, "ihk_release_cpu returned %d\n", ret);
-		}
 	}
 
 	ret = 0;

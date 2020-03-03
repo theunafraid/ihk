@@ -8,6 +8,7 @@
 #include "params.h"
 #include "linux.h"
 
+const char param[] = "user privilege";
 const char *values[] = {
 	"non-root",
 };
@@ -22,6 +23,28 @@ int main(int argc, char **argv)
 	/* Parse additional options */
 	int opt;
 
+	struct mems mems_input[1] = { 0 };
+	struct mems mems_after_reserve[1] = { 0 };
+
+	/* Both Linux and McKernel cpus */
+	for (i = 0; i < 1; i++) {
+		int excess;
+
+		ret = mems_ls(&mems_input[i], "MemFree", 0.9);
+		INTERR(ret, "mems_ls returned %d\n", ret);
+
+		excess = mems_input[i].num_mem_chunks - 4;
+		if (excess > 0) {
+			ret = mems_shift(&mems_input[i], excess);
+			INTERR(ret, "mems_ls returned %d\n", ret);
+		}
+	}
+
+	int ret_expected[] = { -EACCES };
+	struct mems *mems_expected[] = {
+		&mems_after_reserve[0]
+	};
+
 	while ((opt = getopt(argc, argv, "ir")) != -1) {
 		switch (opt) {
 		case 'i':
@@ -31,6 +54,12 @@ int main(int argc, char **argv)
 			exit(0);
 			break;
 		case 'r':
+			/* Check there's no side effects */
+			if (mems_expected[0]) {
+				ret = mems_check_reserved(mems_expected[0], NULL);
+				OKNG(ret == 0, "reserved as expected\n");
+			}
+
 			/* Clean up */
 			ret = linux_rmmod(1);
 			INTERR(ret, "rmmod returned %d\n", ret);
@@ -42,26 +71,6 @@ int main(int argc, char **argv)
 		}
 	}
 
-	struct mems mems_input[1] = { 0 };
-
-	/* Both Linux and McKernel cpus */
-	for (i = 0; i < 1; i++) {
-		ret = mems_ls(&mems_input[i]);
-		INTERR(ret, "mems_ls returned %d\n", ret);
-	}
-
-	/* Spare two cpus for Linux */
-	for (i = 0; i < 1; i++) {
-		ret = mems_shift(&mems_input[i], 2);
-		INTERR(ret, "mems_shift returned %d\n", ret);
-	}
-
-	int ret_expected[] = { -EACCES };
-
-	struct mems *mems_expected[] = {
-		 NULL, /* don't care */
-	};
-
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
 		START("test-case: user privilege: %s\n", values[i]);
@@ -71,16 +80,6 @@ int main(int argc, char **argv)
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
-
-		if (mems_expected[i]) {
-			ret = mems_check_reserved(mems_expected[i]);
-			OKNG(ret == 0, "reserved as expected\n");
-
-			/* Clean up */
-			ret = ihk_release_mem(0, mems_input[i].mem_chunks,
-					      mems_input[i].num_mem_chunks);
-			INTERR(ret, "ihk_release_mem returned %d\n", ret);
-		}
 	}
 
 	ret = 0;
