@@ -209,6 +209,19 @@ foreach(target IN ITEMS
     ihk_os_kargs04
     ihk_os_kargs05
     ihk_os_kargs06
+    ihk_os_boot01
+    ihk_os_boot02
+    ihk_os_boot03
+    ihk_os_boot05
+    ihk_os_boot06
+    ihk_reserve_mem03
+    ihk_reserve_mem04
+    ihk_reserve_mem05
+    ihk_reserve_mem06
+    ihk_os_get_status01
+    ihk_os_get_status02
+    ihk_os_get_kmsg_size01
+    ihk_os_get_kmsg_size02
     )
 
   # Add target

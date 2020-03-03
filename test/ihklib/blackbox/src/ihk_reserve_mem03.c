@@ -7,6 +7,7 @@
 #include "params.h"
 #include "linux.h"
 
+const char param[] = "dev_index";
 const char *values[] = {
 	"INT_MIN",
 	"-1",
@@ -22,44 +23,53 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
-	int dev_index_input[] = {
-		 INT_MIN,
-		 -1,
-		 0,
-		 1,
-		 INT_MAX
-		};
-
-	struct mems mems_input[5] = { 0 };
-
-	/* All of McKernel CPUs */
-	for (i = 0; i < 5; i++) {
-		ret = mems_ls(&mems_input[i]);
-		INTERR(ret, "mems_ls returned %d\n", ret);
-
-		ret = mems_shift(&mems_input[i], 2);
-		INTERR(ret, "mems_shift returned %d\n", ret);
-	}
-
-	int ret_expected[] = {
-		  -ENOENT,
-		  -ENOENT,
-		  0,
-		  -ENOENT,
-		  -ENOENT,
-		};
-
-	struct mems *mems_expected[] = {
-		  NULL, /* don't care */
-		  NULL, /* don't care */
-		  &mems_input[2],
-		  NULL, /* don't care */
-		  NULL, /* don't care */
-		};
-
 	/* Precondition */
 	ret = linux_insmod();
 	INTERR(ret, "linux_insmod returned %d\n", ret);
+
+	int dev_index_input[] = {
+		INT_MIN,
+		-1,
+		0,
+		1,
+		INT_MAX
+	};
+
+	struct mems mems_input[5] = { 0 };
+	struct mems mems_after_reserve[5] = { 0 };
+
+	/* All of McKernel CPUs */
+	for (i = 0; i < 5; i++) {
+		int excess;
+
+		ret = mems_ls(&mems_input[i], "MemFree", 0.9);
+		INTERR(ret, "mems_ls returned %d\n", ret);
+
+		excess = mems_input[i].num_mem_chunks - 4;
+		if (excess > 0) {
+			ret = mems_shift(&mems_input[i], excess);
+			INTERR(ret, "mems_ls returned %d\n", ret);
+		}
+	}
+
+	ret = mems_copy(&mems_after_reserve[2], &mems_input[2]);
+	INTERR(ret, "mems_copy returned %d\n", ret);
+
+	int ret_expected[] = {
+		-ENOENT,
+		-ENOENT,
+		0,
+		-ENOENT,
+		-ENOENT,
+	};
+
+	struct mems *mems_expected[] = {
+		&mems_after_reserve[0],
+		&mems_after_reserve[1],
+		&mems_after_reserve[2],
+		&mems_after_reserve[3],
+		&mems_after_reserve[4],
+	};
 
 	/* Activate and check */
 	for (i = 0; i < 5; i++) {
@@ -73,13 +83,12 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 
 		if (mems_expected[i]) {
-			ret = mems_check_reserved(mems_expected[i]);
+			ret = mems_check_reserved(mems_expected[i], NULL);
 			OKNG(ret == 0, "reserved as expected\n");
 
 			/* Clean up */
-			ret = ihk_release_mem(0, mems_input[i].mem_chunks,
-					      mems_input[i].num_mem_chunks);
-			INTERR(ret, "ihk_release_mem returned %d\n", ret);
+			ret = mems_release();
+			INTERR(ret, "mems_release returned %d\n", ret);
 		}
 	}
 
