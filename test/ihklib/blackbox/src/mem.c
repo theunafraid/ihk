@@ -101,7 +101,7 @@ int mems_ls(struct mems *mems, char *type, double ratio)
 		goto out;
 	}
 
-	while (fscanf(fp, "id: %d, nr_free_pages: %ld",
+	while (fscanf(fp, "id: %d, nr_free_pages: %ld\n",
 		      &numa_node_number, &memfree) == 2) {
 		printf("%s: id: %d, %s: # of pages: %ld, "
 		       "size: %ld (%ld MiB)\n",
@@ -111,7 +111,7 @@ int mems_ls(struct mems *mems, char *type, double ratio)
 		memfree *= PAGE_SIZE;
 
 #define RESERVE_MEM_GRANULE (1024UL * 1024 * 4)
-		mems->mem_chunks[numa_node_number].size =
+		mems->mem_chunks[numa_node_number].size +=
 			((unsigned long)(memfree * ratio) &
 			 ~(RESERVE_MEM_GRANULE - 1));
 		mems->mem_chunks[numa_node_number].numa_node_number =
@@ -476,7 +476,7 @@ int mems_check_reserved(struct mems *expected, struct mems *margin)
 	return ret;
 }
 
-int mems_check_var(struct mems *expected, double allowed_var)
+int mems_check_var(double allowed_var)
 {
 	int ret;
 	int i;

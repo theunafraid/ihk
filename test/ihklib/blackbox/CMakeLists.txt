@@ -240,6 +240,7 @@ foreach(target IN ITEMS
     ihk_os_get_status02
     ihk_os_get_kmsg_size01
     ihk_os_get_kmsg_size02
+    ihk_reserve_mem13
     )
 
   # Add target

@@ -42,7 +42,6 @@ int main(int argc, char **argv)
 	double mem_taken_ratio[] = { 0, 0.3 };
 
 	int ret_expected[2] = { 0, -ENOMEM };
-	struct mems mems_free_on_reserve[2] = { 0 };
 
 	/* Precondition */
 	ret = linux_insmod();
@@ -108,12 +107,15 @@ int main(int argc, char **argv)
 			int id = mems_ref.mem_chunks[j].numa_node_number;
 
 			sprintf(cmd,
-				"cat /sys/devices/system/node/node%d/meminfo | "
-				"grep MemFree",
+				"awk 'BEGIN { ORS=\"\" }"
+				"/MemFree/ { "
+				"printf $0; "
+				"print \" (\"; print $4 / 1024; print \" MiB)\\n\";"
+				" }' /sys/devices/system/node/node%d/meminfo",
 				id);
 			system(cmd);
 		}
-		//goto out;
+
 		ret = mems_ls(&mems_input[i], "MemFree", 0.95);
 		INTERR(ret, "mems_ls returned %d\n", ret);
 
@@ -129,9 +131,11 @@ int main(int argc, char **argv)
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		ret = mems_check_var(&mems_free_on_reserve[i],
-				     allowed_var / (double)100);
-		OKNG(ret == 0, "NUMA-node variation of reserved size\n");
+		if (i == 0) {
+			ret = mems_check_var(allowed_var / (double)100);
+			OKNG(ret == 0,
+			     "NUMA-node variation of reserved size\n");
+		}
 
 		/* Clean up */
 		ret = mems_release();

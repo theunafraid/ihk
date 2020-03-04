@@ -24,7 +24,7 @@ void mems_dump_sum(struct mems *mems);
 int mems_compare(struct mems *result, struct mems *expected,
 		 struct mems *margin);
 int mems_check_reserved(struct mems *expected, struct mems *margin);
-int mems_check_var(struct mems *expected, double allowed_var);
+int mems_check_var(double allowed_var);
 int mems_check_ratio(struct mems *divisor, struct mems *ratios,
 		     double *ratios_out);
 int mems_check_total(unsigned long lower_limit);
