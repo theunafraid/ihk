@@ -10,6 +10,21 @@ cmake_minimum_required(VERSION 3.0)
 
 project(ihk_rmif_bbtest C)
 
+set(UNAME_R ${CMAKE_SYSTEM_VERSION} CACHE STRING "Kernel version to build against")
+set(KERNEL_DIR "/lib/modules/${UNAME_R}/build" CACHE STRING "kernel build directory")
+execute_process(COMMAND awk -F= "$1 == \"CONFIG_ARM64_64K_PAGES\" { print $2; exit; }" "${KERNEL_DIR}/.config"
+	OUTPUT_VARIABLE CONFIG_ARM64_64K_PAGES OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+	if(CONFIG_ARM64_64K_PAGES STREQUAL "y")
+		set(PAGE_SIZE "65536")
+	else()
+		set(PAGE_SIZE "4096")
+	endif()
+else()
+		set(PAGE_SIZE "4096")
+endif()
+message("PAGE_SIZE: ${PAGE_SIZE}")
+
 # CPPFLAGS
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
   add_definitions(-DBUILD_TARGET=smp-x86)
@@ -38,6 +53,9 @@ foreach(target IN ITEMS
     os
     )
   add_library(${target} STATIC src/${target}.c)
+  target_compile_definitions(${target}
+    PRIVATE -DPAGE_SIZE=${PAGE_SIZE}
+    )
   target_include_directories(${target}
     PRIVATE "${PROJECT_SOURCE_DIR}/include"
     PRIVATE "${WITH_MCK}/include"
@@ -248,9 +266,12 @@ foreach(target IN ITEMS
 
 endforeach()
 
-# utility shell functions
+# utility shell scripts
 configure_file(src/util.sh.in util.sh @ONLY)
 install(PROGRAMS ${CMAKE_BINARY_DIR}/util.sh DESTINATION bin)
+
+# utility awk scripts
+install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/src/zoneinfo.awk DESTINATION bin)
 
 # patches
 foreach(target IN ITEMS
