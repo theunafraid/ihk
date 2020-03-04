@@ -48,12 +48,12 @@ int main(int argc, char **argv)
 
 		ret = ihk_create_os(0);
 		INTERR(ret, "ihk_create_os returned %d\n", ret);
-		
+
 		ret = ihk_os_get_status(os_index_input[i]);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
-		
+
 		ret = ihk_destroy_os(0, 0);
 		INTERR(ret, "ihk_destroy_os returned %d\n", ret);
 	}
