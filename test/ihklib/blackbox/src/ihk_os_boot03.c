@@ -48,7 +48,7 @@ int main(int argc, char **argv)
 
 		ret = os_load();
 		INTERR(ret, "os_load returned %d\n", ret);
-		
+
 		ret = os_kargs();
 		INTERR(ret, "os_kargs returned %d\n", ret);
 

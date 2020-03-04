@@ -62,7 +62,7 @@ int main(int argc, char **argv)
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
-		
+
 		/* check if os status changed to the expected one */
 		os_wait_for_status(status_expected[i]);
 		ret = ihk_os_get_status(0);
@@ -87,7 +87,6 @@ int main(int argc, char **argv)
  out:
 	if (ihk_get_num_os_instances(0)) {
 		ihk_os_shutdown(0);
-		os_wait_for_status(IHK_STATUS_INACTIVE);
 		cpus_os_release();
 		mems_os_release();
 		ihk_destroy_os(0, 0);
