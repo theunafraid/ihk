@@ -68,10 +68,7 @@ int mems_copy(struct mems *dst, struct mems *src)
 int mems_ls(struct mems *mems, char *type, double ratio)
 {
 	int ret;
-	DIR *dp = NULL;
 	FILE *fp = NULL;
-	struct dirent *entp;
-	int max_numa_node_number = -1;
 
 	if (mems->mem_chunks == NULL) {
 		ret = mems_init(mems, MAX_NUM_MEM_CHUNKS);
@@ -80,63 +77,54 @@ int mems_ls(struct mems *mems, char *type, double ratio)
 		}
 	}
 
-	dp = opendir("/sys/devices/system/node/");
-	if (dp == NULL) {
+	char cmd[4096];
+	unsigned long memfree;
+	int numa_node_number = 0;
+	char keyword[4096];
+
+	if (strcmp(type, "MemTotal") == 0) {
+		sprintf(keyword, "%s", "present");
+	} else if (strcmp(type, "MemFree") == 0) {
+		sprintf(keyword, "%s", "nr_free_pages");
+	} else {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	sprintf(cmd,
+		"awk -v keyword=\"%s\" -f %s/bin/zoneinfo.awk /proc/zoneinfo",
+		keyword, QUOTE(CMAKE_INSTALL_PREFIX));
+
+	fp = popen(cmd, "r");
+	if (fp == NULL) {
 		ret = -errno;
 		goto out;
 	}
 
-	while (entp = readdir(dp)) {
-		char cmd[4096];
-		unsigned long memfree;
-		int numa_node_number;
-
-		ret = strncmp(entp->d_name, "node", 4);
-		if (ret) {
-			continue;
-		}
-
-		numa_node_number = atoi(entp->d_name + 4);
-		dprintf("%s: numa_node_number: %d\n",
-		       __func__, numa_node_number);
-
-		if (numa_node_number > max_numa_node_number) {
-			max_numa_node_number = numa_node_number;
-		}
-
-		sprintf(cmd,
-			"grep %s /sys/devices/system/node/%s/meminfo | "
-			"awk '{ print $4; }'",
-			type, entp->d_name);
-
-		fp = popen(cmd, "r");
-		if (fp == NULL) {
-			ret = -errno;
-			goto out;
-		}
-
-		ret = fscanf(fp, "%ld kb", &memfree);
-		dprintf("%s: %s: %ld\n", __func__, type, memfree);
-		if (ret == EOF) {
-			ret = -errno;
-			goto out;
-		}
-
-		pclose(fp);
-		fp = NULL;
+	while (fscanf(fp, "id: %d, nr_free_pages: %ld",
+		      &numa_node_number, &memfree) == 2) {
+		printf("%s: id: %d, %s: # of pages: %ld, "
+		       "size: %ld (%ld MiB)\n",
+		       __func__, numa_node_number, keyword,
+		       memfree, memfree * PAGE_SIZE,
+		       (memfree * PAGE_SIZE) >> 20);
+		memfree *= PAGE_SIZE;
 
 #define RESERVE_MEM_GRANULE (1024UL * 1024 * 4)
 		mems->mem_chunks[numa_node_number].size =
-			((unsigned long)(memfree * 1024 * ratio) &
+			((unsigned long)(memfree * ratio) &
 			 ~(RESERVE_MEM_GRANULE - 1));
 		mems->mem_chunks[numa_node_number].numa_node_number =
 			numa_node_number;
 	}
+	pclose(fp);
+	fp = NULL;
+
 	mems->mem_chunks = mremap(mems->mem_chunks,
 				  sizeof(struct ihk_mem_chunk) *
 				  mems->num_mem_chunks,
 				  sizeof(struct ihk_mem_chunk) *
-				  max_numa_node_number + 1,
+				  numa_node_number + 1,
 				  MREMAP_MAYMOVE);
 	if (mems->mem_chunks == MAP_FAILED) {
 		int errno_save = errno;
@@ -146,16 +134,12 @@ int mems_ls(struct mems *mems, char *type, double ratio)
 		goto out;
 	}
 
-	mems->num_mem_chunks = max_numa_node_number + 1;
+	mems->num_mem_chunks = numa_node_number + 1;
 	INFO("# of NUMA nodes: %d\n", mems->num_mem_chunks);
 	ret = 0;
  out:
 	if (fp) {
 		pclose(fp);
-	}
-
-	if (dp) {
-		closedir(dp);
 	}
 
 	return ret;
