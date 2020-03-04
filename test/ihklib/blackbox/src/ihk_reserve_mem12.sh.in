@@ -22,10 +22,9 @@ if [ "$cpu_model" == "a64fx" ]; then
 #    sudo bash -c "echo $((8*1024*1024*1024)) > memory.memsw.limit_in_bytes"
 #    sudo bash -c "echo $((8*1024*1024*1024)) > memory.limit_in_bytes"
     popd > /dev/null
-
-    min_free_kbytes=$(cat /proc/sys/vm/min_free_kbytes)
-    sudo bash -c 'echo 0 > /proc/sys/vm/min_free_kbytes'
 fi
+
+init_oom_killer
 
 sudo timeout 300 @CMAKE_INSTALL_PREFIX@/bin/ihk_reserve_mem12 -u $(id -u) -g $(id -g)
 ret=$?
@@ -43,9 +42,10 @@ if [ "$cpu_model" == "a64fx" ]; then
     sudo bash -c "echo $limit_in_bytes > memory.limit_in_bytes"
     sudo bash -c "echo $memsw_limit_in_bytes > memory.memsw.limit_in_bytes"
     popd > /dev/null
-
-    sudo bash -c "echo $min_free_kbytes > /proc/sys/vm/min_free_kbytes"
 fi
+
+fini_oom_killer
+
 
 if [ "${AUTOTEST_HOME}" != "" ]; then
     # Pass OK/NG to runtestlist.sh
