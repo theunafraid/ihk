@@ -107,13 +107,17 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
+		int j;
+
 		START("test-case: %s: %s\n", param, messages[i]);
-		
+
+		ret = linux_wait_for_permission(0);
+		INTERR(ret, "/dev/mcos0 permission didn't change\n");
+
 		ret = ihk_os_boot(0);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
-
 	}
 
 	ret = 0;
