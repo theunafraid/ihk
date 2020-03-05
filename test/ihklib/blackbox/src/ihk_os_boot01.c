@@ -1,5 +1,7 @@
+#include <string.h>
 #include <errno.h>
 #include <ihklib.h>
+#include <ihk/ihklib_private.h>
 #include "util.h"
 #include "okng.h"
 #include "cpu.h"
@@ -28,6 +30,8 @@ int main(int argc, char **argv)
 		IHK_STATUS_RUNNING,
 	};
 
+	char kmsg_input[2][IHK_KMSG_SIZE] = { 0 };
+
 	/* Precondition */
 	ret = linux_insmod();
 	INTERR(ret, "linux_insmod returned %d\n", ret);
@@ -40,6 +44,8 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 2; i++) {
+		char *kmsg = NULL;
+
 		START("test-case: %s: %s\n", param, messages[i]);
 
 		/* Precondition */
@@ -65,6 +71,15 @@ int main(int argc, char **argv)
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
+		if (ret == 0) {
+			ret = ihk_os_kmsg(0, kmsg_input[i], IHK_KMSG_SIZE);
+			INTERR(ret < 0, "ihk_os_kmsg returned %d\n", ret);
+
+			kmsg = strstr(kmsg_input[i], "booted");
+			OKNG(kmsg != NULL,
+			     "exptected string found in kmsg\n");
+		}
+
 		/* Check OS status and clean up*/
 		if (ihk_get_num_os_instances(0)) {
 			os_wait_for_status(status_expected[i]);
@@ -85,7 +100,6 @@ int main(int argc, char **argv)
 			ret = ihk_destroy_os(0, 0);
 			INTERR(ret, "ihk_destroy_os returned %d\n", ret);
 		}
-
 	}
 
 	ret = 0;
