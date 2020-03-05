@@ -1,3 +1,4 @@
+#include <string.h>
 #include <limits.h>
 #include <errno.h>
 #include <ihklib.h>
@@ -82,6 +83,14 @@ int main(int argc, char **argv)
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
+		if (ret == 0) {
+			char *kmsg = NULL;
+
+			kmsg = strstr(kmsg_input[i], "booted");
+			OKNG(kmsg != NULL,
+			     "expected string found in kmsg\n");
+		}
+
 		ret = ihk_os_shutdown(0);
 		INTERR(ret, "ihk_os_shutdown returned %d\n", ret);
 
@@ -98,7 +107,6 @@ int main(int argc, char **argv)
 out:
 	if (ihk_get_num_os_instances(0)) {
 		ihk_os_shutdown(0);
-		os_wait_for_status(IHK_STATUS_INACTIVE);
 		cpus_os_release();
 		mems_os_release();
 		ihk_destroy_os(0, 0);
@@ -109,4 +117,3 @@ out:
 
 	return ret;
 }
-

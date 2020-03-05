@@ -1,3 +1,4 @@
+#include <string.h>
 #include <errno.h>
 #include <ihklib.h>
 #include <ihk/ihklib_private.h>
@@ -39,7 +40,6 @@ int main(int argc, char **argv)
 		0,
 	};
 
-
 	for (i = 0; i < 2; i++) {
 		char *kmsg = NULL;
 
@@ -71,9 +71,11 @@ int main(int argc, char **argv)
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		kmsg = strstr(kmsg_input[i], "booted");
-		OKNG((i == 0) ? (kmsg == NULL) : (kmsg != NULL),
-			"returned as expected\n");
+		if (ret == 0) {
+			kmsg = strstr(kmsg_input[i], "booted");
+			OKNG(kmsg != NULL,
+			     "expected string found in kmsg\n");
+		}
 
 		if (i == 1) {
 			ret = ihk_os_shutdown(0);
@@ -93,7 +95,6 @@ int main(int argc, char **argv)
 out:
 	if (ihk_get_num_os_instances(0)) {
 		ihk_os_shutdown(0);
-		os_wait_for_status(IHK_STATUS_INACTIVE);
 		cpus_os_release();
 		mems_os_release();
 		ihk_destroy_os(0, 0);
