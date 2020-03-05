@@ -50,7 +50,7 @@ int main(int argc, char **argv)
 			INTERR(ret, "ihk_create_os returned %d\n", ret);
 
 			/* make /dev/mcos0 accessible to non-root */
-			ret = linux_chmod(params.uid, params.gid);
+			ret = linux_chmod(0);
 			INTERR(ret, "linux_chmod returned %d\n", ret);
 
 			ret = cpus_os_assign();
@@ -110,9 +110,6 @@ int main(int argc, char **argv)
 		int j;
 
 		START("test-case: %s: %s\n", param, messages[i]);
-
-		ret = linux_wait_for_permission(0);
-		INTERR(ret, "/dev/mcos0 permission didn't change\n");
 
 		ret = ihk_os_boot(0);
 		OKNG(ret == ret_expected[i],
