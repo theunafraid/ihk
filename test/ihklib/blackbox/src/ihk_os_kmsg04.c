@@ -1,3 +1,6 @@
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
 #include <limits.h>
 #include <errno.h>
 #include <ihklib.h>
@@ -9,9 +12,6 @@
 #include "os.h"
 #include "params.h"
 #include "linux.h"
-#include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
 
 const char param[] = "kmsg";
 const char *values[] = {
@@ -42,7 +42,7 @@ int main(int argc, char **argv)
 	};
 
 	int ret_expected[2] = {
-		-EINVAL,
+		-EFAULT,
 		0,
 	};
 
@@ -79,9 +79,10 @@ int main(int argc, char **argv)
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		if (i == 1) {
+		if (ret == 0) {
 			kmsg = strstr(kmsg_input[i], "booted");
-			OKNG(kmsg, "returned as expected\n");
+			OKNG(kmsg != NULL,
+			     "expected string found in kmsg\n");
 		}
 
 		ret = ihk_os_shutdown(0);
@@ -105,7 +106,6 @@ out:
 	}
 	if (ihk_get_num_os_instances(0)) {
 		ihk_os_shutdown(0);
-		os_wait_for_status(IHK_STATUS_INACTIVE);
 		cpus_os_release();
 		mems_os_release();
 		ihk_destroy_os(0, 0);
