@@ -77,7 +77,7 @@ int main(int argc, char **argv)
 
 			kmsg = strstr(kmsg_input[i], "booted");
 			OKNG(kmsg != NULL,
-			     "exptected string found in kmsg\n");
+			     "expected string found in kmsg\n");
 		}
 
 		/* Check OS status and clean up*/
