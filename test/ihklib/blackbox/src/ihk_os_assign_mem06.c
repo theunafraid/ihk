@@ -42,7 +42,7 @@ int main(int argc, char **argv)
 			ret = ihk_create_os(0);
 			INTERR(ret, "ihk_create_os returned %d\n", ret);
 
-			ret = linux_chmod(params.uid, params.gid);
+			ret = linux_chmod(0);
 			INTERR(ret, "linux_chmod returned %d\n", ret);
 
 			exit(0);
