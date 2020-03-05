@@ -73,6 +73,7 @@ foreach(target IN ITEMS
   add_library(${target} STATIC src/${target}.c)
   target_include_directories(${target}
     PRIVATE "${PROJECT_SOURCE_DIR}/include"
+    PRIVATE "${WITH_MCK}/include"
     )
 endforeach()
 
@@ -241,6 +242,23 @@ foreach(target IN ITEMS
     ihk_os_get_kmsg_size01
     ihk_os_get_kmsg_size02
     ihk_reserve_mem13
+    ihk_os_kmsg01
+    ihk_os_kmsg02
+    ihk_os_kmsg03
+    ihk_os_kmsg04
+    ihk_os_kmsg05
+    ihk_os_clear_kmsg01
+    ihk_os_clear_kmsg02
+    ihk_os_clear_kmsg03
+    ihk_os_clear_kmsg04
+    ihk_os_get_num_numa_nodes01
+    ihk_os_get_num_numa_nodes02
+    ihk_os_get_num_pagesizes01
+    ihk_os_get_num_pagesizes02
+    ihk_os_get_pagesizes01
+    ihk_os_get_pagesizes02
+    ihk_os_get_pagesizes03
+    ihk_os_get_pagesizes04
     )
 
   # Add target

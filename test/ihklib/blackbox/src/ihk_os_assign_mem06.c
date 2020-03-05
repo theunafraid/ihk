@@ -19,6 +19,13 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
+	struct mems mems_input[1] = { 0 };
+	struct mems mems_after_assign[1] = { 0 };
+	struct mems *mems_expected[1] = {
+		&mems_after_assign[0]
+	};
+	int ret_expected[] = { -EPERM };
+
 	/* Parse additional options */
 	int opt;
 
@@ -41,6 +48,12 @@ int main(int argc, char **argv)
 			exit(0);
 			break;
 		case 'r':
+			/* Check there's no side effects */
+			if (mems_expected[0]) {
+				ret = mems_check_assigned(mems_expected[0]);
+				OKNG(ret == 0, "assigned as expected\n");
+			}
+
 			/* Clean up */
 			ret = mems_release();
 			INTERR(ret, "mems_release returned %d\n", ret);
@@ -55,8 +68,6 @@ int main(int argc, char **argv)
 		}
 	}
 
-	struct mems mems_input[1] = { 0 };
-	int ret_expected[] = { -EPERM };
 
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {

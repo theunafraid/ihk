@@ -7,6 +7,8 @@
 #include "util.h"
 #include "okng.h"
 #include "linux.h"
+#include <sys/stat.h>
+#include <ihklib.h>
 
 int linux_insmod(void)
 {
@@ -33,6 +35,37 @@ int linux_insmod(void)
 	ret = WEXITSTATUS(ret);
 	INTERR(ret, "%s returned %d\n", cmd, ret);
 
+out:
+	return ret;
+}
+
+int linux_testchmod(int dev_index)
+{
+	int i, ret = 0;
+	int num_os_instances;
+	int *os_indices = NULL;
+
+	ret = ihk_get_num_os_instances(dev_index);
+	INTERR(ret < 0,
+		"ihk_get_num_os_instances failed with errno %d\n", errno);
+	num_os_instances = ret;
+
+	os_indices = calloc(num_os_instances, sizeof(int));
+	INTERR(!os_indices, "calloc failed with errno: %d\n", errno);
+
+	ret = ihk_get_os_instances(dev_index, os_indices, num_os_instances);
+	INTERR(ret, "ihk_get_os_instances failed with errno: %d\n", errno);
+
+	for (i = 0; i < num_os_instances; i++) {
+		char os_filename[4096];
+
+		sprintf(os_filename, "/dev/mcos%d", os_indices[i]);
+		ret = chmod(os_filename, S_IRGRP | S_IWGRP |
+					S_IROTH | S_IWOTH);
+		INTERR(ret, "chmod failed with errno; %d\n", errno);
+	}
+
+	ret = 0;
 out:
 	return ret;
 }
