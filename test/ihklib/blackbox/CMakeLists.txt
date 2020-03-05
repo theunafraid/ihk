@@ -250,15 +250,15 @@ foreach(target IN ITEMS
     ihk_os_clear_kmsg01
     ihk_os_clear_kmsg02
     ihk_os_clear_kmsg03
-    ihk_os_clear_kmsg04
-    ihk_os_get_num_numa_nodes01
-    ihk_os_get_num_numa_nodes02
-    ihk_os_get_num_pagesizes01
-    ihk_os_get_num_pagesizes02
-    ihk_os_get_pagesizes01
-    ihk_os_get_pagesizes02
-    ihk_os_get_pagesizes03
-    ihk_os_get_pagesizes04
+#    ihk_os_clear_kmsg04
+#    ihk_os_get_num_numa_nodes01
+#    ihk_os_get_num_numa_nodes02
+#    ihk_os_get_num_pagesizes01
+#    ihk_os_get_num_pagesizes02
+#    ihk_os_get_pagesizes01
+#    ihk_os_get_pagesizes02
+#    ihk_os_get_pagesizes03
+#    ihk_os_get_pagesizes04
     )
 
   # Add target
