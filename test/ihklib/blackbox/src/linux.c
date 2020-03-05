@@ -39,7 +39,7 @@ out:
 	return ret;
 }
 
-int linux_testchmod(int dev_index)
+int linux_chmod(int dev_index)
 {
 	int i, ret = 0;
 	int num_os_instances;
@@ -67,42 +67,6 @@ int linux_testchmod(int dev_index)
 
 	ret = 0;
 out:
-	return ret;
-}
-
-int linux_chmod(uid_t uid, gid_t gid)
-{
-	int ret;
-	char cmd[1024];
-
-	sprintf(cmd, "chmod og+rw /dev/mcos*", uid, gid);
-	INFO("%s\n", cmd);
-	ret = system(cmd);
-	ret = WEXITSTATUS(ret);
-	INTERR(ret, "%s returned %d\n", cmd, ret);
-
- out:
-	return ret;
-
-}
-
-int linux_wait_for_permission(int index)
-{
-	int ret;
-	int j;
-	char cmd[4096];
-
-	INFO("waiting for change of /dev/mcos0 permission...\n");
-	for (j = 0; j = 10; j++) {
-		sprintf(cmd, "/dev/mcos%d", index);
-		ret = access(cmd, R_OK);
-		if (!ret) {
-			break;
-		}
-		INFO("access /dev/mcos0 returned %d\n", ret);
-			usleep(100000);
-	}
-
 	return ret;
 }
 
