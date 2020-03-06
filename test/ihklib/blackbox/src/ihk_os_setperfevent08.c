@@ -1,0 +1,159 @@
+#include <stdio.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <ihklib.h>
+#include "util.h"
+#include "okng.h"
+#include "mem.h"
+#include "cpu.h"
+#include "os.h"
+#include "params.h"
+#include "linux.h"
+#include "user.h"
+#include "perf.h"
+
+#define NEVENTS 2
+
+const char param[] = "number of event types";
+const char *values[] = {
+	"2 (instruction count and load instruction count)"
+};
+
+int main(int argc, char **argv)
+{
+	int ret;
+	int i;
+	FILE *fp = NULL;
+
+	params_getopt(argc, argv);
+
+	/* Precondition */
+	ret = linux_insmod(0);
+	INTERR(ret, "linux_insmod returned %d\n", ret);
+
+	ret = cpus_reserve();
+	INTERR(ret, "cpus_reserve returned %d\n", ret);
+
+	ret = mems_reserve();
+	INTERR(ret, "mems_reserve returned %d\n", ret);
+
+	struct ihk_perf_event_attr attr_input[NEVENTS] = {
+		{
+		 .config = ARMV8_PMUV3_PERFCTR_INST_RETIRED,
+		 .disabled = 1,
+		 .pinned = 0,
+		 .exclude_user = 0,
+		 .exclude_kernel = 1,
+		 .exclude_hv = 1,
+		 .exclude_idle = 1
+		},
+		{
+		 .config = ARMV8_PMUV3_PERFCTR_LD_RETIRED,
+		 .disabled = 1,
+		 .pinned = 0,
+		 .exclude_user = 0,
+		 .exclude_kernel = 1,
+		 .exclude_hv = 1,
+		 .exclude_idle = 1
+		},
+	};
+
+	int ret_expected[1] = { 2 };
+
+	unsigned long count_expected[NEVENTS] = { 2000000, 1000000 };
+
+	pid_t pid = -1;
+	/* Activate and check */
+	for (i = 0; i < 1; i++) {
+		int errno_save;
+		int ncpu;
+		char cmd[4096];
+		unsigned long counts[NEVENTS];
+		int wstatus;
+		int j;
+
+		START("test-case: %s: %s\n", param, values[i]);
+
+		ret = ihk_create_os(0);
+		INTERR(ret, "ihk_create_os returned %d\n", ret);
+
+		ret = cpus_os_assign();
+		INTERR(ret, "cpus_os_assign returned %d\n", ret);
+
+		ret = mems_os_assign();
+		INTERR(ret, "mems_os_assign returned %d\n", ret);
+
+		ret = os_load();
+		INTERR(ret, "os_load returned %d\n", ret);
+
+		ret = os_kargs();
+		INTERR(ret, "os_kargs returned %d\n", ret);
+
+		ret = ihk_os_boot(0);
+		INTERR(ret, "ihk_os_boot returned %d\n", ret);
+
+		ret = ihk_os_setperfevent(0, attr_input, NEVENTS);
+		OKNG(ret == ret_expected[i],
+		     "return value: %d, expected: %d\n",
+		     ret, ret_expected[i]);
+
+		ret = ihk_os_perfctl(0, PERF_EVENT_ENABLE);
+		INTERR(ret, "PERF_EVENT_ENABLE returned %d\n", ret);
+
+		ret = user_fork_exec("nop_ldr", &pid);
+		INTERR(ret < 0, "user_fork_exec returned %d\n", ret);
+
+		ret = waitpid(pid, &wstatus, 0);
+		INTERR(ret < 0, "waitpid returned %d\n", errno);
+		pid = -1;
+
+		ret = ihk_os_perfctl(0, PERF_EVENT_DISABLE);
+		INTERR(ret, "PERF_EVENT_DISABLE returned %d\n", ret);
+
+		ret = ihk_os_getperfevent(0, counts, NEVENTS);
+		INTERR(ret, "ihk_os_getperfevent returned %d\n",
+		       ret);
+
+		for (j = 0; j < NEVENTS; j++) {
+			OKNG(counts[j] >= count_expected[j] &&
+			     counts[j] < count_expected[j] * 1.1,
+			     "event count (%ld) is within expected range\n",
+			     counts[j]);
+		}
+
+		ret = ihk_os_perfctl(0, PERF_EVENT_DISABLE);
+		INTERR(ret, "PERF_EVENT_DISABLE returned %d\n", ret);
+
+		ret = ihk_os_shutdown(0);
+		INTERR(ret, "ihk_os_shutdown returned %d\n", ret);
+
+		ret = cpus_os_release();
+		INTERR(ret, "cpus_os_release returned %d\n", ret);
+
+		ret = mems_os_release();
+		INTERR(ret, "mems_os_release returned %d\n", ret);
+
+		ret = ihk_destroy_os(0, 0);
+		INTERR(ret, "ihk_destroy_os returned %d\n", ret);
+	}
+
+	ret = 0;
+ out:
+	if (pid != -1) {
+		user_wait(&pid);
+		linux_kill_mcexec();
+	}
+	if (ihk_get_num_os_instances(0)) {
+		ihk_os_shutdown(0);
+		cpus_os_release();
+		mems_os_release();
+		ihk_destroy_os(0, 0);
+	}
+	cpus_release();
+	mems_release();
+	linux_rmmod(0);
+
+	return ret;
+}
+
