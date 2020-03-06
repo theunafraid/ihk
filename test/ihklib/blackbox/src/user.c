@@ -58,7 +58,11 @@ int user_wait(pid_t *pid)
 				ret = -EINVAL;
 				goto out;
 			}
-			break;
+			INFO("process with pid %d exited with status %d\n",
+			     *pid, WEXITSTATUS(wstatus));
+			*pid = -1;
+			ret = 0;
+			goto out;
 		}
 
 		if (ret == 0) {
@@ -75,10 +79,6 @@ int user_wait(pid_t *pid)
 			goto out;
 		}
 	}
-
-	INFO("child: status: %d\n", WEXITSTATUS(wstatus));
-	*pid = -1;
-	ret = 0;
  out:
 	return ret;
 }
