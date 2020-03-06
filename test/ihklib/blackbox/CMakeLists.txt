@@ -77,6 +77,16 @@ foreach(target IN ITEMS
     )
 endforeach()
 
+# library used by program running on McKernel
+foreach(target IN ITEMS
+    mckernel
+    )
+  add_library(${target} STATIC src/${target}.c)
+  target_include_directories(${target}
+    PRIVATE "${PROJECT_SOURCE_DIR}/include"
+    )
+endforeach()
+
 foreach(target IN ITEMS
     ihk_reserve_cpu01
     ihk_reserve_cpu02
@@ -260,7 +270,9 @@ foreach(target IN ITEMS
 #    ihk_os_get_pagesizes03
 #    ihk_os_get_pagesizes04
 ihk_os_get_eventfd08
-    )
+ihk_os_setperfevent07
+ihk_os_setperfevent08
+)
 
   # Add target
   add_executable(${target} src/${target}.c)
@@ -301,7 +313,7 @@ foreach(target IN ITEMS
   install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/src/${target}.patch DESTINATION bin)
 endforeach()
 
-# programs to run on McKernel
+# programs running on McKernel
 foreach(target IN ITEMS
     panic
     hungup
@@ -311,6 +323,30 @@ foreach(target IN ITEMS
 
   # Add target
   add_executable(${target} src/${target}.c)
+
+  # Install
+  install(TARGETS ${target} DESTINATION bin)
+
+endforeach()
+
+# programs running on McKernel using mckernel.c
+foreach(target IN ITEMS
+    nop
+    nop_ldr
+    )
+
+  # Add target
+  add_executable(${target} src/${target}.c)
+
+  # -I
+  target_include_directories(${target}
+    PRIVATE "${PROJECT_SOURCE_DIR}/include"
+    )
+
+  # -l
+  target_link_libraries(${target}
+    PRIVATE mckernel
+    )
 
   # Install
   install(TARGETS ${target} DESTINATION bin)
