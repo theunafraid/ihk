@@ -259,6 +259,7 @@ foreach(target IN ITEMS
 #    ihk_os_get_pagesizes02
 #    ihk_os_get_pagesizes03
 #    ihk_os_get_pagesizes04
+ihk_os_get_eventfd08
     )
 
   # Add target
@@ -305,6 +306,7 @@ foreach(target IN ITEMS
     panic
     hungup
     delay_with_interrupt_disabled
+    oom
     )
 
   # Add target
