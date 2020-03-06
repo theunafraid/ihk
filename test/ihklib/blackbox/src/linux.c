@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <signal.h>
 #include <string.h>
 #include <errno.h>
 #include "util.h"
@@ -198,12 +199,52 @@ int linux_kill_mcexec(void)
 {
 	int ret;
 	char cmd[1024];
-	int wstatus;
+	int pid;
+	FILE *fp = NULL;
+	int killing = 0;
 
-	sprintf(cmd, "pidof mcexec | xargs -r kill -9");
-	ret = system(cmd);
-	wstatus = WEXITSTATUS(ret);
-	INFO("kill mcexec returned %d\n", wstatus);
+	while (1) {
+		sprintf(cmd, "pidof mcexec | awk '{ print $1 }'");
 
-	return wstatus;
+		if ((fp = popen(cmd, "r")) == NULL) {
+			int errno_save = errno;
+
+			dprintf("%s: error: popen returned %d\n",
+				__func__, errno_save);
+			ret = -errno_save;
+			goto out;
+		}
+
+		ret = fscanf(fp, "%d\n", &pid);
+		if (ret == EOF || ret == 0) {
+			ret = 0;
+			goto out;
+		}
+
+		if (killing) {
+			goto next;
+		}
+
+		if (ret == 1) {
+			INFO("killing %d...\n", pid);
+			ret = kill(pid, 9);
+			if (ret) {
+				int errno_save = errno;
+
+				dprintf("%s: error: kill returned %d\n",
+					__func__, errno_save);
+				ret = -errno_save;
+				goto out;
+			}
+			killing = 1;
+		}
+	next:
+		pclose(fp);
+		fp = NULL;
+	}
+ out:
+	if (fp) {
+		pclose(fp);
+	}
+	return ret;
 }
