@@ -76,14 +76,18 @@ int main(int argc, char **argv)
 		ret = ihk_os_boot(0);
 		INTERR(ret, "ihk_os_boot returned %d\n", ret);
 
+		ret = ihk_os_kmsg(0, kmsg[i], IHK_KMSG_SIZE);
+		OKNG(strstr(kmsg[i], "booted"), "expected string found\n");
+
 		ret = ihk_os_clear_kmsg(os_index_input[i]);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
 		ret = ihk_os_kmsg(0, kmsg[i], IHK_KMSG_SIZE);
-		OKNG((i == 2) ? !(strlen(kmsg[i])) : (strlen(kmsg[i])),
-			"cleared as expected\n");
+		OKNG(i == 2 ? strlen(kmsg[i]) == 0 :
+		     strstr(kmsg[i], "booted") != NULL,
+			"cleared / untouched as expected\n");
 
 		ret = ihk_os_shutdown(0);
 		INTERR(ret, "ihk_os_shutdown returned %d\n", ret);
@@ -101,7 +105,6 @@ int main(int argc, char **argv)
 out:
 	if (ihk_get_num_os_instances(0)) {
 		ihk_os_shutdown(0);
-		os_wait_for_status(IHK_STATUS_INACTIVE);
 		cpus_os_release();
 		mems_os_release();
 		ihk_destroy_os(0, 0);
