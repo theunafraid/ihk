@@ -260,19 +260,28 @@ foreach(target IN ITEMS
     ihk_os_clear_kmsg01
     ihk_os_clear_kmsg02
     ihk_os_clear_kmsg03
-#    ihk_os_clear_kmsg04
+    ihk_os_get_eventfd08
+    ihk_os_setperfevent07
+    ihk_os_setperfevent08
+    ihk_os_clear_kmsg04
 #    ihk_os_get_num_numa_nodes01
 #    ihk_os_get_num_numa_nodes02
 #    ihk_os_get_num_pagesizes01
 #    ihk_os_get_num_pagesizes02
-#    ihk_os_get_pagesizes01
-#    ihk_os_get_pagesizes02
-#    ihk_os_get_pagesizes03
-#    ihk_os_get_pagesizes04
-ihk_os_get_eventfd08
-ihk_os_setperfevent07
-ihk_os_setperfevent08
-)
+    ihk_os_get_pagesizes01
+    ihk_os_get_pagesizes02
+    ihk_os_get_pagesizes03
+    ihk_os_get_pagesizes04
+#    ihk_os_set_ikc_map01
+#    ihk_os_set_ikc_map02
+#    ihk_os_set_ikc_map03
+#    ihk_os_set_ikc_map04
+    ihk_os_set_ikc_map05
+    ihk_os_set_ikc_map06
+    ihk_os_set_ikc_map08
+    ihk_os_get_ikc_map01
+    ihk_os_get_ikc_map03
+    )
 
   # Add target
   add_executable(${target} src/${target}.c)
