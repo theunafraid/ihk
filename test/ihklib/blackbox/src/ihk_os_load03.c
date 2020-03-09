@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 	int ret_expected[] = { 0, -EBUSY };
 
 	/* Precondition */
-	ret = linux_insmod();
+	ret = linux_insmod(0);
 	INTERR(ret, "linux_insmod returned %d\n", ret);
 
 	ret = cpus_reserve();

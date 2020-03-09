@@ -59,7 +59,7 @@ int main(int argc, char **argv)
 	double ratios[2][MAX_NUM_MEM_CHUNKS] = { 0 };
 
 	/* Precondition */
-	ret = linux_insmod();
+	ret = linux_insmod(0);
 	INTERR(ret, "linux_insmod returned %d\n", ret);
 
 	/* Activate and check */

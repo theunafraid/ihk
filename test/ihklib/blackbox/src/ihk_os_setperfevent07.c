@@ -16,7 +16,6 @@
 const char param[] = "event type";
 const char *values[] = {
 	"instruction count",
-	"load instruction count"
 };
 
 int main(int argc, char **argv)
@@ -143,4 +142,3 @@ int main(int argc, char **argv)
 
 	return ret;
 }
-
