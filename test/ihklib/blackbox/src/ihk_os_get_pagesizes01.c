@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <string.h>
 #include <ihklib.h>
 #include <ihk/ihklib_private.h>
 #include "util.h"
@@ -15,29 +16,6 @@ const char *values[] = {
 	"without OS instance",
 	"with OS instance",
 };
-
-int pagesize_cmp(long *acquired, long *expected, int num_entries)
-{
-	int i, ret = 0;
-
-	if (!acquired || !expected) {
-		ret = -EINVAL;
-		goto out;
-	}
-
-	for (i = 0; i < num_entries; i++) {
-		printf("acquired: %ld expected: %ld\n",
-				acquired[i], expected[i]);
-		if (acquired[i] != expected[i]) {
-			ret = 1;
-			goto out;
-		}
-	}
-
-	ret = 0;
-out:
-	return ret;
-}
 
 int main(int argc, char **argv)
 {
@@ -61,20 +39,18 @@ int main(int argc, char **argv)
 		0,
 	};
 
-	int ret_expected_compare[2] = {
-		1,
-		0,
-	};
-
-	long expected_pagesizes[IHK_MAX_NUM_PGSIZES] = {
-		1UL << 12,
-		1UL << 16,
-		1UL << 21,
-		1UL << 25,
-		1UL << 30,
-		1UL << 34,
-		1UL << 29,
-		1UL << 42,
+	long pagesizes_expected[2][IHK_MAX_NUM_PGSIZES] = {
+		{ 0 },
+		{
+		 1UL << 12,
+		 1UL << 16,
+		 1UL << 21,
+		 1UL << 25,
+		 1UL << 30,
+		 1UL << 34,
+		 1UL << 29,
+		 1UL << 42,
+		}
 	};
 
 	for (i = 0; i < 2; i++) {
@@ -107,14 +83,17 @@ int main(int argc, char **argv)
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		ret = pagesize_cmp(pagesizes_input[i], expected_pagesizes,
-				IHK_MAX_NUM_PGSIZES);
-		OKNG(ret == ret_expected_compare[i],
-				"get pagesizes as expected\n");
+		ret = memcmp(pagesizes_input[i], pagesizes_expected[i],
+			     IHK_MAX_NUM_PGSIZES * sizeof(long));
+		OKNG(ret == 0, "get pagesizes as expected\n");
 
 		if (i == 1) {
 			ret = ihk_os_shutdown(0);
 			INTERR(ret, "ihk_os_shutdown returned %d\n", ret);
+
+			ret = os_wait_for_status(IHK_STATUS_INACTIVE);
+			INTERR(ret, "os status didn't change to %d\n",
+			       IHK_STATUS_INACTIVE);
 
 			ret = mems_os_release();
 			INTERR(ret, "mems_os_release returned %d\n", ret);
@@ -131,6 +110,7 @@ int main(int argc, char **argv)
 out:
 	if (ihk_get_num_os_instances(0)) {
 		ihk_os_shutdown(0);
+		os_wait_for_status(IHK_STATUS_INACTIVE);
 		cpus_os_release();
 		mems_os_release();
 		ihk_destroy_os(0, 0);
