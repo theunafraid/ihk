@@ -61,6 +61,10 @@ int main(int argc, char **argv)
 
 			ret = ihk_os_boot(0);
 			INTERR(ret, "ihk_os_boot returned %d\n", ret);
+
+			ret = ihk_os_kmsg(0, kmsg[i], IHK_KMSG_SIZE);
+			OKNG(strstr(kmsg[i], "booted"),
+			     "expected string found\n");
 		}
 
 		ret = ihk_os_clear_kmsg(0);
@@ -89,7 +93,6 @@ int main(int argc, char **argv)
 out:
 	if (ihk_get_num_os_instances(0)) {
 		ihk_os_shutdown(0);
-		os_wait_for_status(IHK_STATUS_INACTIVE);
 		cpus_os_release();
 		mems_os_release();
 		ihk_destroy_os(0, 0);

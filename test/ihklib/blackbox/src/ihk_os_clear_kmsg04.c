@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <errno.h>
 #include <ihklib.h>
 #include <ihk/ihklib_private.h>
@@ -7,15 +8,14 @@
 #include "mem.h"
 #include "os.h"
 #include "params.h"
-#include <string.h>
 #include "linux.h"
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
 
-const char param[] = "os status";
+const char param[] = "kmsg";
 const char *values[] = {
-	"before boot",
-	"after boot",
+	"check if \"booted\" is cleared",
 };
 
 int main(int argc, char **argv)
@@ -25,6 +25,7 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
+	/* Precondition */
 	ret = linux_insmod();
 	INTERR(ret, "linux_insmod returned %d\n", ret);
 
@@ -34,14 +35,13 @@ int main(int argc, char **argv)
 	ret = mems_reserve();
 	INTERR(ret, "mems_reserve returned %d\n", ret);
 
-	char kmsg[2][IHK_KMSG_SIZE] = { 0 };
-	int ret_expected[2] = {
-		-EINVAL,
-		0,
-	};
+	char before_clear_kmsg[IHK_KMSG_SIZE] = { 0 };
+	char after_clear_kmsg[IHK_KMSG_SIZE] = { 0 };
 
+	int ret_expected[1] = { 0 };
 
-	for (i = 0; i < 2; i++) {
+	for (i = 0; i < 1; i++) {
+		char *kmsg = NULL;
 
 		START("test-case: %s: %s\n", param, values[i]);
 
@@ -60,28 +60,28 @@ int main(int argc, char **argv)
 		ret = os_kargs();
 		INTERR(ret, "os_kargs returned %d\n", ret);
 
-		/* Precondition */
-		if (i == 1) {
-			ret = ihk_os_boot(0);
-			INTERR(ret, "ihk_os_boot returned %d\n", ret);
+		ret = ihk_os_boot(0);
+		INTERR(ret, "ihk_os_boot returned %d\n", ret);
 
-			ret = ihk_os_kmsg(0, kmsg[i], IHK_KMSG_SIZE);
-			OKNG(strstr(kmsg[i], "booted"),
-			     "expected string found\n");
-		}
+		ret = ihk_os_kmsg(0, before_clear_kmsg, IHK_KMSG_SIZE);
+		INTERR(ret, "ihk_os_kmsg returned %d\n", ret);
+
+		kmsg = strstr(before_clear_kmsg, "booted");
+		OKNG(kmsg, "\"booted\" found\n");
 
 		ret = ihk_os_clear_kmsg(0);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		if (i == 1) {
-			ret = ihk_os_kmsg(0, kmsg[i], IHK_KMSG_SIZE);
-			OKNG(!strlen(kmsg[i]), "cleared as expected\n");
+		ret = ihk_os_kmsg(0, after_clear_kmsg, IHK_KMSG_SIZE);
+		INTERR(ret, "ihk_os_kmsg returned %d\n", ret);
 
-			ret = ihk_os_shutdown(0);
-			INTERR(ret, "ihk_os_shutdown returned %d\n", ret);
-		}
+		ret = strlen(after_clear_kmsg);
+		OKNG(!ret, "cleared as expected\n");
+
+		ret = ihk_os_shutdown(0);
+		INTERR(ret, "ihk_os_shutdown returned %d\n", ret);
 
 		ret = mems_os_release();
 		INTERR(ret, "mems_os_release returned %d\n", ret);
@@ -100,8 +100,8 @@ out:
 		mems_os_release();
 		ihk_destroy_os(0, 0);
 	}
-	mems_release();
 	cpus_release();
+	mems_release();
 	linux_rmmod(0);
 
 	return ret;
