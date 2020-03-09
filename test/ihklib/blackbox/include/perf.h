@@ -1,0 +1,7 @@
+#ifndef __PERF_H_INCLUDED__
+#define __PERF_H_INCLUDED__
+
+#define ARMV8_PMUV3_PERFCTR_INST_RETIRED			0x08
+#define ARMV8_PMUV3_PERFCTR_LD_RETIRED				0x06
+
+#endif
