@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 	struct mems mems_expected_num_mem_chunks[2] = { 0 };
 
 	/* Precondition */
-	ret = linux_insmod();
+	ret = linux_insmod(0);
 	INTERR(ret, "linux_insmod returned %d\n", ret);
 
 	int ret_expected[2] = { 0 };

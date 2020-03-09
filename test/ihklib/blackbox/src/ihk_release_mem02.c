@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 	params_getopt(argc, argv);
 
 	/* Precondition */
-	ret = linux_insmod();
+	ret = linux_insmod(0);
 	INTERR(ret, "linux_insmod returned %d\n", ret);
 
 	struct mems mems_input[4] = {

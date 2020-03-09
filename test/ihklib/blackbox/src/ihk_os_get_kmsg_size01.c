@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
-	ret = linux_insmod();
+	ret = linux_insmod(0);
 	INTERR(ret, "linux_insmod returned %d\n", ret);
 
 	ssize_t ret_expected[2] = {

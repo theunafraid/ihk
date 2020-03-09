@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 		START("test-case: %s: %s\n", param, values[i]);
 
 		if (i == 1) {
-			ret = linux_insmod();
+			ret = linux_insmod(0);
 			INTERR(ret, "linux_insmod returned %d\n", ret);
 
 			ret = ihk_create_os(0);

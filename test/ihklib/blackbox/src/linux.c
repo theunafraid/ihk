@@ -11,13 +11,14 @@
 #include <sys/stat.h>
 #include <ihklib.h>
 
-int linux_insmod(void)
+int linux_insmod(int verbose)
 {
 	int ret;
 	char cmd[1024];
 
 	sprintf(cmd, "insmod %s/kmod/ihk.ko", QUOTE(WITH_MCK));
-	INFO("%s\n", cmd);
+	if (verbose)
+		INFO("%s\n", cmd);
 	ret = system(cmd);
 	ret = WEXITSTATUS(ret);
 	INTERR(ret, "%s returned %d\n", cmd, ret);
@@ -25,13 +26,15 @@ int linux_insmod(void)
 	sprintf(cmd,
 		"insmod %s/kmod/ihk-%s.ko ihk_start_irq=240 ihk_ikc_irq_core=0",
 		QUOTE(WITH_MCK), QUOTE(BUILD_TARGET));
-	INFO("%s\n", cmd);
+	if (verbose)
+		INFO("%s\n", cmd);
 	ret = system(cmd);
 	ret = WEXITSTATUS(ret);
 	INTERR(ret, "%s returned %d\n", cmd, ret);
 
 	sprintf(cmd, "insmod %s/kmod/mcctrl.ko", QUOTE(WITH_MCK));
-	INFO("%s\n", cmd);
+	if (verbose)
+		INFO("%s\n", cmd);
 	ret = system(cmd);
 	ret = WEXITSTATUS(ret);
 	INTERR(ret, "%s returned %d\n", cmd, ret);

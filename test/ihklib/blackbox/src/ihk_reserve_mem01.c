@@ -76,7 +76,7 @@ int main(int argc, char **argv)
 
 		/* Precondition */
 		if (i == 0) {
-			ret = linux_insmod();
+			ret = linux_insmod(0);
 			INTERR(ret == 0, "linux_insmod returned %d\n", ret);
 		}
 	}
