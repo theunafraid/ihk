@@ -137,7 +137,6 @@ foreach(target IN ITEMS
     ihk_os_set_ikc_map07
     ikc_map
     #  ihk_destroy_os07
-    #ihk_os_get_ikc_map07
     ihk_destroy_os03
     #ihk_destroy_os08
     ihk_destroy_os05
@@ -280,7 +279,11 @@ foreach(target IN ITEMS
     ihk_os_set_ikc_map06
     ihk_os_set_ikc_map08
     ihk_os_get_ikc_map01
+    ihk_os_get_ikc_map02
     ihk_os_get_ikc_map03
+    ihk_os_get_ikc_map04
+    ihk_os_get_ikc_map05
+    ihk_os_get_ikc_map06
     )
 
   # Add target
