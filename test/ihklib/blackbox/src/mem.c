@@ -799,3 +799,33 @@ int mems_os_release(void)
  out:
 	return ret;
 }
+
+int mems_get_num_numa_nodes(void)
+{
+	int ret;
+	int num_nodes = 0;
+
+	char *cmd = "lscpu | grep \"NUMA node(s)\" | awk '{print $3}'";
+	FILE *fp = NULL;
+
+	fp = popen(cmd, "r");
+	if (!fp) {
+		ret = -errno;
+		goto out;
+	}
+
+	ret = fscanf(fp, "%d\n", &num_nodes);
+	if (ret == EOF) {
+		ret = -errno;
+		goto out;
+	}
+
+	ret = num_nodes;
+out:
+	if (fp) {
+		pclose(fp);
+	}
+	fp = NULL;
+
+	return ret;
+}
