@@ -7,9 +7,10 @@ fi
 
 # insmod as root
 sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_os_get_ikc_map06 -u $(id -u) -g $(id -g) -i
+num_cpus=$?
 
 # try to reserve memory as non-root
-@CMAKE_INSTALL_PREFIX@/bin/ihk_os_get_ikc_map06 -u $(id -u) -g $(id -g)
+@CMAKE_INSTALL_PREFIX@/bin/ihk_os_get_ikc_map06 -u $(id -u) -g $(id -g) -n ${num_cpus}
 
 # rmmod as root
 sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_os_get_ikc_map06 -u $(id -u) -g $(id -g) -r
