@@ -271,13 +271,13 @@ foreach(target IN ITEMS
     ihk_os_get_pagesizes02
     ihk_os_get_pagesizes03
     ihk_os_get_pagesizes04
-#    ihk_os_set_ikc_map01
+    ihk_os_set_ikc_map01
 #    ihk_os_set_ikc_map02
 #    ihk_os_set_ikc_map03
 #    ihk_os_set_ikc_map04
-    ihk_os_set_ikc_map05
-    ihk_os_set_ikc_map06
-    ihk_os_set_ikc_map08
+#    ihk_os_set_ikc_map05
+#    ihk_os_set_ikc_map06
+#    ihk_os_set_ikc_map08
     ihk_os_get_ikc_map01
     ihk_os_get_ikc_map02
     ihk_os_get_ikc_map03
