@@ -64,7 +64,7 @@ int main(int argc, char **argv)
 		INTERR(ret, "ihk_os_boot returned %d\n", ret);
 
 		ret = ihk_os_kmsg(0, before_clear_kmsg, IHK_KMSG_SIZE);
-		INTERR(ret, "ihk_os_kmsg returned %d\n", ret);
+		INTERR(ret <= 0, "ihk_os_kmsg returned %d\n", ret);
 
 		kmsg = strstr(before_clear_kmsg, "booted");
 		OKNG(kmsg, "\"booted\" found\n");
@@ -75,13 +75,17 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 
 		ret = ihk_os_kmsg(0, after_clear_kmsg, IHK_KMSG_SIZE);
-		INTERR(ret, "ihk_os_kmsg returned %d\n", ret);
+		INTERR(ret != 0, "ihk_os_kmsg returned %d\n", ret);
 
-		ret = strlen(after_clear_kmsg);
-		OKNG(!ret, "cleared as expected\n");
+		kmsg = strstr(after_clear_kmsg, "booted");
+		OKNG(!kmsg, "\"booted\" is missing as expected\n");
 
 		ret = ihk_os_shutdown(0);
 		INTERR(ret, "ihk_os_shutdown returned %d\n", ret);
+
+		ret = os_wait_for_status(IHK_STATUS_INACTIVE);
+		INTERR(ret, "os status didn't change to %d\n",
+		       IHK_STATUS_INACTIVE);
 
 		ret = mems_os_release();
 		INTERR(ret, "mems_os_release returned %d\n", ret);
