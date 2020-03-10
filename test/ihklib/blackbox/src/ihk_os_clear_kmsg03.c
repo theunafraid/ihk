@@ -77,10 +77,14 @@ int main(int argc, char **argv)
 
 		if (i == 1) {
 			ret = ihk_os_kmsg(0, kmsg[i], IHK_KMSG_SIZE);
-			OKNG(!strlen(kmsg[i]), "cleared as expected\n");
+			OKNG(ret == 0, "cleared as expected\n");
 
 			ret = ihk_os_shutdown(0);
 			INTERR(ret, "ihk_os_shutdown returned %d\n", ret);
+
+			ret = os_wait_for_status(IHK_STATUS_INACTIVE);
+			INTERR(ret, "os status didn't change to %d\n",
+			       IHK_STATUS_INACTIVE);
 		}
 
 		ret = mems_os_release();
