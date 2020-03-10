@@ -773,3 +773,36 @@ int ikc_cpu_map_pop(struct ikc_cpu_map *map, int n)
  out:
 	return ret;
 }
+
+int ikc_cpu_map_check_channels(int nchannels)
+{
+	int ret = 0, ncpus;
+	FILE *fp = NULL;
+	char cmd[4096];
+
+	sprintf(cmd, "%s/bin/mcexec %s/bin/ikc_map.sh %d | sort | uniq | wc -l",
+		QUOTE(WITH_MCK), QUOTE(CMAKE_INSTALL_PREFIX), nchannels);
+
+	fp = popen(cmd, "r");
+	if (!fp) {
+		fprintf(stderr, "%s: popen failed with errno %d\n",
+			__func__, errno);
+		ret = -errno;
+		goto out;
+	}
+
+	ret = fscanf(fp, "%d\n", &ncpus);
+	printf("ret: %d, ncpus: %d\n", ret, ncpus);
+	if (ret != 1) {
+		ret = 1;
+		goto out;
+	}
+
+	ret = (ncpus == nchannels);
+out:
+	if (fp) {
+		pclose(fp);
+	}
+	return ret;
+}
+
