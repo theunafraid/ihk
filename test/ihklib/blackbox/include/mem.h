@@ -38,4 +38,6 @@ int mems_os_release(void);
 int mems_reserved(struct mems *mems);
 int mems_check_assigned(struct mems *expected);
 
+int mems_get_num_numa_nodes(void);
+
 #endif
