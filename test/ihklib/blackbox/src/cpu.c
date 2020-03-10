@@ -810,7 +810,6 @@ out:
 	if (fp) {
 		pclose(fp);
 	}
-	system("pidof mcexec | xargs -r kill -9");
 	return ret;
 }
 
