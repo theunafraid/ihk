@@ -77,21 +77,8 @@ int main(int argc, char **argv)
 		ret = ihk_os_boot(0);
 		INTERR(ret, "ihk_os_boot returned %d\n", ret);
 
-		sprintf(cmd, "%s/bin/mcexec %s/bin/ikc_map.sh %d |"
-			" sort | uniq | wc -l",
-			QUOTE(WITH_MCK), QUOTE(CMAKE_INSTALL_PREFIX),
-			map_input[i].ncpus);
-		fp = popen(cmd, "r");
-
-		errno_save = errno;
-		INTERR(fp == NULL, "popen returned %d\n", errno);
-
-		ret = fscanf(fp, "%d\n", &ncpu);
-		OKNG(ret == 1 && ncpu == map_input[i].ncpus,
-		    "IKCs from all cpus succeeded\n");
-
-		pclose(fp);
-		fp = NULL;
+		ret = ikc_cpu_map_check_channels(map_expected[i]->ncpus);
+		OKNG(ret == 0, "all IKC channels are active\n");
 
 		if (map_expected[i]) {
 			ret = ikc_cpu_map_check(map_expected[i]);
@@ -100,6 +87,10 @@ int main(int argc, char **argv)
 
 		ret = ihk_os_shutdown(0);
 		INTERR(ret, "ihk_os_shutdown returned %d\n", ret);
+
+		ret = os_wait_for_status(IHK_STATUS_INACTIVE);
+		INTERR(ret, "os status didn't change to %d\n",
+		       IHK_STATUS_INACTIVE);
 
 		ret = ihk_destroy_os(0, 0);
 		INTERR(ret, "ihk_destroy_os returned %d\n", ret);
