@@ -264,10 +264,10 @@ foreach(target IN ITEMS
     ihk_os_setperfevent07
     ihk_os_setperfevent08
     ihk_os_clear_kmsg04
-#    ihk_os_get_num_numa_nodes01
-#    ihk_os_get_num_numa_nodes02
-#    ihk_os_get_num_pagesizes01
-#    ihk_os_get_num_pagesizes02
+    ihk_os_get_num_numa_nodes01
+    ihk_os_get_num_numa_nodes02
+    ihk_os_get_num_pagesizes01
+    ihk_os_get_num_pagesizes02
     ihk_os_get_pagesizes01
     ihk_os_get_pagesizes02
     ihk_os_get_pagesizes03
