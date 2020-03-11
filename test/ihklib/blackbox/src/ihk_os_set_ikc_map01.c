@@ -18,6 +18,7 @@ int main(int argc, char **argv)
 {
 	int ret;
 	int i;
+	FILE *fp = NULL;
 
 	params_getopt(argc, argv);
 
@@ -83,12 +84,12 @@ int main(int argc, char **argv)
 
 			ret = ihk_os_boot(0);
 			INTERR(ret, "ihk_os_boot returned %d\n", ret);
-		}
-
-		if (map_expected[i]) {
 
 			ret = ikc_cpu_map_check_channels(map_expected[i]->ncpus);
 			OKNG(ret == 0, "all IKC channels are active\n");
+
+			ret = linux_kill_mcexec();
+			INTERR(ret, "linux_kill_mcexec returned %d\n", ret);
 
 			ret = ikc_cpu_map_check(map_expected[i]);
 			OKNG(ret == 0, "map set as expected\n");
@@ -114,6 +115,17 @@ int main(int argc, char **argv)
 
 	ret = 0;
  out:
+	if (fp) {
+		fclose(fp);
+	}
+	linux_kill_mcexec();
+	if (ihk_get_num_os_instances(0)) {
+		ihk_os_shutdown(0);
+		os_wait_for_status(IHK_STATUS_INACTIVE);
+		cpus_os_release();
+		mems_os_release();
+		ihk_destroy_os(0, 0);
+	}
 	mems_release();
 	cpus_release();
 	linux_rmmod(0);
