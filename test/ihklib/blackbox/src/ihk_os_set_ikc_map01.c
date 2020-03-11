@@ -18,7 +18,6 @@ int main(int argc, char **argv)
 {
 	int ret;
 	int i;
-	FILE *fp = NULL;
 
 	params_getopt(argc, argv);
 
@@ -115,9 +114,6 @@ int main(int argc, char **argv)
 
 	ret = 0;
  out:
-	if (fp) {
-		fclose(fp);
-	}
 	linux_kill_mcexec();
 	if (ihk_get_num_os_instances(0)) {
 		ihk_os_shutdown(0);
