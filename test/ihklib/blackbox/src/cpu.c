@@ -695,13 +695,20 @@ void ikc_cpu_map_max_src_cpu(struct ikc_cpu_map *map, int *src_cpu,
 			    int *dst_cpu)
 {
 	int i;
-	*src_cpu = INT_MIN;
+	int src = INT_MIN, dst;
 
 	for (i = 0; i < map->ncpus; i++) {
-		if (map->map[i].src_cpu > *src_cpu) {
-			*src_cpu = map->map[i].src_cpu;
-			*dst_cpu = map->map[i].dst_cpu;
+		if (map->map[i].src_cpu > src) {
+			src = map->map[i].src_cpu;
+			dst = map->map[i].dst_cpu;
 		}
+	}
+
+	if (src_cpu) {
+		*src_cpu = src;
+	}
+	if (dst_cpu) {
+		*dst_cpu = dst;
 	}
 }
 
@@ -798,11 +805,12 @@ int ikc_cpu_map_check_channels(int nchannels)
 		goto out;
 	}
 
-	ret = (ncpus == nchannels);
+	ret = (ncpus == nchannels) ? 0 : 1;
 out:
 	if (fp) {
 		pclose(fp);
 	}
+	system("pidof mcexec | xargs -r kill -9");
 	return ret;
 }
 
