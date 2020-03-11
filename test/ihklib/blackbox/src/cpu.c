@@ -59,14 +59,14 @@ int cpus_copy(struct cpus *dst, struct cpus *src)
 	return ret;
 }
 
-int cpus_ls(struct cpus *cpus)
+int _cpus_ls(struct cpus *cpus, char *online)
 {
 	char cmd[1024];
 	FILE *fp;
 	int ncpus;
 	int ret;
 
-	sprintf(cmd, "lscpu -p=cpu --online | awk '!/#/ { print $0; }'");
+	sprintf(cmd, "lscpu -p=cpu --%s | awk '!/#/ { print $0; }'", online);
 	//INFO("%s\n", cmd);
 	fp = popen(cmd, "r");
 	if (fp == NULL) {
@@ -110,6 +110,11 @@ int cpus_ls(struct cpus *cpus)
 		pclose(fp);
 	}
 	return ret;
+}
+
+int cpus_ls(struct cpus *cpus)
+{
+	return _cpus_ls(cpus, "online");
 }
 
 int cpus_max_id(struct cpus *cpus)
