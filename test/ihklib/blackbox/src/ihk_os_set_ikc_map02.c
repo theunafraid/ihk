@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 		ret = ikc_cpu_map_2toN(&map_input[i]);
 		INTERR(ret, "ikc_cpu_map_2toN returned %d\n", ret);
 
-		switch(i) {
+		switch (i) {
 		case 1:
 			ret = ikc_cpu_map_2toN(&map_after_set[i]);
 			INTERR(ret, "ikc_cpu_map_2toN returned %d\n", ret);
@@ -109,11 +109,13 @@ int main(int argc, char **argv)
 
 		if (map_expected[i]) {
 			ret = ikc_cpu_map_check_channels(map_input[i].ncpus);
-			OKNG(ret == map_expected[i]->ncpus,
-				"IKCs from all cpus succeeded\n");
+			OKNG(ret == 0, "all IKC channels are active\n");
+
+			ret = linux_kill_mcexec();
+			INTERR(ret, "linux_kill_mcexec returned %d\n", ret);
 
 			ret = ikc_cpu_map_check(map_expected[i]);
-			OKNG(ret == 0, "map set as expected\n");
+			OKNG(ret == 0, "ikc map configured as expected\n");
 		}
 
 		ret = ihk_os_shutdown(0);
@@ -122,7 +124,7 @@ int main(int argc, char **argv)
 		ret = os_wait_for_status(IHK_STATUS_INACTIVE);
 		INTERR(ret, "os status didn't change to %d\n",
 		       IHK_STATUS_INACTIVE);
-		
+
 		ret = cpus_os_release();
 		INTERR(ret, "cpus_os_release returned %d\n", ret);
 
@@ -135,6 +137,14 @@ int main(int argc, char **argv)
 
 	ret = 0;
  out:
+	linux_kill_mcexec();
+	if (ihk_get_num_os_instances(0)) {
+		ihk_os_shutdown(0);
+		os_wait_for_status(IHK_STATUS_INACTIVE);
+		cpus_os_release();
+		mems_os_release();
+		ihk_destroy_os(0, 0);
+	}
 	mems_release();
 	cpus_release();
 	linux_rmmod(0);
