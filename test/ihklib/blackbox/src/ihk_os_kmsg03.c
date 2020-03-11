@@ -80,6 +80,10 @@ int main(int argc, char **argv)
 		if (i == 1) {
 			ret = ihk_os_shutdown(0);
 			INTERR(ret, "ihk_os_shutdown returned %d\n", ret);
+
+			ret = os_wait_for_status(IHK_STATUS_INACTIVE);
+			INTERR(ret, "os status didn't change to %d\n",
+			       IHK_STATUS_INACTIVE);
 		}
 
 		ret = mems_os_release();
