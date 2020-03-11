@@ -93,6 +93,11 @@ int main(int argc, char **argv)
 			ret = ihk_os_shutdown(0);
 			INTERR(ret, "ihk_os_shutdown returned %d\n",
 			       ret);
+			
+			ret = os_wait_for_status(IHK_STATUS_INACTIVE);
+			INTERR(ret, "os status didn't change to %d\n",
+			       IHK_STATUS_INACTIVE);
+			
 			ret = cpus_os_release();
 			INTERR(ret, "cpus_os_release returned %d\n",
 			       ret);

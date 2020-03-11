@@ -1,3 +1,4 @@
+#include <string.h>
 #include <errno.h>
 #include <ihklib.h>
 #include <ihk/ihklib_private.h>

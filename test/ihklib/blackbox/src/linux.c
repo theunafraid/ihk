@@ -49,6 +49,8 @@ int linux_chmod(int dev_index)
 	int num_os_instances;
 	int *os_indices = NULL;
 
+	mode_t os_mode = S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+
 	ret = ihk_get_num_os_instances(dev_index);
 	INTERR(ret < 0,
 		"ihk_get_num_os_instances failed with errno %d\n", errno);
@@ -62,11 +64,25 @@ int linux_chmod(int dev_index)
 
 	for (i = 0; i < num_os_instances; i++) {
 		char os_filename[4096];
+		int tries = 0;
+		struct stat os_stat;
 
 		sprintf(os_filename, "/dev/mcos%d", os_indices[i]);
-		ret = chmod(os_filename, S_IRGRP | S_IWGRP |
-					S_IROTH | S_IWOTH);
-		INTERR(ret, "chmod failed with errno; %d\n", errno);
+		ret = stat(os_filename, &os_stat);
+		INTERR(ret, "stat failed with errno; %d\n", errno);
+		
+		while ((os_stat.st_mode & 0x3F) != 0x36) {
+			ret = chmod(os_filename, os_mode);
+			INTERR(ret, "chmod failed with errno; %d\n", errno);
+			
+			ret = stat(os_filename, &os_stat);
+			INTERR(ret, "stat failed with errno; %d\n", errno);
+			
+			if (++tries > 20) {
+				ret = -ETIME;
+				goto out;
+			}
+		}
 	}
 
 	ret = 0;
