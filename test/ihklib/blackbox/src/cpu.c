@@ -783,33 +783,34 @@ int ikc_cpu_map_pop(struct ikc_cpu_map *map, int n)
 
 int ikc_cpu_map_check_channels(int nchannels)
 {
-	int ret = 0, ncpus;
+	int ret;
 	FILE *fp = NULL;
+	int ncpus;
 	char cmd[4096];
 
-	sprintf(cmd, "%s/bin/mcexec %s/bin/ikc_map.sh %d | sort | uniq | wc -l",
-		QUOTE(WITH_MCK), QUOTE(CMAKE_INSTALL_PREFIX), nchannels);
-
+	sprintf(cmd, "%s/bin/mcexec %s/bin/ikc_map.sh %d |"
+		" sort | uniq | wc -l",
+		QUOTE(WITH_MCK), QUOTE(CMAKE_INSTALL_PREFIX),
+		nchannels);
 	fp = popen(cmd, "r");
-	if (!fp) {
-		fprintf(stderr, "%s: popen failed with errno %d\n",
-			__func__, errno);
+
+	if (fp == NULL) {
+		int errno_save = errno;
+
+		printf("%s: popen returned %d\n",
+		       __func__, errno);
 		ret = -errno;
 		goto out;
 	}
 
 	ret = fscanf(fp, "%d\n", &ncpus);
-	printf("ret: %d, ncpus: %d\n", ret, ncpus);
-	if (ret != 1) {
-		ret = 1;
-		goto out;
-	}
+	INFO("# of tokens: %d, ncpus: %d, nchannels: %d\n",
+	     ret, ncpus, nchannels);
 
-	ret = (ncpus == nchannels) ? 0 : 1;
-out:
+	ret =  (ret == 1 && ncpus == nchannels) ? 0 : 1;
+ out:
 	if (fp) {
 		pclose(fp);
 	}
 	return ret;
 }
-
