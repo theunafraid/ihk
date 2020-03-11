@@ -3,10 +3,12 @@
 #include "util.h"
 #include "okng.h"
 #include "cpu.h"
+#include "mem.h"
+#include "os.h"
 #include "params.h"
 #include "linux.h"
 
-const char param[] = "cpus";
+const char param[] = "map entries";
 const char *values[] = {
 	"NULL",
 	"all",
@@ -28,89 +30,112 @@ int main(int argc, char **argv)
 	ret = cpus_reserve();
 	INTERR(ret, "cpus_reserve returned %d\n", ret);
 
-	ret = ihk_create_os(0);
-	INTERR(ret, "ihk_create_os returned %d\n", ret);
+	ret = mems_reserve();
+	INTERR(ret, "mems_reserve returned %d\n", ret);
 
 	/* Prepare one with NULL and zero-clear others */
-	struct cpus cpus_input[4] = { 0 };
+	struct ikc_cpu_map map_input[4] = { 0 };
+	struct ikc_cpu_map map_after_set[4] = { 0 };
 
 	for (i = 1; i < 4; i++) {
-		ret = cpus_reserved(&cpus_input[i]);
-		INTERR(ret, "cpus_reserved returned %d\n", ret);
+		int src_cpu, dst_cpu;
+
+		ret = ikc_cpu_map_2toN(&map_input[i]);
+		INTERR(ret, "ikc_cpu_map_2toN returned %d\n", ret);
+
+		switch(i) {
+		case 1:
+			ret = ikc_cpu_map_2toN(&map_after_set[i]);
+			INTERR(ret, "ikc_cpu_map_2toN returned %d\n", ret);
+			break;
+		case 2:
+			ikc_cpu_map_max_src_cpu(&map_input[i],
+					&src_cpu, &dst_cpu);
+			ret = ikc_cpu_map_push(&map_input[i],
+					src_cpu + 1, dst_cpu);
+			INTERR(ret, "ikc_cpu_map_push returned %d\n", ret);
+			break;
+		case 3:
+			ret = ikc_cpu_map_pop(&map_input[i], 1);
+			INTERR(ret, "ikc_cpu_map_pop returned %d\n", ret);
+			break;
+		default:
+			break;
+		}
 	}
-
-	/* Plus one */
-	ret = cpus_push(&cpus_input[2],
-			cpus_max_id(&cpus_input[2]) + 1);
-	INTERR(ret, "cpus_push returned %d\n", ret);
-
-	/* Minus one */
-	ret = cpus_pop(&cpus_input[3], 1);
-	INTERR(ret, "cpus_pop returned %d\n", ret);
-
-	/* ncpus isn't zero but cpus is NULL */
-	cpus_input[0].ncpus = 1;
-
-	struct cpus cpus_after_assign[4] = { 0 };
-
-	for (i = 0; i < 4; i++) {
-		ret = cpus_reserved(&cpus_after_assign[i]);
-		INTERR(ret, "cpus_reserved returned %d\n", ret);
-	}
-
-	/* Minus one */
-	ret = cpus_pop(&cpus_after_assign[3], 1);
-	INTERR(ret, "cpus_pop returned %d\n", ret);
-
-	/* Empty */
-	ret = cpus_shift(&cpus_after_assign[0], cpus_after_assign[0].ncpus);
-	INTERR(ret, "cpus_shift returned %d\n", ret);
-
-	/* Empty */
-	ret = cpus_shift(&cpus_after_assign[2], cpus_after_assign[2].ncpus);
-	INTERR(ret, "cpus_shift returned %d\n", ret);
 
 	int ret_expected[] = {
-		  -EFAULT,
-		  0,
 		  -EINVAL,
 		  0,
+		  -EINVAL,
+		  -EINVAL,
 	};
 
-	struct cpus *cpus_expected[] = {
-		  &cpus_after_assign[0],
-		  &cpus_after_assign[1],
-		  &cpus_after_assign[2],
-		  &cpus_after_assign[3],
+	struct ikc_cpu_map *map_expected[] = {
+		NULL,
+		&map_after_set[1],
+		NULL,
+		NULL,
 	};
+
 
 	/* Activate and check */
 	for (i = 0; i < 4; i++) {
 		START("test-case: %s: %s\n", param, values[i]);
 
-		ret = ihk_os_assign_cpu(0, cpus_input[i].cpus,
-					cpus_input[i].ncpus);
-		if (ret != ret_expected[i]) {
-			cpus_dump(&cpus_input[i]);
-		}
+		ret = ihk_create_os(0);
+		INTERR(ret, "ihk_create_os returned %d\n", ret);
 
+		ret = cpus_os_assign();
+		INTERR(ret, "cpus_os_assign returned %d\n", ret);
+
+		ret = mems_os_assign();
+		INTERR(ret, "mems_os_assign returned %d\n", ret);
+
+		ret = ihk_os_set_ikc_map(0, map_input[i].map,
+				map_input[i].ncpus);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		if (cpus_expected[i]) {
-			ret = cpus_check_assigned(cpus_expected[i]);
-			OKNG(ret == 0, "assigned as expected\n");
+		ret = os_load();
+		INTERR(ret, "os_load returned %d\n", ret);
 
-			/* Clean up */
-			ret = ihk_os_release_cpu(0, cpus_after_assign[i].cpus,
-					      cpus_after_assign[i].ncpus);
-			INTERR(ret, "ihk_os_release_cpu returned %d\n", ret);
+		ret = os_kargs();
+		INTERR(ret, "os_kargs returned %d\n", ret);
+
+		ret = ihk_os_boot(0);
+		INTERR(ret, "ihk_os_boot returned %d\n", ret);
+
+		if (map_expected[i]) {
+			ret = ikc_cpu_map_check_channels(map_input[i].ncpus);
+			OKNG(ret == map_expected[i]->ncpus,
+				"IKCs from all cpus succeeded\n");
+
+			ret = ikc_cpu_map_check(map_expected[i]);
+			OKNG(ret == 0, "map set as expected\n");
 		}
+
+		ret = ihk_os_shutdown(0);
+		INTERR(ret, "ihk_os_shutdown returned %d\n", ret);
+
+		ret = os_wait_for_status(IHK_STATUS_INACTIVE);
+		INTERR(ret, "os status didn't change to %d\n",
+		       IHK_STATUS_INACTIVE);
+		
+		ret = cpus_os_release();
+		INTERR(ret, "cpus_os_release returned %d\n", ret);
+
+		ret = mems_os_release();
+		INTERR(ret, "mems_os_release returned %d\n", ret);
+
+		ret = ihk_destroy_os(0, 0);
+		INTERR(ret, "ihk_destroy_os returned %d\n", ret);
 	}
 
 	ret = 0;
  out:
+	mems_release();
 	cpus_release();
 	linux_rmmod(0);
 
