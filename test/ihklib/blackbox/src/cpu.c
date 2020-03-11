@@ -811,7 +811,7 @@ int ikc_cpu_map_check_channels(int nchannels)
 	ret = fscanf(fp, "%d\n", &ncpus);
 	INFO("# of tokens: %d, ncpus: %d, nchannels: %d\n",
 	     ret, ncpus, nchannels);
-	ret =  (ret == 1 && ncpus == nchannels) ? 0 : 1;
+	ret = (ret == 1 && ncpus == nchannels) ? 0 : 1;
 
  out:
 	if (fp) {
