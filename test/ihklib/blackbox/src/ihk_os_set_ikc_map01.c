@@ -92,7 +92,7 @@ int main(int argc, char **argv)
 			INTERR(ret, "linux_kill_mcexec returned %d\n", ret);
 
 			ret = ikc_cpu_map_check(map_expected[i]);
-			OKNG(ret == 0, "map set as expected\n");
+			OKNG(ret == 0, "ikc map configured as expected\n");
 
 			/* Clean up */
 			ret = ihk_os_shutdown(0);
