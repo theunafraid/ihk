@@ -1,7 +1,6 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/epoll.h>
 #include <sys/wait.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -30,88 +29,6 @@ const char *messages[] = {
 };
 
 #define MAX_COUNT 10
-
-static int user_poll_fifo(int fd_fifo)
-{
-	int ret;
-	pid_t pid;
-	int fd_poll = -1;
-	int fd_event = -1;
-	struct epoll_event event = { 0 };
-	struct epoll_event events[1];
-	int nfd;
-	int i;
-	int count = 0;
-
-	fd_poll = epoll_create1(0);
-	INTERR(fd_poll == -1, "epoll_create returned %d\n", errno);
-
-	event.data.fd = fd_fifo;
-	event.events = EPOLLIN;
-
-	ret = epoll_ctl(fd_poll, EPOLL_CTL_ADD, fd_fifo, &event);
-	INTERR(ret, "epoll_ctl returned %d\n", errno);
-
- redo:
-	nfd = epoll_wait(fd_poll, events, 1,
-			 1000 * MAX_COUNT * 0.3);
-
-	if (nfd < 0) {
-		int errno_save = errno;
-
-		if (errno == EINTR) {
-			goto redo;
-		}
-
-		printf("%s: epoll_wait returned %d\n",
-		       __func__, errno_save);
-		ret = -errno_save;
-		goto out;
-	}
-
-	if (nfd == 0) {
-		INFO("%s: epoll_wait timeout\n", __func__);
-
-		ret = -ETIME;
-		goto out;
-	}
-
-	for (i = 0; i < nfd; i++) {
-		if (events[i].data.fd == fd_fifo) {
-			int messages[MAX_COUNT];
-			ssize_t ret;
-
-			ret = read(events[i].data.fd, messages,
-				   sizeof(int) * MAX_COUNT);
-
-			if (ret == -1) {
-				int errno_save = errno;
-
-				printf("%s: read returned %d\n",
-				       __func__, errno_save);
-				ret = -errno_save;
-				goto out;
-			}
-
-			if (ret == 0) {
-				printf("%s: EOF detected\n",
-				       __func__);
-				goto out;
-			}
-
-			count += ret / sizeof(int);
-		}
-	}
-
-	ret = count;
- out:
-	if (fd_poll != -1) {
-		close(fd_poll);
-	}
-
-	//INFO("%s: count: %d, ret %d\n", __func__, count, ret);
-	return ret;
-}
 
 int main(int argc, char **argv)
 {
@@ -280,15 +197,21 @@ int main(int argc, char **argv)
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		if (target_status[i] == IHK_STATUS_RUNNING) {
+		if (ret_expected[i] == 0) {
 			int count = 0;
 			int wstatus;
 			char exit_status;
 
+			os_wait_for_status(IHK_STATUS_FROZEN);
+			ret = ihk_os_get_status(0);
+			OKNG(ret == IHK_STATUS_FROZEN,
+			     "status: %d, expected: %d\n",
+			     ret, IHK_STATUS_FROZEN);
+
 			/* Consume messages sent before getting
 			 * frozen
 			 */
-			while ((ret = user_poll_fifo(fd_fifo)) > 0) {
+			while ((ret = user_poll_fifo(fd_fifo, MAX_COUNT)) > 0) {
 				count += ret;
 				INFO("count: %d\n", count);
 			}
@@ -302,7 +225,7 @@ int main(int argc, char **argv)
 			INTERR(ret, "ihk_os_thaw returned %d\n", ret);
 
 			/* Consume remaining messages */
-			while ((ret = user_poll_fifo(fd_fifo)) > 0) {
+			while ((ret = user_poll_fifo(fd_fifo, MAX_COUNT)) > 0) {
 				count += ret;
 				INFO("count: %d\n", count);
 			}
