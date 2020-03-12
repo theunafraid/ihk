@@ -5,5 +5,6 @@ extern char **environ;
 
 int user_fork_exec(char *filename, pid_t *pid);
 int user_wait(pid_t *pid);
+int user_poll_fifo(int fd_fifo, int max_count);
 
 #endif
