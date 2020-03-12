@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/epoll.h>
 #include "util.h"
 #include "okng.h"
 #include "user.h"
@@ -80,5 +81,92 @@ int user_wait(pid_t *pid)
 		}
 	}
  out:
+	return ret;
+}
+
+int user_poll_fifo(int fd_fifo, int max_count)
+{
+	int ret;
+	pid_t pid;
+	int fd_poll = -1;
+	int fd_event = -1;
+	struct epoll_event event = { 0 };
+	struct epoll_event events[1];
+	int nfd;
+	int i;
+	int count = 0;
+	int *messages;
+
+	messages = calloc(max_count, sizeof(int));
+	if (messages == NULL) {
+		printf("%s: calloc failed\n", __func__);
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	fd_poll = epoll_create1(0);
+	INTERR(fd_poll == -1, "epoll_create returned %d\n", errno);
+
+	event.data.fd = fd_fifo;
+	event.events = EPOLLIN;
+
+	ret = epoll_ctl(fd_poll, EPOLL_CTL_ADD, fd_fifo, &event);
+	INTERR(ret, "epoll_ctl returned %d\n", errno);
+
+ redo:
+	nfd = epoll_wait(fd_poll, events, 1,
+			 1000 * max_count * 0.3);
+
+	if (nfd < 0) {
+		int errno_save = errno;
+
+		if (errno == EINTR) {
+			goto redo;
+		}
+
+		printf("%s: epoll_wait returned %d\n",
+		       __func__, errno_save);
+		ret = -errno_save;
+		goto out;
+	}
+
+	if (nfd == 0) {
+		INFO("%s: epoll_wait timeout\n", __func__);
+
+		ret = -ETIME;
+		goto out;
+	}
+
+	for (i = 0; i < nfd; i++) {
+		if (events[i].data.fd == fd_fifo) {
+			ret = read(events[i].data.fd, messages,
+				   sizeof(int) * max_count);
+
+			if (ret == -1) {
+				int errno_save = errno;
+
+				printf("%s: read returned %d\n",
+				       __func__, errno_save);
+				ret = -errno_save;
+				goto out;
+			}
+
+			if (ret == 0) {
+				printf("%s: EOF detected\n",
+				       __func__);
+				goto out;
+			}
+
+			count += ret / sizeof(int);
+		}
+	}
+
+	ret = count;
+ out:
+	if (fd_poll != -1) {
+		close(fd_poll);
+	}
+
+	//INFO("%s: count: %d, ret %d\n", __func__, count, ret);
 	return ret;
 }
