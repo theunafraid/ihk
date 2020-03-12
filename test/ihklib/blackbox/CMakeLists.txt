@@ -333,6 +333,7 @@ foreach(target IN ITEMS
     hungup
     delay_with_interrupt_disabled
     oom
+    count
     )
 
   # Add target
