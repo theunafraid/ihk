@@ -286,6 +286,7 @@ foreach(target IN ITEMS
     ihk_os_get_ikc_map04
     ihk_os_get_ikc_map05
     ihk_os_get_ikc_map06
+    ihk_os_freeze08
     )
 
   # Add target
