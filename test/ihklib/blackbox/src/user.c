@@ -24,8 +24,8 @@ int user_fork_exec(char *filename, pid_t *pid)
 			filename);
 		ret = system(cmd);
 		status = WEXITSTATUS(ret);
-		INFO("child: status: %d\n",
-		     status);
+		INFO("%s: child exited with status of %d\n",
+		     __func__, status);
 		exit(status);
 #if 0
 		argv[0] = cmd;
