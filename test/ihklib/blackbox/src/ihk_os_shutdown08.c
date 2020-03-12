@@ -196,6 +196,7 @@ int main(int argc, char **argv)
 
 		/* Clean up */
 		switch (target_status[i]) {
+		case IHK_STATUS_SHUTDOWN:
 		case IHK_STATUS_HUNGUP:
 		case IHK_STATUS_PANIC:
 			ret = user_wait(&pid);
