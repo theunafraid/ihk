@@ -227,7 +227,8 @@ int main(int argc, char **argv)
 			/* Consume remaining messages */
 			while ((ret = user_poll_fifo(fd_fifo, MAX_COUNT)) > 0) {
 				count += ret;
-				INFO("count: %d\n", count);
+				INFO("count: # of received messages: %d\n",
+				     count);
 			}
 			OKNG(ret == -ETIME && count == MAX_COUNT,
 			     "all messages received\n");
