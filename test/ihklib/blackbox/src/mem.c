@@ -254,6 +254,11 @@ int mems_pop(struct mems *mems, int n)
 {
 	int ret;
 
+	if (n == 0) {
+		ret = 0;
+		goto out;
+	}
+
 	if (mems->num_mem_chunks < n || mems->mem_chunks == NULL) {
 		ret = 1;
 		goto out;
@@ -294,6 +299,11 @@ int mems_pop(struct mems *mems, int n)
 int mems_shift(struct mems *mems, int n)
 {
 	int ret;
+
+	if (n == 0) {
+		ret = 0;
+		goto out;
+	}
 
 	if (mems->num_mem_chunks < n || mems->mem_chunks == NULL) {
 		ret = 1;

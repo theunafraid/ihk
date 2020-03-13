@@ -163,6 +163,11 @@ int cpus_pop(struct cpus *cpus, int n)
 {
 	int ret;
 
+	if (n == 0) {
+		ret = 0;
+		goto out;
+	}
+
 	if (cpus->ncpus < n || cpus->cpus == NULL) {
 		ret = 1;
 		goto out;
@@ -199,13 +204,13 @@ int cpus_shift(struct cpus *cpus, int n)
 {
 	int ret;
 
-	if (cpus->ncpus < n || cpus->cpus == NULL) {
-		ret = -EINVAL;
+	if (n == 0) {
+		ret = 0;
 		goto out;
 	}
 
-	if (n == 0) {
-		ret = 0;
+	if (cpus->ncpus < n || cpus->cpus == NULL) {
+		ret = -EINVAL;
 		goto out;
 	}
 

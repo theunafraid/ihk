@@ -1,3 +1,20 @@
+execute_process(COMMAND bash -c "gawk '/CPU implementer/ { print \$4; exit; }' /proc/cpuinfo"
+  OUTPUT_VARIABLE CPU_IMPLEMENTER OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(COMMAND bash -c "gawk '/CPU architecture/ { print \$3; exit; }' /proc/cpuinfo"
+  OUTPUT_VARIABLE CPU_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(COMMAND bash -c "gawk '/CPU variant/ { print \$4; exit; }' /proc/cpuinfo"
+  OUTPUT_VARIABLE CPU_VARIANT OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(COMMAND bash -c "gawk '/CPU part/ { print \$4; exit; }' /proc/cpuinfo"
+  OUTPUT_VARIABLE CPU_PART OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+if(CPU_IMPLEMENTER STREQUAL "0x46" AND CPU_ARCH STREQUAL "8" AND
+    CPU_VARIANT STREQUAL "0x0" AND CPU_PART STREQUAL "0x001")
+  message("A64FX detected")
+  execute_process(COMMAND module purge)
+  execute_process(COMMAND module load fjcompiler-native)
+  set(CMAKE_C_COMPILER "fcc")
+endif()
+
 cmake_policy(SET CMP0005 NEW)
 
 # Options: -DWITH_MCK=<McKernel install directory>
@@ -287,6 +304,7 @@ foreach(target IN ITEMS
     ihk_os_get_ikc_map05
     ihk_os_get_ikc_map06
     ihk_os_freeze08
+    ihk_os_setperfevent10
     )
 
   # Add target
@@ -349,6 +367,7 @@ endforeach()
 foreach(target IN ITEMS
     nop
     nop_ldr
+    simd_sve_wfi_mem
     )
 
   # Add target
