@@ -213,12 +213,13 @@ int main(int argc, char **argv)
 			 */
 			while ((ret = user_poll_fifo(fd_fifo, MAX_COUNT)) > 0) {
 				count += ret;
-				INFO("count: %d\n", count);
+				INFO("# of messages received: %d\n", count);
 			}
 
 			/* epoll on pipe should eventually time out */
-			OKNG(ret == -ETIME, "target process gets silent "
-			     "as expected, ret: %d\n", ret);
+			OKNG(ret == -ETIME && count < MAX_COUNT,
+			     "process becomes silent as expected, ret: %d\n",
+			     ret);
 
 			INFO("trying to thaw...\n");
 			ret = ihk_os_thaw(os_set, sizeof(unsigned long) * 8);
@@ -227,11 +228,10 @@ int main(int argc, char **argv)
 			/* Consume remaining messages */
 			while ((ret = user_poll_fifo(fd_fifo, MAX_COUNT)) > 0) {
 				count += ret;
-				INFO("count: # of received messages: %d\n",
-				     count);
+				INFO("# of messages received: %d\n", count);
 			}
 			OKNG(ret == -ETIME && count == MAX_COUNT,
-			     "all messages received\n");
+			     "all messages are received\n");
 
 			ret = waitpid(pid_count, &wstatus, 0);
 			exit_status = WEXITSTATUS(wstatus);
