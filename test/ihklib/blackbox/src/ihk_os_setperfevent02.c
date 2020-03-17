@@ -108,33 +108,35 @@ int main(int argc, char **argv)
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		if (ret_expected[i] > 0) {
+		ret = ihk_os_perfctl(0, PERF_EVENT_ENABLE);
+		INTERR(ret, "PERF_EVENT_ENABLE returned %d\n", ret);
 
-			ret = ihk_os_perfctl(0, PERF_EVENT_ENABLE);
-			INTERR(ret, "PERF_EVENT_ENABLE returned %d\n", ret);
+		ret = user_fork_exec("nop", &pid);
+		INTERR(ret < 0, "user_fork_exec returned %d\n", ret);
 
-			ret = user_fork_exec("nop", &pid);
-			INTERR(ret < 0, "user_fork_exec returned %d\n", ret);
+		ret = waitpid(pid, &wstatus, 0);
+		INTERR(ret < 0, "waitpid returned %d\n", errno);
+		pid = -1;
 
-			ret = waitpid(pid, &wstatus, 0);
-			INTERR(ret < 0, "waitpid returned %d\n", errno);
-			pid = -1;
+		ret = ihk_os_perfctl(0, PERF_EVENT_DISABLE);
+		INTERR(ret, "PERF_EVENT_DISABLE returned %d\n", ret);
 
-			ret = ihk_os_perfctl(0, PERF_EVENT_DISABLE);
-			INTERR(ret, "PERF_EVENT_DISABLE returned %d\n", ret);
+		ret = ihk_os_getperfevent(0, &counts, 1);
+		INTERR(ret, "ihk_os_getperfevent returned %d\n",
+		       ret);
 
-			ret = ihk_os_getperfevent(0, &counts, 1);
-			INTERR(ret, "ihk_os_getperfevent returned %d\n",
-			       ret);
-
+		if (count_expected[i] > 0) {
 			OKNG(counts >= count_expected[i] &&
 			     counts < count_expected[i] * 1.1,
 			     "event count (%ld) is within expected range\n",
 			     counts);
-
-			ret = ihk_os_perfctl(0, PERF_EVENT_DESTROY);
-			INTERR(ret, "PERF_EVENT_DESTROY returned %d\n", ret);
+		} else {
+			OKNG(counts == count_expected[i],
+			     "event not counted\n");
 		}
+
+		ret = ihk_os_perfctl(0, PERF_EVENT_DESTROY);
+		INTERR(ret, "PERF_EVENT_DESTROY returned %d\n", ret);
 
 		ret = ihk_os_shutdown(0);
 		INTERR(ret, "ihk_os_shutdown returned %d\n", ret);

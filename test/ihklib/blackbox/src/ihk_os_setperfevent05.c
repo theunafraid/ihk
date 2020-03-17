@@ -13,9 +13,9 @@
 #include "user.h"
 #include "perf.h"
 
-const char param[] = "number of events";
+const char param[] = "user privilege";
 const char *values[] = {
-	"number of events: 0",
+	"root",
 };
 
 int main(int argc, char **argv)
@@ -35,29 +35,30 @@ int main(int argc, char **argv)
 	ret = mems_reserve();
 	INTERR(ret, "mems_reserve returned %d\n", ret);
 
-	int n_input = 0;
-
 	struct ihk_perf_event_attr attr_input[1] = {
 		{
-		 .config = ARMV8_PMUV3_PERFCTR_INST_RETIRED,
-		 .disabled = 1,
-		 .pinned = 0,
-		 .exclude_user = 0,
-		 .exclude_kernel = 1,
-		 .exclude_hv = 1,
-		 .exclude_idle = 1
+			 .config = ARMV8_PMUV3_PERFCTR_INST_RETIRED,
+			 .disabled = 1,
+			 .pinned = 0,
+			 .exclude_user = 0,
+			 .exclude_kernel = 1,
+			 .exclude_hv = 1,
+			 .exclude_idle = 1
 		}
 	};
 
-	int ret_expected[1] = { -EINVAL };
+	int ret_expected[1] = {
+		1,
+	};
 
-	unsigned long count_expected[1] = { 0 };
+	unsigned long count_expected[1] = {
+		1000000,
+	};
 
 	pid_t pid = -1;
-
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
-		unsigned long counts = 0UL;
+		unsigned long counts = {0};
 		int wstatus;
 
 		START("test-case: %s: %s\n", param, values[i]);
@@ -80,8 +81,9 @@ int main(int argc, char **argv)
 		ret = ihk_os_boot(0);
 		INTERR(ret, "ihk_os_boot returned %d\n", ret);
 
-		ret = ihk_os_setperfevent(0, attr_input, n_input);
-		OKNG(ret == ret_expected[i], "return value: %d, expected: %d\n",
+		ret = ihk_os_setperfevent(0, attr_input, 1);
+		OKNG(ret == ret_expected[i],
+		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
 		ret = ihk_os_perfctl(0, PERF_EVENT_ENABLE);
@@ -98,18 +100,11 @@ int main(int argc, char **argv)
 		INTERR(ret, "PERF_EVENT_DISABLE returned %d\n", ret);
 
 		ret = ihk_os_getperfevent(0, &counts, 1);
-		INTERR(ret, "ihk_os_getperfevent returned %d\n",
-		       ret);
+		INTERR(ret, "ihk_os_getperfevent returned %d\n", ret);
 
-		if (count_expected[i] > 0) {
-			OKNG(counts >= count_expected[i] &&
-			     counts < count_expected[i] * 1.1,
-			     "event count (%ld) is within expected range\n",
-			     counts);
-		} else {
-			OKNG(counts == count_expected[i],
-			     "event not counted\n");
-		}
+		OKNG(counts >= count_expected[i] &&
+			counts < count_expected[i] * 1.1,
+			"event count (%ld) is within expected range\n", counts);
 
 		ret = ihk_os_perfctl(0, PERF_EVENT_DESTROY);
 		INTERR(ret, "PERF_EVENT_DESTROY returned %d\n", ret);
