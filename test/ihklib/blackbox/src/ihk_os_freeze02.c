@@ -107,7 +107,7 @@ int main(int argc, char **argv)
 		fd_fifo = open(fn, O_RDWR);
 		INTERR(fd_fifo == -1, "open returned %d\n", errno);
 
-		/* Start couting */
+		/* Start counting */
 		ret = write(fd_fifo, &word, sizeof(int));
 		INTERR(ret != sizeof(int),
 		       "write returned %d\n", errno);
