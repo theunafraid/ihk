@@ -237,6 +237,7 @@ int main(int argc, char **argv)
 		}
 
 		ihk_os_shutdown(0);
+		os_wait_for_status(IHK_STATUS_INACTIVE);
 		ihk_destroy_os(0, 0);
 	}
 	cpus_release();
@@ -245,4 +246,3 @@ int main(int argc, char **argv)
 
 	return ret;
 }
-
