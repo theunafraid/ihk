@@ -94,6 +94,10 @@ int main(int argc, char **argv)
 		if (status_expected[i] != IHK_STATUS_INACTIVE) {
 			ret = ihk_os_shutdown(0);
 			INTERR(ret, "ihk_os_shutdown returned %d\n", ret);
+
+			ret = os_wait_for_status(IHK_STATUS_INACTIVE);
+			INTERR(ret, "os status didn't change to %d\n",
+			       IHK_STATUS_INACTIVE);
 		}
 
 		ret = cpus_os_release();
@@ -110,6 +114,7 @@ int main(int argc, char **argv)
  out:
 	if (ihk_get_num_os_instances(0)) {
 		ihk_os_shutdown(0);
+		os_wait_for_status(IHK_STATUS_INACTIVE);
 		cpus_os_release();
 		mems_os_release();
 		ihk_destroy_os(0, 0);
