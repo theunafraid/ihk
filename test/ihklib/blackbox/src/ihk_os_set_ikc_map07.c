@@ -47,9 +47,6 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
-		int errno_save;
-		int ncpu;
-		char cmd[4096];
 
 		START("test-case: %s: %s\n", param, values[i]);
 
