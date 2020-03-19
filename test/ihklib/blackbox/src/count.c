@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 		goto out;
 	}
 
-	printf("[ INFO ] count: start sending message...\n", i);
+	printf("[ INFO ] count: start sending messages...\n", i);
 
 	for (i = 0; i < MAX_COUNT; i++) {
 		printf("[ INFO ] count: sending message #%d\n", i);
