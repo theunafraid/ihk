@@ -70,15 +70,23 @@ int main(int argc, char **argv)
 		if (i == 1) {
 			ret = ihk_os_shutdown(0);
 			INTERR(ret, "ihk_os_boot returned %d\n", ret);
+
+			ret = os_wait_for_status(IHK_STATUS_INACTIVE);
+			INTERR(ret, "os status didn't change to %d\n",
+			       IHK_STATUS_INACTIVE);
 		}
 
 	}
 
 	ret = 0;
  out:
-	cpus_os_release();
-	mems_os_release();
-	ihk_destroy_os(0, 0);
+	if (ihk_get_num_os_instances(0)) {
+		ihk_os_shutdown(0);
+		os_wait_for_status(IHK_STATUS_INACTIVE);
+		cpus_os_release();
+		mems_os_release();
+		ihk_destroy_os(0, 0);
+	}
 	cpus_release();
 	mems_release();
 	linux_rmmod(0);
