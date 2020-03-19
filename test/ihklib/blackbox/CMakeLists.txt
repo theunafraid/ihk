@@ -305,6 +305,37 @@ foreach(target IN ITEMS
     ihk_os_get_ikc_map06
     ihk_os_freeze08
     ihk_os_setperfevent10
+    ihk_os_setperfevent01
+    ihk_os_setperfevent02
+    ihk_os_setperfevent03
+    ihk_os_setperfevent04
+    ihk_os_setperfevent05
+    ihk_os_setperfevent06
+    ihk_os_perfctl01
+    ihk_os_perfctl02
+    ihk_os_perfctl03
+    ihk_os_perfctl04
+    ihk_os_perfctl05
+    ihk_os_perfctl06
+    ihk_os_perfctl07
+    ihk_os_getperfevent01
+    ihk_os_getperfevent02
+    ihk_os_getperfevent03
+    ihk_os_getperfevent04
+    ihk_os_getperfevent05
+    ihk_os_getperfevent06
+    ihk_os_getperfevent07
+    ihk_os_getperfevent08
+    ihk_os_freeze01
+    ihk_os_freeze02
+    ihk_os_freeze03
+    ihk_os_freeze05
+    ihk_os_freeze06
+    ihk_os_thaw01
+    ihk_os_thaw02
+    ihk_os_thaw03
+    ihk_os_thaw05
+    ihk_os_thaw06
     )
 
   # Add target
