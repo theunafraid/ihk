@@ -122,8 +122,8 @@ int main(int argc, char **argv)
 			     counts[j]);
 		}
 
-		ret = ihk_os_perfctl(0, PERF_EVENT_DISABLE);
-		INTERR(ret, "PERF_EVENT_DISABLE returned %d\n", ret);
+		ret = ihk_os_perfctl(0, PERF_EVENT_DESTROY);
+		INTERR(ret, "PERF_EVENT_DESTROY returned %d\n", ret);
 
 		ret = ihk_os_shutdown(0);
 		INTERR(ret, "ihk_os_shutdown returned %d\n", ret);
@@ -150,6 +150,7 @@ int main(int argc, char **argv)
 	}
 	if (ihk_get_num_os_instances(0)) {
 		ihk_os_shutdown(0);
+		os_wait_for_status(IHK_STATUS_INACTIVE);
 		cpus_os_release();
 		mems_os_release();
 		ihk_destroy_os(0, 0);
