@@ -15,8 +15,8 @@
 
 const char param[] = "existence of os instance";
 const char *values[] = {
-	"before ihk_create_os()",
-	"after ihk_create_os()",
+	"without os instance",
+	"with os instance",
 };
 
 int main(int argc, char **argv)
