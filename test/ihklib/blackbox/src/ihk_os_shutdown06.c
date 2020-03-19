@@ -121,9 +121,26 @@ int main(int argc, char **argv)
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
+		if (ret_expected[i] == 0) {
+			ret = os_wait_for_status(IHK_STATUS_INACTIVE);
+			INTERR(ret, "os status didn't change to %d\n",
+			       IHK_STATUS_INACTIVE);
+		}
 	}
 
 	ret = 0;
  out:
+	if (opt == 'i' || opt == 'r') {
+		if (ihk_get_num_os_instances(0)) {
+			ihk_os_shutdown(0);
+			os_wait_for_status(IHK_STATUS_INACTIVE);
+			cpus_os_release();
+			mems_os_release();
+			ihk_destroy_os(0, 0);
+		}
+		cpus_release();
+		mems_release();
+		linux_rmmod(1);
+	}
 	return ret;
 }
