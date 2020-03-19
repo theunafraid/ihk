@@ -181,7 +181,7 @@ int main(int argc, char **argv)
 			ret = user_fork_exec(cmd, &pid_count);
 			INTERR(ret < 0, "user_fork_exec returned %d\n", ret);
 
-			/* Start couting */
+			/* Start counting */
 			ret = write(fd_fifo, &word, sizeof(int));
 			INTERR(ret != sizeof(int),
 			       "write returned %d\n", errno);
@@ -318,6 +318,7 @@ int main(int argc, char **argv)
 
 		if (ihk_os_get_status(0) == IHK_STATUS_FROZEN) {
 			ihk_os_thaw(os_set, sizeof(unsigned long) * 8);
+			os_wait_for_status(IHK_STATUS_RUNNING);
 		}
 
 		if (pid_count > 0) {
