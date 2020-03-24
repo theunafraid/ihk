@@ -76,7 +76,7 @@ int main(int argc, char **argv)
 	INTERR(ret, "mems_reserve returned %d\n", ret);
 
 	/* Activate and check */
-	for (i = 1; i < 2; i++) {
+	for (i = 0; i < 2; i++) {
 		int wstatus;
 		int word = 1;
 		char cmd[4096];
@@ -119,7 +119,9 @@ int main(int argc, char **argv)
 			INTERR(ret < 0, "user_fork_exec returned %d\n", ret);
 
 			/* Wait until child is ready */
-			usleep(1000000);
+			ret = read(fd_out, &message, sizeof(int));
+			INTERR(ret <= 0, "read returned %d, errno: %d\n",
+			       ret, errno);
 		}
 
 		ret = ihk_os_getrusage(0, &ru_result[i][0],
