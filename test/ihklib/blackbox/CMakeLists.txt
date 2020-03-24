@@ -336,10 +336,24 @@ foreach(target IN ITEMS
     ihk_os_thaw03
     ihk_os_thaw05
     ihk_os_thaw06
+    ihk_os_makedumpfile01
+    ihk_os_makedumpfile02
+    ihk_os_makedumpfile03
+    ihk_os_makedumpfile05
+    ihk_os_getrusage01
+    ihk_os_getrusage02
+    ihk_os_getrusage03
+    ihk_os_getrusage04
+    ihk_os_getrusage05
     )
 
   # Add target
   add_executable(${target} src/${target}.c)
+
+  # -D
+  target_compile_definitions(${target}
+    PRIVATE -DPAGE_SIZE=${PAGE_SIZE}
+    )
 
   # -I
   target_include_directories(${target}
@@ -384,10 +398,15 @@ foreach(target IN ITEMS
     delay_with_interrupt_disabled
     oom
     count
+    mmap
     )
 
   # Add target
   add_executable(${target} src/${target}.c)
+
+  target_compile_definitions(${target}
+    PRIVATE -DPAGE_SIZE=${PAGE_SIZE}
+    )
 
   # Install
   install(TARGETS ${target} DESTINATION bin)
@@ -398,7 +417,7 @@ endforeach()
 foreach(target IN ITEMS
     nop
     nop_ldr
-    simd_sve_wfi_mem
+#    simd_sve_wfi_mem
     )
 
   # Add target
