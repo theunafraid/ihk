@@ -49,10 +49,9 @@ int main(int argc, char **argv)
 	};
 
 	int ret_expected[1] = { 1 };
-
 	unsigned long count_expected[2] = { 1000000 };
-
 	pid_t pid = -1;
+
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
 		int errno_save;
