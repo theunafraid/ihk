@@ -48,6 +48,17 @@ int main(int argc, char **argv)
 		goto out;
 	}
 
+	/* Let parent take stat */
+	ret = write(fd_out, &message, sizeof(int));
+	if (ret != sizeof(int)) {
+		int errno_save = errno;
+
+		printf("%s: write returned %d, errno: %d\n",
+		       __FILE__, ret, errno);
+		ret = ret >= 0 ? ret : -errno_save;
+		goto out;
+	}
+
 	/* Wait until parent takes reference stat */
 	ret = read(fd_in, &message, sizeof(int));
 	if (ret != sizeof(int)) {
