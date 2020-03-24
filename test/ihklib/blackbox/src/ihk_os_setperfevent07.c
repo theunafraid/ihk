@@ -49,7 +49,6 @@ int main(int argc, char **argv)
 	};
 
 	int ret_expected[1] = { 1 };
-
 	unsigned long count_expected[2] = { 1000000 };
 
 	/* Activate and check */

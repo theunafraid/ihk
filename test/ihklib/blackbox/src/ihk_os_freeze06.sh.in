@@ -3,6 +3,8 @@
 # define WORKDIR
 if [ "${AUTOTEST_HOME}" != "" ]; then
     . ${AUTOTEST_HOME}/bin/config.sh
+else
+    WORKDIR=$(pwd)
 fi
 
 # insmod as root
