@@ -314,7 +314,7 @@ foreach(target IN ITEMS
     ihk_os_perfctl01
     ihk_os_perfctl02
     ihk_os_perfctl03
-    ihk_os_perfctl04
+#    ihk_os_perfctl04
     ihk_os_perfctl05
     ihk_os_perfctl06
     ihk_os_perfctl07
@@ -324,8 +324,8 @@ foreach(target IN ITEMS
     ihk_os_getperfevent04
     ihk_os_getperfevent05
     ihk_os_getperfevent06
-    ihk_os_getperfevent07
-    ihk_os_getperfevent08
+#    ihk_os_getperfevent07
+#    ihk_os_getperfevent08
     ihk_os_freeze01
     ihk_os_freeze02
     ihk_os_freeze03
@@ -337,14 +337,14 @@ foreach(target IN ITEMS
     ihk_os_thaw05
     ihk_os_thaw06
     ihk_os_makedumpfile01
-    ihk_os_makedumpfile02
-    ihk_os_makedumpfile03
-    ihk_os_makedumpfile05
+#    ihk_os_makedumpfile02
+#    ihk_os_makedumpfile03
+#    ihk_os_makedumpfile05
     ihk_os_getrusage01
-    ihk_os_getrusage02
-    ihk_os_getrusage03
-    ihk_os_getrusage04
-    ihk_os_getrusage05
+#    ihk_os_getrusage02
+#    ihk_os_getrusage03
+#    ihk_os_getrusage04
+#    ihk_os_getrusage05
     )
 
   # Add target
