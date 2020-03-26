@@ -300,6 +300,7 @@ int main(int argc, char **argv)
  out:
 	if (pid_status > 0) {
 		user_wait(&pid_status);
+		linux_kill_mcexec();
 	}
 
 	if (ihk_get_num_os_instances(0)) {
