@@ -69,10 +69,17 @@ function fini_oom_killer()
 
 function check_dump() {
     dump=$1
-    
+    interactive=$2
+
+    if [ $interactive -eq 1 ]; then
+	eclair_opt="-i"
+    else
+	eclair_opt=
+    fi
+
     expect -c "
 set timeout 20
-spawn @WITH_MCK@/bin/eclair -d ${dump} -k @WITH_MCK@/smp-arm64/kernel/mckernel.img -l
+spawn sudo @WITH_MCK@/bin/eclair -d ${dump} -k @WITH_MCK@/smp-arm64/kernel/mckernel.img -l $eclair_opt
 
 expect \"(eclair)\"
 send \"set pagination 0\n\"

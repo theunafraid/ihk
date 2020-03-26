@@ -22,8 +22,6 @@ int main(int argc, char **argv)
 	int i;
 	int opt;
 	char *fn;
-	struct mems mems = { 0 };
-	int excess;
 	int index;
 
 	params_getopt(argc, argv);
@@ -55,6 +53,9 @@ int main(int argc, char **argv)
 
 	ret = cpus_reserve();
 	INTERR(ret, "cpus_reserve returned %d\n", ret);
+
+	struct mems mems = { 0 };
+	int excess;
 
 	ret = mems_ls(&mems, "MemFree", 0.9);
 	INTERR(ret, "mems_ls returned %d\n", ret);

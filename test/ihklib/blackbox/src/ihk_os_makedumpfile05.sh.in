@@ -17,7 +17,7 @@ for i in {0..1}; do
 	break;
     fi
 
-    check_dump ${WORKDIR}/dump
+    check_dump ${WORKDIR}/dump 0
     if [ $ret -ne 0 ]; then
 	break;
     fi
