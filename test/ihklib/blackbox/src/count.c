@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 #define MAX_COUNT 10
 
@@ -41,6 +42,9 @@ int main(int argc, char **argv)
 	printf("[ INFO ] count: start sending messages...\n", i);
 
 	for (i = 0; i < MAX_COUNT; i++) {
+		long j, sum;
+		struct timeval start, end;
+
 		printf("[ INFO ] count: sending message #%d\n", i);
 
 		ret = write(fd, &message, sizeof(int));
@@ -52,7 +56,29 @@ int main(int argc, char **argv)
 			goto out;
 		}
 
-		usleep(1000000);
+		gettimeofday(&start, NULL);
+		while (1) {
+			long sec, usec;
+
+			for (j = 0; j < (1UL << 20); j++) {
+				sum += j;
+			}
+			if (sum < 0) {
+				printf("%s: sum is negative (%ld)\n", __FILE__, sum);
+				ret = -EINVAL;
+				goto out;
+			}
+
+			gettimeofday(&end, NULL);
+
+			usec = end.tv_sec - start.tv_sec;
+			sec = usec < 0 ? -1 : 0;
+			usec = usec < 0 ? usec + 1000000 : usec;
+			sec += end.tv_sec - start.tv_sec;
+			if (sec >= 1) {
+				break;
+			}
+		}
 	}
 
 	ret = 0;

@@ -346,6 +346,7 @@ foreach(target IN ITEMS
 #    ihk_os_getrusage04
 #    ihk_os_getrusage05
     ihk_os_get_status08
+    ihk_os_thaw08
     )
 
   # Add target
