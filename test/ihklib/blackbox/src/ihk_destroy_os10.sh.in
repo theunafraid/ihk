@@ -8,9 +8,12 @@ if [ "${AUTOTEST_HOME}" != "" ]; then
 fi
 
 patch_and_build delay_with_interrupt_disabled_mckernel
-
-sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_destroy_os10 -u $(id -u) -g $(id -g)
 ret=$?
+
+if [ $ret -eq 0 ]; then
+    sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_destroy_os10 -u $(id -u) -g $(id -g)
+    ret=$?
+fi
 
 if [ "${AUTOTEST_HOME}" != "" ]; then
     # Pass OK/NG to runtestlist.sh

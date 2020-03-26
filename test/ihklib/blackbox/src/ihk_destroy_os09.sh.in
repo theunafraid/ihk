@@ -8,9 +8,12 @@ if [ "${AUTOTEST_HOME}" != "" ]; then
 fi
 
 patch_and_build status_mckernel status_ihk
-
-sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_destroy_os09 -u $(id -u) -g $(id -g)
 ret=$?
+
+if [ $ret -eq 0 ]; then
+    sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_destroy_os09 -u $(id -u) -g $(id -g)
+    ret=$?
+fi
 
 if [ "${AUTOTEST_HOME}" != "" ]; then
     # Pass OK/NG to runtestlist.sh
