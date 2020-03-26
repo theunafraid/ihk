@@ -26,13 +26,42 @@ int main(int argc, char **argv)
 
 	params_getopt(argc, argv);
 
-	while ((opt = getopt(argc, argv, "i:f:")) != -1) {
+	while ((opt = getopt(argc, argv, "i:f:c")) != -1) {
 		switch (opt) {
 		case 'i':
 			index = atoi(optarg);
 			break;
 		case 'f':
 			fn = optarg;
+			break;
+		case 'c':
+			/* Clean up */
+			ret = ihk_os_shutdown(0);
+			INTERR(ret, "ihk_os_shutdown returned %d\n", ret);
+
+			ret = os_wait_for_status(IHK_STATUS_INACTIVE);
+			INTERR(ret, "os status didn't change to %d\n",
+			       IHK_STATUS_INACTIVE);
+
+			ret = cpus_os_release();
+			INTERR(ret, "cpus_os_release returned %d\n", ret);
+
+			ret = mems_os_release();
+			INTERR(ret, "mems_os_release returned %d\n", ret);
+
+			ret = ihk_destroy_os(0, 0);
+			INTERR(ret, "ihk_destroy_os returned %d\n", ret);
+
+			ret = cpus_release();
+			INTERR(ret, "cpus_release returned %d\n", ret);
+
+			ret = mems_release();
+			INTERR(ret, "mems_release returned %d\n", ret);
+
+			ret = linux_rmmod(0);
+			INTERR(ret, "linux_rmmod returned %d\n", ret);
+
+			exit(0);
 			break;
 		default: /* '?' */
 			printf("unknown option %c\n", optopt);
@@ -112,33 +141,8 @@ int main(int argc, char **argv)
 		exit(0);
 	}
 
-	/* Clean up */
-	if (ret_access_expected[index] == 0) {
-		//ret = unlink(fn);
-		//INTERR(ret, "unlink returned %d\n", ret);
-	}
-
-	ret = ihk_os_shutdown(0);
-	INTERR(ret, "ihk_os_shutdown returned %d\n", ret);
-
-	ret = os_wait_for_status(IHK_STATUS_INACTIVE);
-	INTERR(ret, "os status didn't change to %d\n",
-	       IHK_STATUS_INACTIVE);
-
-	ret = cpus_os_release();
-	INTERR(ret, "cpus_os_release returned %d\n", ret);
-
-	ret = mems_os_release();
-	INTERR(ret, "mems_os_release returned %d\n", ret);
-
-	ret = ihk_destroy_os(0, 0);
-	INTERR(ret, "ihk_destroy_os returned %d\n", ret);
-
-	ret = 0;
+	return 0;
  out:
-	if (!(access(fn, F_OK))) {
-		//unlink(fn);
-	}
 	if (ihk_get_num_os_instances(0)) {
 		ihk_os_shutdown(0);
 		os_wait_for_status(IHK_STATUS_INACTIVE);

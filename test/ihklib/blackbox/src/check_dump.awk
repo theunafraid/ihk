@@ -9,51 +9,51 @@ st == 1 { st = 2; next; }
 
 st == 2 {
     if ($0 ~ /Thread [0-9]* .* at .*:[0-9]*/) {
-	printf "[ OK ] "
+	printf "[  OK  ] "
 	ok++
     } else {
 print $0
-	printf "[ NG ] "
+	printf "[  NG  ] "
 	ng++
     }
-    print "info threads"
+    print "check_dump: info threads"
     st = 0
 }
 
 st == 3 {
     if ($0 ~ /Switching to thread 3/) {
-	printf "[ OK ] "
+	printf "[  OK  ] "
 	ok++
     } else {
-	printf "[ NG ] "
+	printf "[  NG  ] "
 	ng++
     }
-    print "switch thread"
+    print "check_dump: switch thread"
     st = 0
 }
 
 st == 4 {
     if ($0 ~ /at .*:[0-9]*/) {
-	printf "[ OK ] "
+	printf "[  OK  ] "
 	ok++
     } else {
-	printf "[ NG ] "
+	printf "[  NG  ] "
 	ng++
     }
-    print "backtrace"
+    print "check_dump: backtrace"
     st = 0
 }
 
 
 st == 5 {
     if ($3 ~ /0x[0-9a-f]{16}/) {
-	printf "[ OK ] "
+	printf "[  OK  ] "
 	ok++
     } else {
-	printf "[ NG ] "
+	printf "[  NG  ] "
 	ng++
     }
-    print "_end address shown"
+    print "check_dump: _end address shown"
     st = 0
 }
 
