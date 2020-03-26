@@ -6,12 +6,24 @@ function patch_and_build()
     if [ -n $fn_mckernel ]; then
 	pushd @WITH_MCK_SRC@
         patch -p1 < @CMAKE_INSTALL_PREFIX@/bin/${fn_mckernel}.patch
+	ret=$?
+	if [ $ret -ne 0 ]; then
+	    echo "[INTERR] patch failed"
+            patch -p1 -R < @CMAKE_INSTALL_PREFIX@/bin/${fn_mckernel}.patch
+	    return $ret
+	fi
 	popd
     fi
 
     if [ -n $fn_ihk ]; then
 	pushd @WITH_MCK_SRC@/ihk
         patch -p1 < @CMAKE_INSTALL_PREFIX@/bin/${fn_ihk}.patch
+	ret=$?
+	if [ $ret -ne 0 ]; then
+	    echo "[INTERR] patch failed"
+            patch -p1 -R < @CMAKE_INSTALL_PREFIX@/bin/${fn_ihk}.patch
+	    return $ret
+	fi
 	popd
     fi
 
@@ -34,6 +46,8 @@ function patch_and_build()
         patch -R -p1 < @CMAKE_INSTALL_PREFIX@/bin/${fn_ihk}.patch
         popd
     fi
+
+    return 0
 }
 
 function detect_cpu_model()
