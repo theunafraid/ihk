@@ -347,6 +347,9 @@ foreach(target IN ITEMS
 #    ihk_os_getrusage05
     ihk_os_get_status08
     ihk_os_thaw08
+    ihk_reserve_mem_conf03
+    ihk_reserve_mem_conf04
+    ihk_os_makedumpfile04
     )
 
   # Add target
