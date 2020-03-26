@@ -66,3 +66,34 @@ function fini_oom_killer()
     echo "[ INFO ] performing \"echo $min_free_kbytes > /proc/sys/vm/min_free_kbytes\""
     sudo bash -c "echo $min_free_kbytes > /proc/sys/vm/min_free_kbytes"
 }
+
+function check_dump() {
+    dump=$1
+    
+    expect -c "
+set timeout 20
+spawn @WITH_MCK@/bin/eclair -d ${dump} -k @WITH_MCK@/smp-arm64/kernel/mckernel.img -l
+
+expect \"(eclair)\"
+send \"set pagination 0\n\"
+
+expect \"(eclair)\"
+send \"info threads\n\"
+
+expect \"(eclair)\"
+send \"thread 3\n\"
+
+expect \"(eclair)\"
+send \"bt\n\"
+
+expect \"(eclair)\"
+send \"p/x _end\n\"
+
+expect \"(eclair)\"
+send \"quit\n\"
+
+" > ${WORKDIR}/log
+
+    awk -f @CMAKE_INSTALL_PREFIX@/bin/check_dump.awk ${WORKDIR}/log
+    ret=$?
+}

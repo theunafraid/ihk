@@ -7,38 +7,12 @@ else
     WORKDIR=$(pwd)
 fi
 
+. @CMAKE_INSTALL_PREFIX@/bin/util.sh
+
 sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_os_makedumpfile01 -u $(id -u) -g $(id -g) -f ${WORKDIR}/dump
 ret=$?
 
-expect -c "
-set timeout 20
-spawn @WITH_MCK@/bin/eclair -d ${WORKDIR}/dump -k @WITH_MCK@/smp-arm64/kernel/mckernel.img -l
-
-expect \"(eclair)\"
-send \"set pagination 0\n\"
-
-expect \"(eclair)\"
-send \"info threads\n\"
-
-expect \"(eclair)\"
-send \"thread 3\n\"
-
-expect \"(eclair)\"
-send \"info register\n\"
-
-expect \"(eclair)\"
-send \"bt\n\"
-
-expect \"(eclair)\"
-send \"p/x _end\n\"
-
-expect \"(eclair)\"
-send \"quit\n\
-
-" > ${WORKDIR}/log
-
-cat ${WORKDIR}/log
-
+check_dump ${WORKDIR}/dump
 #sufo rm -f ${WORKDIR}/dump
 
 if [ "${AUTOTEST_HOME}" != "" ]; then

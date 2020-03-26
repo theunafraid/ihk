@@ -381,7 +381,12 @@ configure_file(src/util.sh.in util.sh @ONLY)
 install(PROGRAMS ${CMAKE_BINARY_DIR}/util.sh DESTINATION bin)
 
 # utility awk scripts
-install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/src/zoneinfo.awk DESTINATION bin)
+foreach(target IN ITEMS
+    zoneinfo.awk
+    check_dump.awk
+    )
+  install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/src/${target} DESTINATION bin)
+endforeach()
 
 # patches
 foreach(target IN ITEMS
