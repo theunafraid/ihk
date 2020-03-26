@@ -85,6 +85,10 @@ int main(int argc, char **argv)
 			       IHK_STATUS_RUNNING);
 		}
 
+		if (!(access(fn, F_OK))) {
+			unlink(fn);
+		}
+
 		ret = ihk_os_makedumpfile(0, fn, 24, 0);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
@@ -92,6 +96,9 @@ int main(int argc, char **argv)
 
 		/* Clean up */
 		if (ret_expected[i] == 0) {
+			ret = unlink(fn);
+			INTERR(ret, "unlink returned %d\n", ret);
+
 			ret = ihk_os_shutdown(0);
 			INTERR(ret, "ihk_os_shutdown returned %d\n", ret);
 
@@ -113,6 +120,9 @@ int main(int argc, char **argv)
 
 	ret = 0;
  out:
+	if (!(access(fn, F_OK))) {
+		unlink(fn);
+	}
 	if (ihk_get_num_os_instances(0)) {
 		ihk_os_shutdown(0);
 		os_wait_for_status(IHK_STATUS_INACTIVE);

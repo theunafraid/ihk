@@ -57,7 +57,7 @@ int main(int argc, char **argv)
 	INTERR(ret, "mems_reserve returned %d\n", ret);
 
 	/* Activate and check */
-	for (i = 1; i < 2; i++) {
+	for (i = 0; i < 2; i++) {
 		START("test-case: %s: %s\n", param, values[i]);
 
 		ret = ihk_create_os(0);
@@ -85,6 +85,10 @@ int main(int argc, char **argv)
 			       IHK_STATUS_RUNNING);
 		}
 
+		if (!(access(fn, F_OK))) {
+			unlink(fn);
+		}
+
 		ret = ihk_os_makedumpfile(0, fn, 24, 0);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
@@ -92,7 +96,8 @@ int main(int argc, char **argv)
 
 		ret = access(fn, F_OK);
 		OKNG(ret == ret_access_expected[i],
-			"dumpfile created as expected\n");
+		     "dumpfile %screated as expected\n",
+		     ret_access_expected[i] == 0 ? "" : "not ");
 
 		/* Clean up */
 		if ((ihk_os_get_status(0)) == IHK_STATUS_RUNNING) {

@@ -101,6 +101,10 @@ int main(int argc, char **argv)
 		INTERR(ret, "os status didn't change to %d\n",
 		       IHK_STATUS_RUNNING);
 
+		if (!(access(fn, F_OK))) {
+			unlink(fn);
+		}
+
 		ret = ihk_os_makedumpfile(os_index_input[i],
 					fn, 24, 0);
 		OKNG(ret == ret_expected[i],
@@ -108,7 +112,7 @@ int main(int argc, char **argv)
 
 		ret = access(fn, F_OK);
 		OKNG(ret == ret_access_expected[i],
-			"dumpfile status same as expected\n");
+			"dumpfile generated\n");
 
 		if (ret_access_expected[i] == 0) {
 			ret = unlink(fn);
