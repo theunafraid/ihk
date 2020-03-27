@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+#include <sys/syscall.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
@@ -8,6 +10,7 @@
 #include <stdio.h>
 #include <errno.h>
 
+#define MAP_HUGE_2MB    (21 << MAP_HUGE_SHIFT)
 #define MAX_NUM_CHUNKS (1UL<<10)
 
 enum ihk_os_pgsize {
@@ -26,9 +29,21 @@ int main(int argc, char **argv)
 {
 	int ret;
 	int i;
-	char *mem[IHK_MAX_NUM_PGSIZES][MAX_NUM_CHUNKS];
+	int opt;
+	int fd = -1;
+	char **mem[IHK_MAX_NUM_PGSIZES] = { 0 };
 	int message;
 	int fd_in, fd_out;
+	int num_pages;
+	int kernel_mode = 0;
+	size_t kernel_mem_size = 0;
+	intptr_t kernel_addr = 0;
+	size_t user_mem_size = 0;
+	int mmap_flags = MAP_PRIVATE;
+	int page_size = PAGE_SIZE;
+	enum ihk_os_pgsize pg = IHK_OS_PGSIZE_64KB;
+
+	fd_in = fd_out = -1;
 
 	fd_in = open(argv[1], O_RDWR);
 	if (fd_in == -1) {
@@ -45,6 +60,62 @@ int main(int argc, char **argv)
 
 		printf("%s: open returned %d\n", __FILE__, errno);
 		ret = -errno_save;
+		goto out;
+	}
+
+	while ((opt = getopt(argc, argv, "p:u:f:k:")) != -1) {
+		switch (opt) {
+		case 'p': /* specify page size */
+			pg = atoi(optarg);
+			break;
+		case 'u': /* size of memory to allocate */
+			user_mem_size = atoi(optarg);
+			break;
+		case 'f': /* speficy filename for file mapping */
+			fd = open(optarg, O_RDWR);
+			if (fd == -1) {
+				int errno_save = errno;
+
+				printf("%s: open returned %d\n",
+						__FILE__, errno);
+				ret = -errno_save;
+				goto out;
+			}
+			break;
+		case 'k': /* allocate memory in kernel space */
+			kernel_mode = 1;
+			kernel_mem_size = atoi(optarg);
+			break;
+		default:
+			printf("unknown option %c\n", optopt);
+			exit(1);
+		}
+	}
+
+	if (fd == -1) {
+		mmap_flags |= MAP_ANONYMOUS;
+	}
+
+	switch (pg) {
+	case IHK_OS_PGSIZE_2MB:
+		mmap_flags |= MAP_HUGETLB | MAP_HUGE_2MB;
+		page_size = 1UL << 21;
+		break;
+	default:
+		break;
+	}
+
+	if (!user_mem_size) {
+		user_mem_size = page_size * MAX_NUM_CHUNKS;
+	}
+	num_pages = user_mem_size / page_size;
+
+	mem[pg] = malloc(sizeof(char *) * num_pages);
+	if (!mem[pg]) {
+		int errno_save = -errno;
+
+		printf("%s: malloc returned %d\n", __FILE__, errno);
+		ret = errno_save;
 		goto out;
 	}
 
@@ -73,18 +144,26 @@ int main(int argc, char **argv)
 	system("printf '[ INFO ] '; "
 	       "grep MemUsed /sys/devices/system/node/node0/meminfo");
 
-	/* 64 KiB * 1024 */
-	for (i = 0; i < (1UL << 10); i++) {
-		mem[IHK_OS_PGSIZE_64KB][i] = mmap(0,
-						  PAGE_SIZE,
-						  PROT_READ | PROT_WRITE,
-						  MAP_ANONYMOUS | MAP_PRIVATE,
-						  -1, 0);
-		if (mem[IHK_OS_PGSIZE_64KB][i] == MAP_FAILED) {
+	for (i = 0; i < num_pages; i++) {
+		mem[pg][i] = mmap(0, page_size, PROT_READ | PROT_WRITE,
+					mmap_flags, fd, 0);
+		if (mem[pg][i] == MAP_FAILED) {
 			ret = -errno;
 			goto out;
 		}
-		memset(mem[IHK_OS_PGSIZE_64KB][i], 0xff, PAGE_SIZE);
+		memset(mem[pg][i], 0xff, page_size);
+	}
+
+	if (kernel_mode) {
+		kernel_addr = syscall(2003, kernel_mem_size);
+		if (kernel_addr == -1) {
+			int errno_save = -errno;
+
+			printf("%s: syscall 2003 failed: %s\n",
+					__FILE__, strerror(errno_save));
+			ret = errno_save;
+			goto out;
+		}
 	}
 
 	/* Let parent take stat */
@@ -114,5 +193,23 @@ int main(int argc, char **argv)
 
 	ret = 0;
  out:
+	if (fd != -1) {
+		close(fd);
+	}
+	if (fd_in != -1) {
+		close(fd_in);
+	}
+	if (fd_out != -1) {
+		close(fd_out);
+	}
+	for (i = 0; i < num_pages; i++) {
+		munmap(mem[pg][i], page_size);
+	}
+	if (mem[pg]) {
+		free(mem[pg]);
+	}
+	if (kernel_mode) {
+		syscall(2004, kernel_addr);
+	}
 	return ret;
 }

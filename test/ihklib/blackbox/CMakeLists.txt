@@ -340,16 +340,19 @@ foreach(target IN ITEMS
 #    ihk_os_makedumpfile02
 #    ihk_os_makedumpfile03
 #    ihk_os_makedumpfile05
-    ihk_os_getrusage01
-#    ihk_os_getrusage02
-#    ihk_os_getrusage03
-#    ihk_os_getrusage04
-#    ihk_os_getrusage05
     ihk_os_get_status08
     ihk_os_thaw08
     ihk_reserve_mem_conf03
     ihk_reserve_mem_conf04
     ihk_os_makedumpfile04
+    ihk_os_getrusage01
+    ihk_os_getrusage02
+    ihk_os_getrusage03
+    ihk_os_getrusage04
+    ihk_os_getrusage05
+    ihk_os_getrusage06
+    ihk_os_getrusage07
+    ihk_os_getrusage08
     )
 
   # Add target
@@ -396,6 +399,7 @@ endforeach()
 # patches
 foreach(target IN ITEMS
     status_mckernel status_ihk
+    mckernel_mem_alloc
     delay_with_interrupt_disabled_mckernel
     )
   install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/src/${target}.patch DESTINATION bin)
