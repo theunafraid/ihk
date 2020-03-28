@@ -41,7 +41,7 @@ int main(int argc, char **argv)
 	size_t user_mem_size = 0;
 	int mmap_flags = MAP_PRIVATE;
 	int page_size = PAGE_SIZE;
-	enum ihk_os_pgsize pg = IHK_OS_PGSIZE_64KB;
+	enum ihk_os_pgsize page_size_index = IHK_OS_PGSIZE_64KB;
 
 	fd_in = fd_out = -1;
 
@@ -66,7 +66,7 @@ int main(int argc, char **argv)
 	while ((opt = getopt(argc, argv, "p:u:f:k:")) != -1) {
 		switch (opt) {
 		case 'p': /* specify page size */
-			pg = atoi(optarg);
+			page_size_index = atoi(optarg);
 			break;
 		case 'u': /* size of memory to allocate */
 			user_mem_size = atoi(optarg);
@@ -96,7 +96,7 @@ int main(int argc, char **argv)
 		mmap_flags |= MAP_ANONYMOUS;
 	}
 
-	switch (pg) {
+	switch (page_size_index) {
 	case IHK_OS_PGSIZE_2MB:
 		mmap_flags |= MAP_HUGETLB | MAP_HUGE_2MB;
 		page_size = 1UL << 21;
@@ -110,8 +110,8 @@ int main(int argc, char **argv)
 	}
 	num_pages = user_mem_size / page_size;
 
-	mem[pg] = malloc(sizeof(char *) * num_pages);
-	if (!mem[pg]) {
+	mem[page_size_index] = malloc(sizeof(char *) * num_pages);
+	if (!mem[page_size_index]) {
 		int errno_save = -errno;
 
 		printf("%s: malloc returned %d\n", __FILE__, errno);
@@ -141,17 +141,29 @@ int main(int argc, char **argv)
 		goto out;
 	}
 
-	system("printf '[ INFO ] '; "
-	       "grep MemUsed /sys/devices/system/node/node0/meminfo");
-
+	printf("[ INFO ] num_pages: %d, page_size: %d\n",
+	       num_pages, page_size);
 	for (i = 0; i < num_pages; i++) {
-		mem[pg][i] = mmap(0, page_size, PROT_READ | PROT_WRITE,
-					mmap_flags, fd, 0);
-		if (mem[pg][i] == MAP_FAILED) {
+		mem[page_size_index][i] = mmap(0, page_size, PROT_READ | PROT_WRITE,
+					       mmap_flags, fd, 0);
+		if (mem[page_size_index][i] == MAP_FAILED) {
 			ret = -errno;
 			goto out;
 		}
-		memset(mem[pg][i], 0xff, page_size);
+
+		if (fd == -1) {
+			memset(mem[page_size_index][i], 0xff, page_size);
+		} else {
+			char *buf = mmap(0, page_size, PROT_READ | PROT_WRITE,
+						       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+
+			if (buf == MAP_FAILED) {
+				ret = -errno;
+				goto out;
+			}
+			memcpy(buf, mem[page_size_index][i], page_size);
+			munmap(buf, page_size);
+		}
 	}
 
 	if (kernel_mode) {
@@ -188,9 +200,6 @@ int main(int argc, char **argv)
 		goto out;
 	}
 
-	system("printf '[ INFO ] '; "
-	       "grep MemUsed /sys/devices/system/node/node0/meminfo");
-
 	ret = 0;
  out:
 	if (fd != -1) {
@@ -203,10 +212,10 @@ int main(int argc, char **argv)
 		close(fd_out);
 	}
 	for (i = 0; i < num_pages; i++) {
-		munmap(mem[pg][i], page_size);
+		munmap(mem[page_size_index][i], page_size);
 	}
-	if (mem[pg]) {
-		free(mem[pg]);
+	if (mem[page_size_index]) {
+		free(mem[page_size_index]);
 	}
 	if (kernel_mode) {
 		syscall(2004, kernel_addr);

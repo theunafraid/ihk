@@ -17,7 +17,7 @@
 #include "linux.h"
 #include "user.h"
 
-const char param[] = "size of rusage";
+const char param[] = "output buffer size";
 const char *values[] = {
 	"LONG_MIN",
 	"-1",

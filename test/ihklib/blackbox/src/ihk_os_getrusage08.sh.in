@@ -9,17 +9,24 @@ else
     WORKDIR=$(pwd)
 fi
 
-patch_and_build mckernel_mem_alloc
+for i in {0..0}; do
+    patch_and_build mckernel_mem_alloc
+    ret=$?
 
-sudo mkfifo -m 0666 ${WORKDIR}/fifo_in
-sudo mkfifo -m 0666 ${WORKDIR}/fifo_out
+    if [ $ret -ne 0 ]; then
+	break
+    fi
 
-sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_os_getrusage08 -u $(id -u) -g $(id -g) \
-	-i ${WORKDIR}/fifo_in -o ${WORKDIR}/fifo_out
-ret=$?
+    sudo mkfifo -m 0666 ${WORKDIR}/fifo_in
+    sudo mkfifo -m 0666 ${WORKDIR}/fifo_out
 
-sudo rm -f ${WORKDIR}/fifo_in
-sudo rm -f ${WORKDIR}/fifo_out
+    sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_os_getrusage08 -u $(id -u) -g $(id -g) \
+	 -i ${WORKDIR}/fifo_in -o ${WORKDIR}/fifo_out
+    ret=$?
+
+    sudo rm -f ${WORKDIR}/fifo_in
+    sudo rm -f ${WORKDIR}/fifo_out
+done
 
 if [ "${AUTOTEST_HOME}" != "" ]; then
     # Pass OK/NG to runtestlist.sh

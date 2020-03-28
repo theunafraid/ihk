@@ -185,8 +185,10 @@ int main(int argc, char **argv)
 		}
 		else {
 			OKNG(!memcmp(&ru_input_before[i], &ru_expected[i],
+				     sizeof(struct ihk_os_rusage)) &&
+			     !memcmp(&ru_input_after[i], &ru_expected[i],
 				     sizeof(struct ihk_os_rusage)),
-			     "output buffer is untouched\n");
+			     "output buffers are untouched\n");
 		}
 
 		ret = ihk_os_shutdown(0);

@@ -104,10 +104,6 @@ int main(int argc, char **argv)
 			ret = ihk_os_boot(0);
 			INTERR(ret, "ihk_os_boot returned %d\n", ret);
 
-			ret = os_wait_for_status(IHK_STATUS_RUNNING);
-			INTERR(ret, "os status didn't change to %d\n",
-			       IHK_STATUS_RUNNING);
-
 			fd_in = open(fn_in, O_RDWR);
 			INTERR(fd_in == -1, "open returned %d\n", errno);
 
@@ -177,8 +173,10 @@ int main(int argc, char **argv)
 			     rss64k, rss64k_expected);
 		} else {
 			OKNG(!memcmp(&ru_result[i][0], &ru_expected[i],
+				     sizeof(struct ihk_os_rusage)) &&
+			     !memcmp(&ru_result[i][1], &ru_expected[i],
 				     sizeof(struct ihk_os_rusage)),
-			     "output buffer is untouched\n");
+			     "output buffers are untouched\n");
 		}
 
 		/* Clean up */

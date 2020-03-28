@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 	}
 
 	int ret_expected[2] = {
-		-EINVAL,
+		-EFAULT,
 		0
 	};
 
