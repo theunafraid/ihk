@@ -126,8 +126,8 @@ int main(int argc, char **argv)
 		OKNG(ret == ret_expected[i], "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		INFO("rss: %ld\n",
-		ru_input_before[i].memory_stat_mapped_file[pg[i]]);
+		INFO("mapped_file: %ld\n",
+		     ru_input_before[i].memory_stat_mapped_file[pg[i]]);
 
 		ret = write(fd_in, &message, sizeof(int));
 		INTERR(ret != sizeof(int),
@@ -142,8 +142,8 @@ int main(int argc, char **argv)
 		OKNG(ret == ret_expected[i], "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		INFO("rss: %ld\n",
-			ru_input_after[i].memory_stat_mapped_file[pg[i]]);
+		INFO("mapped_file: %ld\n",
+		     ru_input_after[i].memory_stat_mapped_file[pg[i]]);
 
 		ret = write(fd_in, &message, sizeof(int));
 		INTERR(ret != sizeof(int),
@@ -157,15 +157,17 @@ int main(int argc, char **argv)
 		close(fd_out);
 
 		if (ret_expected[i] == 0) {
-			unsigned long rss =
+			unsigned long mapped_file =
 			ru_input_after[i].memory_stat_mapped_file[pg[i]] -
 			ru_input_before[i].memory_stat_mapped_file[pg[i]];
 
-			unsigned long rss_expected =
+			unsigned long mapped_file_expected =
 				ru_expected[i].memory_stat_mapped_file[pg[i]];
 
-			OKNG(rss >= rss_expected && rss <= rss_expected * 1.1,
-				"rss: %d, expected: %d\n", rss, rss_expected);
+			OKNG(mapped_file >= mapped_file_expected &&
+			     mapped_file <= mapped_file_expected * 1.1,
+			     "mapped_file: %d, expected: %d\n",
+			     mapped_file, mapped_file_expected);
 		}
 
 		ret = ihk_os_shutdown(0);

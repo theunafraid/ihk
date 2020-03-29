@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	enum ihk_os_pgsize pg[2] = {
+	enum ihk_os_pgsize page_size_index[2] = {
 		IHK_OS_PGSIZE_64KB,
 		IHK_OS_PGSIZE_2MB,
 	};
@@ -115,7 +115,7 @@ int main(int argc, char **argv)
 		INTERR(fd_out == -1, "open returned %d\n", errno);
 
 		sprintf(cmd, "mmap %s %s -p %d -u %zu",
-				fn_in, fn_out, pg[i], mem_size[i]);
+				fn_in, fn_out, page_size_index[i], mem_size[i]);
 		ret = user_fork_exec(cmd, &pid);
 		INTERR(ret < 0, "user_fork_exec returned %d\n", ret);
 
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 
 		INFO("rss: %ld\n",
-			ru_input_before[i].memory_stat_rss[pg[i]]);
+		     ru_input_before[i].memory_stat_rss[page_size_index[i]]);
 
 		ret = write(fd_in, &message, sizeof(int));
 		INTERR(ret != sizeof(int),
@@ -146,7 +146,7 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 
 		INFO("rss: %ld\n",
-			ru_input_after[i].memory_stat_rss[pg[i]]);
+			ru_input_after[i].memory_stat_rss[page_size_index[i]]);
 
 		ret = write(fd_in, &message, sizeof(int));
 		INTERR(ret != sizeof(int),
@@ -161,11 +161,11 @@ int main(int argc, char **argv)
 
 		if (ret_expected[i] == 0) {
 			unsigned long rss =
-				ru_input_after[i].memory_stat_rss[pg[i]] -
-				ru_input_before[i].memory_stat_rss[pg[i]];
+				ru_input_after[i].memory_stat_rss[page_size_index[i]] -
+				ru_input_before[i].memory_stat_rss[page_size_index[i]];
 
 			unsigned long rss_expected =
-				ru_expected[i].memory_stat_rss[pg[i]];
+				ru_expected[i].memory_stat_rss[page_size_index[i]];
 
 			OKNG(rss >= rss_expected && rss <= rss_expected * 1.1,
 				"rss: %d, expected: %d\n", rss, rss_expected);

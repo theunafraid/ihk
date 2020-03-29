@@ -116,7 +116,7 @@ int main(int argc, char **argv)
 
 		printf("%s: malloc returned %d\n", __FILE__, errno);
 		ret = errno_save;
-		goto out;
+		goto sync_out;
 	}
 
 	/* Let parent take stat */
@@ -127,7 +127,7 @@ int main(int argc, char **argv)
 		printf("%s: write returned %d, errno: %d\n",
 		       __FILE__, ret, errno);
 		ret = ret >= 0 ? ret : -errno_save;
-		goto out;
+		goto sync_out;
 	}
 
 	/* Wait until parent takes reference stat */
@@ -138,32 +138,24 @@ int main(int argc, char **argv)
 		printf("%s: read returned %d, errno: %d\n",
 		       __FILE__, ret, errno);
 		ret = ret >= 0 ? ret : -errno_save;
-		goto out;
+		goto sync_out;
 	}
 
 	printf("[ INFO ] num_pages: %d, page_size: %d\n",
 	       num_pages, page_size);
 	for (i = 0; i < num_pages; i++) {
-		mem[page_size_index][i] = mmap(0, page_size, PROT_READ | PROT_WRITE,
-					       mmap_flags, fd, 0);
+		mem[page_size_index][i] = mmap(0, page_size,
+					       PROT_READ | PROT_WRITE,
+					       mmap_flags,
+					       fd,
+					       fd == -1 ? 0 : i * page_size
+					       );
 		if (mem[page_size_index][i] == MAP_FAILED) {
 			ret = -errno;
-			goto out;
+			goto sync_out;
 		}
 
-		if (fd == -1) {
-			memset(mem[page_size_index][i], 0xff, page_size);
-		} else {
-			char *buf = mmap(0, page_size, PROT_READ | PROT_WRITE,
-						       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-
-			if (buf == MAP_FAILED) {
-				ret = -errno;
-				goto out;
-			}
-			memcpy(buf, mem[page_size_index][i], page_size);
-			munmap(buf, page_size);
-		}
+		memset(mem[page_size_index][i], 0xff, page_size);
 	}
 
 	if (kernel_mode) {
@@ -174,9 +166,11 @@ int main(int argc, char **argv)
 			printf("%s: syscall 2003 failed: %s\n",
 					__FILE__, strerror(errno_save));
 			ret = errno_save;
-			goto out;
+			goto sync_out;
 		}
 	}
+
+ sync_out:
 
 	/* Let parent take stat */
 	ret = write(fd_out, &message, sizeof(int));
