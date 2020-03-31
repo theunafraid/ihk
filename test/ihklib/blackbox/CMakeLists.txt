@@ -354,6 +354,11 @@ foreach(target IN ITEMS
     ihk_os_getrusage07
     ihk_os_getrusage08
     ihk_os_read_cpu_register07
+    ihk_os_getrusage10
+    ihk_os_getrusage11
+    ihk_os_getrusage12
+    ihk_os_getrusage13
+    ihk_os_getrusage14
     )
 
   # Add target
@@ -406,6 +411,7 @@ endforeach()
 foreach(target IN ITEMS
     status_mckernel status_ihk
     mckernel_mem_alloc
+    consume_cpu_time
     delay_with_interrupt_disabled_mckernel
     )
   install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/src/${target}.patch DESTINATION bin)
@@ -439,6 +445,7 @@ endforeach()
 foreach(target IN ITEMS
     nop
     nop_ldr
+    consume_cpu_time
 #    simd_sve_wfi_mem
     )
 
@@ -456,6 +463,20 @@ foreach(target IN ITEMS
     )
 
   # Install
+  install(TARGETS ${target} DESTINATION bin)
+
+endforeach()
+
+# programs needs pthread library
+foreach(target IN ITEMS
+    spawn_threads
+    )
+
+  add_executable(${target} src/${target}.c)
+
+  find_package(Threads)
+  target_link_libraries(${target} PRIVATE ${CMAKE_THREAD_LIBS_INIT})
+
   install(TARGETS ${target} DESTINATION bin)
 
 endforeach()
