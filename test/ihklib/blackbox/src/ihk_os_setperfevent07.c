@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 {
 	int ret;
 	int i;
-	FILE *fp = NULL;
+	pid_t pid = -1;
 
 	params_getopt(argc, argv);
 
@@ -52,7 +52,6 @@ int main(int argc, char **argv)
 
 	unsigned long count_expected[2] = { 1000000 };
 
-	pid_t pid = -1;
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
 		int errno_save;
@@ -95,6 +94,9 @@ int main(int argc, char **argv)
 		ret = waitpid(pid, &wstatus, 0);
 		INTERR(ret < 0, "waitpid returned %d\n", errno);
 		pid = -1;
+
+		ret = linux_kill_mcexec();
+		INTERR(ret, "linux_kill_mcexec returned %d\n", ret);
 
 		ret = ihk_os_perfctl(0, PERF_EVENT_DISABLE);
 		INTERR(ret, "PERF_EVENT_DISABLE returned %d\n", ret);
