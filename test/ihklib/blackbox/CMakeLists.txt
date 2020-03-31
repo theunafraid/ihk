@@ -54,7 +54,13 @@ endif()
 add_definitions(-DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX})
 
 # CFLAGS
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g")
+set(CFLAGS_WARNING "-Wall" "-Wextra" "-Wno-unused-parameter" "-Wno-sign-compare" "-Wno-unused-function" ${EXTRA_WARNINGS} CACHE STRING "Warning flags")
+add_compile_options(
+  -O2
+  -g
+  #${CFLAGS_WARNING}
+  )
+
 
 # -L, this must be done before adding dependants
 link_directories("${WITH_MCK}/lib64")
@@ -359,6 +365,7 @@ foreach(target IN ITEMS
     ihk_os_getrusage12
     ihk_os_getrusage13
     ihk_os_getrusage14
+    ihk_os_setperfevent09
     )
 
   # Add target
@@ -413,6 +420,7 @@ foreach(target IN ITEMS
     mckernel_mem_alloc
     consume_cpu_time
     delay_with_interrupt_disabled_mckernel
+    str
     )
   install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/src/${target}.patch DESTINATION bin)
 endforeach()
@@ -427,6 +435,7 @@ foreach(target IN ITEMS
     mmap
     ikc_map
     read_write_cpu_register
+    str
     )
 
   # Add target
@@ -446,7 +455,7 @@ foreach(target IN ITEMS
     nop
     nop_ldr
     consume_cpu_time
-#    simd_sve_wfi_mem
+    #simd_sve_wfi_mem
     )
 
   # Add target
