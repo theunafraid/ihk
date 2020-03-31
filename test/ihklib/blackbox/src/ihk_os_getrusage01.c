@@ -26,8 +26,8 @@ int main(int argc, char **argv)
 {
 	int ret;
 	int i;
-	int fd_in, fd_out;
-	char *fn_in, *fn_out;
+	int fd_in = -1, fd_out = -1;
+	char *fn_in = NULL, *fn_out = NULL;
 
 	params_getopt(argc, argv);
 
@@ -160,6 +160,9 @@ int main(int argc, char **argv)
 
 			close(fd_in);
 			close(fd_out);
+
+			ret = linux_kill_mcexec();
+			INTERR(ret, "linux_kill_mcexec returned %d\n", ret);
 
 			unsigned long rss64k =
 				ru_result[i][1].memory_stat_rss[IHK_OS_PGSIZE_64KB] -

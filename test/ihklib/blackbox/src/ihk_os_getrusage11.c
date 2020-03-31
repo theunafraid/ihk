@@ -161,7 +161,7 @@ int main(int argc, char **argv)
 
 			OKNG(user >= user_expected &&
 				user <= user_expected * 1.1,
-				"user: %d, expected: %d\n",
+				"user: %ld, expected: %ld\n",
 				user, user_expected);
 		}
 

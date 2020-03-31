@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 	int fd = -1;
 	char **mem[IHK_MAX_NUM_PGSIZES] = { 0 };
 	int message;
-	int fd_in, fd_out;
+	int fd_in = -1, fd_out = -1;
 	int num_pages;
 	int kernel_mode = 0;
 	size_t kernel_mem_size = 0;
@@ -42,8 +42,6 @@ int main(int argc, char **argv)
 	int mmap_flags = MAP_PRIVATE;
 	int page_size = PAGE_SIZE;
 	enum ihk_os_pgsize page_size_index = IHK_OS_PGSIZE_64KB;
-
-	fd_in = fd_out = -1;
 
 	fd_in = open(argv[1], O_RDWR);
 	if (fd_in == -1) {
@@ -88,7 +86,8 @@ int main(int argc, char **argv)
 			break;
 		default:
 			printf("unknown option %c\n", optopt);
-			exit(1);
+			ret = -EINVAL;
+			goto out;
 		}
 	}
 
