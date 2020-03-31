@@ -5,9 +5,6 @@ KERN_DIR=/usr/src/kernels/`uname -r`/
 
 TARGET=modules
 
-CPPFLAGS = 
-LDFLAGS = 
-
 all: $(TARGET)
 
 modules:

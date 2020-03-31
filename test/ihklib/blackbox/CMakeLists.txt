@@ -152,7 +152,6 @@ foreach(target IN ITEMS
     ihk_os_assign_mem04
     ihk_os_shutdown07
     ihk_os_set_ikc_map07
-    ikc_map
     #  ihk_destroy_os07
     ihk_destroy_os03
     #ihk_destroy_os08
@@ -337,14 +336,15 @@ foreach(target IN ITEMS
     ihk_os_thaw05
     ihk_os_thaw06
     ihk_os_makedumpfile01
-#    ihk_os_makedumpfile02
-#    ihk_os_makedumpfile03
-#    ihk_os_makedumpfile05
+    ihk_os_makedumpfile02
+    ihk_os_makedumpfile03
+    ihk_os_makedumpfile04
+    ihk_os_makedumpfile05
+    ihk_os_makedumpfile06
     ihk_os_get_status08
     ihk_os_thaw08
     ihk_reserve_mem_conf03
     ihk_reserve_mem_conf04
-    ihk_os_makedumpfile04
     ihk_os_getrusage01
     ihk_os_getrusage02
     ihk_os_getrusage03
@@ -353,6 +353,7 @@ foreach(target IN ITEMS
     ihk_os_getrusage06
     ihk_os_getrusage07
     ihk_os_getrusage08
+    ihk_os_read_cpu_register07
     )
 
   # Add target
@@ -384,9 +385,14 @@ foreach(target IN ITEMS
 
 endforeach()
 
-# utility shell scripts
-configure_file(src/util.sh.in util.sh @ONLY)
-install(PROGRAMS ${CMAKE_BINARY_DIR}/util.sh DESTINATION bin)
+# shell scripts with the need for string replacement
+foreach(target IN ITEMS
+    util
+    ikc_map
+    )
+  configure_file(src/${target}.sh.in ${target}.sh @ONLY)
+  install(PROGRAMS ${CMAKE_BINARY_DIR}/util.sh DESTINATION bin)
+endforeach()
 
 # utility awk scripts
 foreach(target IN ITEMS
@@ -413,6 +419,8 @@ foreach(target IN ITEMS
     oom
     count
     mmap
+    ikc_map
+    read_write_cpu_register
     )
 
   # Add target
@@ -453,7 +461,7 @@ foreach(target IN ITEMS
 endforeach()
 
 # kernel module
-add_custom_target(test_driver ALL COMMAND make && mv test_driver.ko ${CMAKE_BINARY_DIR} && make clean
+add_custom_target(test_driver ALL COMMAND cp ${WITH_MCK}/kmod/ihk/linux/core/Module.symvers ./ && make EXTRA_CFLAGS=-I/${WITH_MCK}/include && mv test_driver.ko ${CMAKE_BINARY_DIR} && make clean
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/driver
 )
 install(PROGRAMS ${CMAKE_BINARY_DIR}/test_driver.ko DESTINATION kmod)

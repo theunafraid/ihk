@@ -5,13 +5,22 @@
 #include <linux/init.h>
 #include <linux/delay.h>
 #include <linux/time.h>
+#include <linux/uaccess.h>
+#include <ihk/ihk_host_driver.h>
 
 #define DEV_CLASS_NAME "dev_class"
-#define DEVICE_NAME "test_rusage"
+#define DEVICE_NAME "test_driver"
 
 static int major_num = 0;
 static struct class *test_class = NULL;
 static struct device *test_dev = NULL;
+
+struct test_driver_ioctl_arg {
+	unsigned long addr;
+	unsigned long val;
+	unsigned long addr_ext;
+	int cpu;
+};
 
 static int dev_open(struct inode *inode, struct file *file)
 {
@@ -24,21 +33,90 @@ static int dev_release(struct inode *inode, struct file *file)
 	return 0;
 }
 
-static long dev_ioctl(struct file *file, unsigned int request, unsigned long arg)
+/* request:
+	0: ihk_os_read_cpu_register
+	1: ihk_os_write_cpu_register
+*/
+static long dev_ioctl(struct file *file, unsigned int request, unsigned long _arg)
 {
-	struct timespec s_time, c_time;
+	int ret;
+	struct test_driver_ioctl_arg *__user uarg =
+		(struct test_driver_ioctl_arg *__user)_arg;
+	struct test_driver_ioctl_arg arg;
+	struct ihk_os_cpu_register desc;
+	ihk_os_t os;
+	struct timespec start, stop;
 
-	getnstimeofday(&s_time);
-
-	while (1) {
-		getnstimeofday(&c_time);
-		if ( c_time.tv_sec >= s_time.tv_sec + request &&
-		     c_time.tv_nsec >= s_time.tv_nsec) {
-			break;
-		}
+	if (copy_from_user(&arg, uarg, sizeof(struct test_driver_ioctl_arg))) {
+		ret = -EFAULT;
+		goto out;
 	}
 
-	return 0;
+	desc.addr = arg.addr;
+	desc.val = arg.val;
+	desc.addr_ext = arg.addr_ext;
+	atomic_set(&desc.sync, 0);
+
+	ret = ihk_get_request_os_cpu(&os, &arg.cpu);
+	if (ret) {
+		pr_err("%s:%d: error: "
+		       "ihk_get_request_os_cpu returned%d\n",
+		       __FILE__, __LINE__, ret);
+		goto out;
+	}
+
+	switch (request) {
+	case 0:
+		ret = ihk_os_read_cpu_register(os, arg.cpu,
+					       &desc);
+
+		if (ret) {
+			pr_err("%s:%d: error: "
+			       "ihk_os_read_cpu_register returned%d\n",
+			       __FILE__, __LINE__, ret);
+			goto out;
+		}
+		break;
+	case 1:
+		ret = ihk_os_write_cpu_register(os, arg.cpu,
+						&desc);
+
+		if (ret) {
+			pr_err("%s:%d: error: "
+			       "ihk_os_write_cpu_register returned%d\n",
+			       __FILE__, __LINE__, ret);
+			goto out;
+		}
+		break;
+	default:
+		pr_err("%s:%d: error: unknown request: %d\n",
+		       __FILE__, __LINE__, request);
+		ret = -EINVAL;
+		goto out;
+	}
+
+	/* wait until notified with 1 sec timeout */
+	getnstimeofday(&start);
+	while (!atomic_read(&desc.sync)) {
+		mdelay(200);
+		getnstimeofday(&stop);
+		if (stop.tv_sec >= start.tv_sec + 1 &&
+		    stop.tv_nsec >= start.tv_nsec) {
+			break;
+		}
+		pr_info("%s:%d: waiting for notification...\n",
+		       __FILE__, __LINE__);
+	}
+
+	arg.val = desc.val;
+	if (copy_to_user(uarg, &arg, sizeof(struct test_driver_ioctl_arg))) {
+		ret = -EFAULT;
+		goto out;
+	}
+
+	ret = 0;
+out:
+	return ret;
 }
 
 static struct file_operations fops = {
