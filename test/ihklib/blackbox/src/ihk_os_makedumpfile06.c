@@ -136,11 +136,7 @@ int main(int argc, char **argv)
 	OKNG(ret == ret_access_expected[index],
 	     "dumpfile created as expected\n");
 
-	/* Keep OS alive */
-	if (index == 1) {
-		exit(0);
-	}
-
+	/* Keep OS alive because check is done in script */
 	return 0;
  out:
 	if (ihk_get_num_os_instances(0)) {
