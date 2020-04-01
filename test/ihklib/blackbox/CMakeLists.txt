@@ -323,6 +323,7 @@ foreach(target IN ITEMS
     ihk_os_perfctl05
     ihk_os_perfctl06
     ihk_os_perfctl07
+    ihk_os_perfctl08
     ihk_os_getperfevent01
     ihk_os_getperfevent02
     ihk_os_getperfevent03
