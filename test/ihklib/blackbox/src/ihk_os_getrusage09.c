@@ -46,7 +46,6 @@ int main(int argc, char **argv)
 	}
 
 	char *node_size = "0:256MB,1:512MB";
-	//char *node_size = "4:256MB,7:512MB";
 
 	int ret_expected[1] = { 0 };
 

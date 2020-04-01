@@ -78,21 +78,42 @@ out:
 	return ret;
 }
 
-static void parse_unit(char *args, int *cpu_id, double *sec)
+static int parse_unit(char *args, int *cpu_id, double *sec)
 {
+	int ret;
+
 	char *ps = strdup(args);
+	if (!ps) {
+		ret = -errno;
+		printf("%s: strdup failed\n", __func__);
+		goto out;
+	}
+
 	char *p = ps;
 
-	while (*p != ':') {
+	while (*p != ':' && *p != '\0') {
 		p++;
 	}
-	*p = '\0';
+
+	if (*p == ':') {
+		*p = '\0';
+	}
+	else {
+		ret = -EINVAL;
+		printf("%s: invalid format (<cpu>:<time>)\n", __func__);
+		goto out;
+	}
 	p++;
 
 	*cpu_id = atoi(ps);
 	*sec = strtod(p, NULL);
 
-	free(ps);
+	ret = 0;
+out:
+	if (ps) {
+		free(ps);
+	}
+	return ret;
 }
 
 static int parse_args(char *args, struct percpu_time **cpus)
@@ -134,7 +155,11 @@ static int parse_args(char *args, struct percpu_time **cpus)
 		double sec_temp = 0.0;
 		long time_temp = 0;
 
-		parse_unit(tok, &cpu_temp, &sec_temp);
+		ret = parse_unit(tok, &cpu_temp, &sec_temp);
+		if (ret) {
+			printf("%s: parse unit returned %d\n", __func__, ret);
+			goto out;
+		}
 		printf("cpu: %d  sec: %f\n", cpu_temp, sec_temp);
 
 		time_temp = sec_temp * NS_PER_SEC;

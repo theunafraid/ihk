@@ -360,6 +360,7 @@ foreach(target IN ITEMS
     ihk_os_getrusage06
     ihk_os_getrusage07
     ihk_os_getrusage08
+    ihk_os_getrusage09
     ihk_os_read_cpu_register07
     ihk_os_getrusage10
     ihk_os_getrusage11
@@ -484,7 +485,7 @@ foreach(target IN ITEMS
 
 endforeach()
 
-# programs needs pthread library
+# programs need pthread library
 foreach(target IN ITEMS
     spawn_threads
     )
@@ -496,6 +497,17 @@ foreach(target IN ITEMS
 
   install(TARGETS ${target} DESTINATION bin)
 
+endforeach()
+
+# programs need libnuma
+foreach(target IN ITEMS
+    numa_alloc
+    )
+
+  add_executable(${target} src/${target}.c)
+  target_link_libraries(${target} PRIVATE numa)
+
+  install(TARGETS ${target} DESTINATION bin)
 endforeach()
 
 # kernel module
