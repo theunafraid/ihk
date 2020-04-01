@@ -13,9 +13,9 @@
 #include "user.h"
 #include "perf.h"
 
-const char param[] = "event type";
+const char param[] = "number of counters";
 const char *values[] = {
-	"instruction count",
+	"one (instruction count)",
 };
 
 int main(int argc, char **argv)
@@ -44,7 +44,7 @@ int main(int argc, char **argv)
 		 .exclude_user = 0,
 		 .exclude_kernel = 1,
 		 .exclude_hv = 1,
-		 .exclude_idle = 1
+		 .exclude_idle = 0
 		}
 	};
 
@@ -106,8 +106,8 @@ int main(int argc, char **argv)
 
 		OKNG(counts[0] >= count_expected[i] &&
 		     counts[0] < count_expected[i] * 1.1,
-		     "event count (%ld) is within expected range\n",
-		     counts[0]);
+		     "count: %ld, expected: %ld\n",
+		     counts[0], count_expected[i]);
 
 		ret = ihk_os_perfctl(0, PERF_EVENT_DESTROY);
 		INTERR(ret, "PERF_EVENT_DESTROY returned %d\n", ret);

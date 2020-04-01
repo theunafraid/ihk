@@ -13,22 +13,16 @@
 #include "user.h"
 #include "perf.h"
 
-#define NEVENTS 2
-
 const char param[] = "number of counters";
 const char *values[] = {
-	"2 (instruction count and load instruction count)"
-};
-const char *event_types[] = {
-	"instruction count",
-	"load instruction count"
+	"one (instruction count)",
 };
 
 int main(int argc, char **argv)
 {
 	int ret;
 	int i;
-	FILE *fp = NULL;
+	pid_t pid = -1;
 
 	params_getopt(argc, argv);
 
@@ -42,7 +36,7 @@ int main(int argc, char **argv)
 	ret = mems_reserve();
 	INTERR(ret, "mems_reserve returned %d\n", ret);
 
-	struct ihk_perf_event_attr attr_input[NEVENTS] = {
+	struct ihk_perf_event_attr attr_input[1] = {
 		{
 		 .config = ARMV8_PMUV3_PERFCTR_INST_RETIRED,
 		 .disabled = 1,
@@ -50,32 +44,20 @@ int main(int argc, char **argv)
 		 .exclude_user = 0,
 		 .exclude_kernel = 1,
 		 .exclude_hv = 1,
-		 .exclude_idle = 1
-		},
-		{
-		 .config = ARMV8_PMUV3_PERFCTR_LD_RETIRED,
-		 .disabled = 1,
-		 .pinned = 0,
-		 .exclude_user = 0,
-		 .exclude_kernel = 1,
-		 .exclude_hv = 1,
-		 .exclude_idle = 1
-		},
+		 .exclude_idle = 0
+		}
 	};
 
-	int ret_expected[1] = { 2 };
+	int ret_expected[1] = { 0 };
+	unsigned long count_expected[2] = { 1000000 };
 
-	unsigned long count_expected[NEVENTS] = { 2000000, 1000000 };
-
-	pid_t pid = -1;
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
 		int errno_save;
 		int ncpu;
 		char cmd[4096];
-		unsigned long counts[NEVENTS];
+		unsigned long counts[1];
 		int wstatus;
-		int j;
 
 		START("test-case: %s: %s\n", param, values[i]);
 
@@ -97,35 +79,35 @@ int main(int argc, char **argv)
 		ret = ihk_os_boot(0);
 		INTERR(ret, "ihk_os_boot returned %d\n", ret);
 
-		ret = ihk_os_setperfevent(0, attr_input, NEVENTS);
-		OKNG(ret == ret_expected[i],
-		     "return value: %d, expected: %d\n",
-		     ret, ret_expected[i]);
+		ret = ihk_os_setperfevent(0, attr_input, 1);
+		INTERR(ret != 1, "ihk_os_setperfevent returned %d\n",
+		       ret);
 
 		ret = ihk_os_perfctl(0, PERF_EVENT_ENABLE);
 		INTERR(ret, "PERF_EVENT_ENABLE returned %d\n", ret);
 
-		ret = user_fork_exec("nop_ldr", &pid);
+		ret = user_fork_exec("nop", &pid);
 		INTERR(ret < 0, "user_fork_exec returned %d\n", ret);
 
 		ret = waitpid(pid, &wstatus, 0);
 		INTERR(ret < 0, "waitpid returned %d\n", errno);
 		pid = -1;
 
+		ret = linux_kill_mcexec();
+		INTERR(ret, "linux_kill_mcexec returned %d\n", ret);
+
 		ret = ihk_os_perfctl(0, PERF_EVENT_DISABLE);
 		INTERR(ret, "PERF_EVENT_DISABLE returned %d\n", ret);
 
-		ret = ihk_os_getperfevent(0, counts, NEVENTS);
-		INTERR(ret, "ihk_os_getperfevent returned %d\n",
-		       ret);
+		ret = ihk_os_getperfevent(0, counts, 1);
+		OKNG(ret == ret_expected[i],
+		     "return value: %d, expected: %d\n",
+		     ret, ret_expected[i]);
 
-		for (j = 0; j < NEVENTS; j++) {
-			OKNG(counts[j] >= count_expected[j] &&
-			     counts[j] < count_expected[j] * 1.1,
-			     "%s: %ld, expected: %ld\n",
-			     event_types[j], counts[j],
-			     count_expected[j]);
-		}
+		OKNG(counts[0] >= count_expected[i] &&
+		     counts[0] < count_expected[i] * 1.1,
+		     "count: %ld, expected: %ld\n",
+		     counts[0], count_expected[i]);
 
 		ret = ihk_os_perfctl(0, PERF_EVENT_DESTROY);
 		INTERR(ret, "PERF_EVENT_DESTROY returned %d\n", ret);
@@ -166,4 +148,3 @@ int main(int argc, char **argv)
 
 	return ret;
 }
-

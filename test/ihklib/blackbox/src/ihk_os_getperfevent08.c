@@ -50,7 +50,7 @@ int main(int argc, char **argv)
 		 .exclude_user = 0,
 		 .exclude_kernel = 1,
 		 .exclude_hv = 1,
-		 .exclude_idle = 1
+		 .exclude_idle = 0
 		},
 		{
 		 .config = ARMV8_PMUV3_PERFCTR_LD_RETIRED,
@@ -59,11 +59,11 @@ int main(int argc, char **argv)
 		 .exclude_user = 0,
 		 .exclude_kernel = 1,
 		 .exclude_hv = 1,
-		 .exclude_idle = 1
+		 .exclude_idle = 0
 		},
 	};
 
-	int ret_expected[1] = { 2 };
+	int ret_expected[1] = { 0 };
 
 	unsigned long count_expected[NEVENTS] = { 2000000, 1000000 };
 
@@ -98,9 +98,8 @@ int main(int argc, char **argv)
 		INTERR(ret, "ihk_os_boot returned %d\n", ret);
 
 		ret = ihk_os_setperfevent(0, attr_input, NEVENTS);
-		OKNG(ret == ret_expected[i],
-		     "return value: %d, expected: %d\n",
-		     ret, ret_expected[i]);
+		INTERR(ret != NEVENTS,
+		       "ihk_os_setperfevent returned %d\n", ret);
 
 		ret = ihk_os_perfctl(0, PERF_EVENT_ENABLE);
 		INTERR(ret, "PERF_EVENT_ENABLE returned %d\n", ret);
@@ -112,12 +111,16 @@ int main(int argc, char **argv)
 		INTERR(ret < 0, "waitpid returned %d\n", errno);
 		pid = -1;
 
+		ret = linux_kill_mcexec();
+		INTERR(ret, "linux_kill_mcexec returned %d\n", ret);
+
 		ret = ihk_os_perfctl(0, PERF_EVENT_DISABLE);
 		INTERR(ret, "PERF_EVENT_DISABLE returned %d\n", ret);
 
 		ret = ihk_os_getperfevent(0, counts, NEVENTS);
-		INTERR(ret, "ihk_os_getperfevent returned %d\n",
-		       ret);
+		OKNG(ret == ret_expected[i],
+		     "return value: %d, expected: %d\n",
+		     ret, ret_expected[i]);
 
 		for (j = 0; j < NEVENTS; j++) {
 			OKNG(counts[j] >= count_expected[j] &&

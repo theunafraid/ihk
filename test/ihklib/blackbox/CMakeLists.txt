@@ -329,8 +329,8 @@ foreach(target IN ITEMS
     ihk_os_getperfevent04
     ihk_os_getperfevent05
     ihk_os_getperfevent06
-#    ihk_os_getperfevent07
-#    ihk_os_getperfevent08
+    ihk_os_getperfevent07
+    ihk_os_getperfevent08
     ihk_os_freeze01
     ihk_os_freeze02
     ihk_os_freeze03
