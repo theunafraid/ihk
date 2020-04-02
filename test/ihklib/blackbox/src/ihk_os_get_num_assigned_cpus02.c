@@ -31,9 +31,6 @@ int main(int argc, char **argv)
 	ret = ihk_create_os(0);
 	INTERR(ret, "ihk_create_os returned %d\n", ret);
 
-	ret = cpus_os_assign();
-	INTERR(ret, "cpus_os_assign returned %d\n", ret);
-
 	/* Prepare one with NULL and zero-clear others */
 	struct cpus cpus_input[] = {
 		{
