@@ -10,7 +10,7 @@
 
 const char param[] = "cpus";
 const char *values[] = {
-	"No CPUs assigned",
+	"No memory assigned",
 };
 
 int main(int argc, char **argv)
