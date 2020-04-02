@@ -22,47 +22,11 @@ const char *values[] = {
 	"include INT_MAX",
 };
 
-int cpus_toggle(int cpu_id, char *toggle)
-{
-	int ret;
-	int on_off = 0;
-	char cmd[4096];
-
-	if (cpu_id < 0) {
-		printf("%s: invalid cpu_id (%d)\n", __func__, cpu_id);
-		ret = -EINVAL;
-		goto out;
-	}
-
-	if (!strcasecmp(toggle, "on")) {
-		on_off = 1;
-	}
-	else if (!strcasecmp(toggle, "off")) {
-		on_off = 0;
-	}
-	else {
-		printf("%s: invalid argument (%s)\n", __func__, toggle);
-		ret = -EINVAL;
-		goto out;
-	}
-
-	sprintf(cmd, "echo %d > /sys/devices/system/cpu/cpu%d/online",
-		on_off, cpu_id);
-
-	ret = system(cmd);
-	ret = WEXITSTATUS(ret);
-	INTERR(ret, "%s returned %d\n", cmd, ret);
-
-	ret = 0;
-out:
-	return ret;
-}
-
 int main(int argc, char **argv)
 {
 	int ret;
 	int i, j;
-	int max_id;
+	int max_id = -1;
 
 	params_getopt(argc, argv);
 
@@ -102,18 +66,18 @@ int main(int argc, char **argv)
 	ret = cpus_toggle(max_id, "off");
 	INTERR(ret, "cpus_toggle returned %d\n", ret);
 
-	/* mckernel cpus */
-	ret = cpus_shift(&cpus_mckernel, 2);
-	INTERR(ret, "cpus_shift returned %d\n", ret);
-
-	ret = cpus_pop(&cpus_mckernel, 1);
-	INTERR(ret, "cpus_pop returned %d\n", ret);
-
 	/* linux cpus */
 	ret = cpus_ls(&cpus_linux);
 	INTERR(ret, "cpus_ls returned %d\n", ret);
 
 	ret = cpus_pop(&cpus_linux, cpus_linux.ncpus - 2);
+	INTERR(ret, "cpus_pop returned %d\n", ret);
+
+	/* mckernel cpus */
+	ret = cpus_shift(&cpus_mckernel, 2);
+	INTERR(ret, "cpus_shift returned %d\n", ret);
+
+	ret = cpus_pop(&cpus_mckernel, 1);
 	INTERR(ret, "cpus_pop returned %d\n", ret);
 
 	ret = ihk_reserve_cpu(0, cpus_mckernel.cpus, cpus_mckernel.ncpus);
@@ -233,7 +197,9 @@ int main(int argc, char **argv)
 	mems_release();
 	cpus_release();
 	linux_rmmod(0);
-	cpus_toggle(max_id, "on");
+	if (max_id != -1) {
+		cpus_toggle(max_id, "on");
+	}
 
 	return ret;
 }
