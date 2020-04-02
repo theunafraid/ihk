@@ -18,7 +18,8 @@
 
 const char param[] = "memory_numa_stat";
 const char *values[] = {
-	"256MB at node 0 and 512MB at node 1"
+	"256MB at the 1st node",
+	"512MB at the 2nd node"
 };
 
 int main(int argc, char **argv)
@@ -28,6 +29,10 @@ int main(int argc, char **argv)
 	int fd_in, fd_out;
 	char *fn_in, *fn_out;
 	int opt;
+	pid_t pid = -1;
+	int wstatus;
+	int message = 1;
+	char cmd[4096], mcexecopt[4096];
 
 	params_getopt(argc, argv);
 
@@ -45,37 +50,49 @@ int main(int argc, char **argv)
 		}
 	}
 
-	char *node_size = "0:256MB,1:512MB";
-
-	int ret_expected[1] = { 0 };
-
-	struct ihk_os_rusage ru_input_before[1] = { 0 };
-	struct ihk_os_rusage ru_input_after[1] = { 0 };
-
-	struct ihk_os_rusage ru_expected[1] = {
-		{
-			.memory_numa_stat[0] = 256 * 1024 * 1024,
-			.memory_numa_stat[1] = 512 * 1024 * 1024,
-		},
-	};
+        struct cpus cpus_mckernel = { 0 };
 
 	/* Precondition */
 	ret = linux_insmod(0);
 	INTERR(ret, "linux_insmod returned %d\n", ret);
 
-	ret = cpus_reserve();
-	INTERR(ret, "cpus_reserve returned %d\n", ret);
+        ret = cpus_ls(&cpus_mckernel);
+        INTERR(ret, "cpus_ls returned %d\n", ret);
 
-	ret = mems_reserve();
-	INTERR(ret, "mems_reserve returned %d\n", ret);
+        ret = cpus_shift(&cpus_mckernel, 2);
+        INTERR(ret, "cpus_shift returned %d\n", ret);
 
-	pid_t pid = -1;
-	int wstatus;
-	int message = 1;
-	char cmd[4096];
+        ret = ihk_reserve_cpu(0, cpus_mckernel.cpus, cpus_mckernel.ncpus);
+        INTERR(ret, "ihk_reserve_cpu returned %d\n", ret);
+
+	struct mems mems = { 0 };
+	int excess;
+
+	ret = mems_ls(&mems, "MemFree", 0.9);
+	INTERR(ret, "mems_ls returned %d\n", ret);
+
+	excess = mems.num_mem_chunks - 4;
+	if (excess > 0) {
+		ret = mems_shift(&mems, excess);
+		INTERR(ret, "mems_shift returned %d\n", ret);
+	}
+
+
+	ret = ihk_reserve_mem(0, mems.mem_chunks,
+			      mems.num_mem_chunks);
+	INTERR(ret, "ihk_reserve_mem returned %d\n", ret);
+
+	int size_input[] = { 256, 512 };
+	int node_input[2] = {
+		mems.mem_chunks[0].numa_node_number,
+		mems.mem_chunks[1].numa_node_number
+	};
+	int ret_expected[2] = { 0 };
+	struct ihk_os_rusage ru_input_before[2] = { 0 };
+	struct ihk_os_rusage ru_input_after[2] = { 0 };
 
 	/* Activate and check */
-	for (i = 0; i < 1; i++) {
+	for (i = 0; i < 2; i++) {
 
 		START("test-case: %s: %s\n", param, values[i]);
 
@@ -107,9 +124,13 @@ int main(int argc, char **argv)
 		fd_out = open(fn_out, O_RDWR);
 		INTERR(fd_out == -1, "open returned %d\n", errno);
 
-		sprintf(cmd, "numa_alloc %s %s -n %s",
-			fn_in, fn_out, node_size);
-		ret = user_fork_exec(cmd, &pid);
+		/* use mcexec -m <NUMA-node-id> because MPOL_MF_STRICT
+		 * isn't supported
+		 */
+		sprintf(cmd, "mmap_sync -i %s -o %s -s %d",
+			fn_in, fn_out, size_input[i]);
+		sprintf(mcexecopt, "-m %d", node_input[i]);
+		ret = _user_fork_exec(cmd, &pid, mcexecopt);
 		INTERR(ret < 0, "user_fork_exec returned %d\n", ret);
 
 		/* Wait until child is ready */
@@ -154,27 +175,16 @@ int main(int argc, char **argv)
 		close(fd_out);
 
 		if (ret_expected[i] == 0) {
-			unsigned long node0 =
-			ru_input_after[i].memory_numa_stat[0] -
-			ru_input_before[i].memory_numa_stat[0];
-			unsigned long node1 =
-			ru_input_after[i].memory_numa_stat[1] -
-			ru_input_before[i].memory_numa_stat[1];
+			unsigned long diff =
+			ru_input_after[i].memory_numa_stat[node_input[i]] -
+			ru_input_before[i].memory_numa_stat[node_input[i]];
 
-			unsigned long node0_expected =
-				ru_expected[i].memory_numa_stat[0];
-			unsigned long node1_expected =
-				ru_expected[i].memory_numa_stat[1];
-
-			OKNG(node0 >= node0_expected &&
-				node0 <= node0_expected * 1.1,
-				"user: %d, expected: %d\n",
-				node0, node0_expected);
-			OKNG(node1 >= node1_expected &&
-				node1 <= node1_expected * 1.1,
-				"user: %d, expected: %d\n",
-				node1, node1_expected);
+			OKNG(diff >= (size_input[i] << 20) &&
+			     diff <= (size_input[i] << 20) * 1.1,
+			     "memory_numa_stat[%d]: %d, expected: %d\n",
+			     node_input[i], diff, size_input[i] << 20);
 		}
+
 		ret = ihk_os_shutdown(0);
 		INTERR(ret, "ihk_os_shutdown returned %d\n", ret);
 

@@ -10,7 +10,7 @@
 #include "okng.h"
 #include "user.h"
 
-int user_fork_exec(char *filename, pid_t *pid)
+int _user_fork_exec(char *filename, pid_t *pid, char *opt)
 {
 	int ret;
 	char cmd[4096];
@@ -19,8 +19,9 @@ int user_fork_exec(char *filename, pid_t *pid)
 
 	ret = fork();
 	if (ret == 0) {
-		sprintf(cmd, "%s/bin/mcexec %s/bin/%s",
+		sprintf(cmd, "%s/bin/mcexec %s %s/bin/%s",
 			QUOTE(WITH_MCK),
+			opt,
 			QUOTE(CMAKE_INSTALL_PREFIX),
 			filename);
 		ret = system(cmd);
@@ -42,6 +43,11 @@ int user_fork_exec(char *filename, pid_t *pid)
 	*pid = ret;
  out:
 	return ret;
+}
+
+int user_fork_exec(char *filename, pid_t *pid)
+{
+	return _user_fork_exec(filename, pid, "");
 }
 
 int user_wait(pid_t *pid)

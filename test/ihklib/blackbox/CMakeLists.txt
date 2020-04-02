@@ -445,6 +445,7 @@ foreach(target IN ITEMS
     ikc_map
     read_write_cpu_register
     str
+    mmap_sync
     )
 
   # Add target
