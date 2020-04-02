@@ -492,6 +492,42 @@ int cpus_broadcast(struct cpus *cpus, int ncpus)
 	return ret;
 }
 
+int cpus_toggle(int cpu_id, char *toggle)
+{
+	int ret;
+	int on_off = 0;
+	char cmd[4096];
+
+	if (cpu_id < 0) {
+		printf("%s: invalid cpu_id (%d)\n", __func__, cpu_id);
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (!strcasecmp(toggle, "on")) {
+		on_off = 1;
+	}
+	else if (!strcasecmp(toggle, "off")) {
+		on_off = 0;
+	}
+	else {
+		printf("%s: invalid argument (%s)\n", __func__, toggle);
+		ret = -EINVAL;
+		goto out;
+	}
+
+	sprintf(cmd, "echo %d > /sys/devices/system/cpu/cpu%d/online",
+		on_off, cpu_id);
+
+	ret = system(cmd);
+	ret = WEXITSTATUS(ret);
+	INTERR(ret, "%s returned %d\n", cmd, ret);
+
+	ret = 0;
+out:
+	return ret;
+}
+
 int ikc_cpu_map_init(struct ikc_cpu_map *map, int ncpus)
 {
 	int ret;

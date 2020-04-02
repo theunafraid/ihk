@@ -38,6 +38,9 @@ int cpus_os_release(void);
 int cpus_at(struct cpus *cpus, int index);
 int cpus_broadcast(struct cpus *cpus, int ncpus);
 
+int cpus_toggle(int cpu_id, char *toggle);
+
+
 void ikc_cpu_map_dump(struct ikc_cpu_map *map);
 int ikc_cpu_map_init(struct ikc_cpu_map *map, int ncpus);
 int ikc_cpu_map_copy(struct ikc_cpu_map *map, struct cpus *src_cpus,
