@@ -367,6 +367,13 @@ foreach(target IN ITEMS
     ihk_os_getrusage13
     ihk_os_getrusage14
     ihk_os_setperfevent09
+    ihk_os_load07
+    ihk_os_load08
+    ihk_os_set_ikc_map11
+    ihk_os_set_ikc_map12
+    ihk_os_set_ikc_map13
+    ihk_os_assign_cpu08
+    ihk_os_release_cpu08
     )
 
   # Add target
