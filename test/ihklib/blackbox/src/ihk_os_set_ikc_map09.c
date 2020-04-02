@@ -10,7 +10,7 @@
 
 const char param[] = "cpus";
 const char *values[] = {
-	"include unassigned CPU(s)",
+	"include unreserved CPU(s)",
 };
 
 int main(int argc, char **argv)
@@ -32,7 +32,6 @@ int main(int argc, char **argv)
 	ret = cpus_pop(&cpus_mckernel, 1);
 	INTERR(ret, "cpus_shift returned %d\n", ret);
 
-	struct ikc_cpu_map map_invalid = { 0 };
 	struct ikc_cpu_map map_input[1] = { 0 };
 
 	/* invalid ikc src */
