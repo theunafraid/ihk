@@ -20,6 +20,7 @@ const char param[] = "McKernel CPU";
 const char *values[] = {
 	"INT_MIN",
 	"-1",
+	"# of assigned",
 	"INT_MAX",
 };
 
