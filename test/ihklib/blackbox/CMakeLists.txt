@@ -385,6 +385,8 @@ foreach(target IN ITEMS
     ihk_reserve_mem_conf06
     ihk_release_cpu07
     ihk_reserve_cpu07
+    ihk_os_write_cpu_register02
+    ihk_os_write_cpu_register01
     )
 
   # Add target
