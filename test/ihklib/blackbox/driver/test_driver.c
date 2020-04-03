@@ -20,6 +20,8 @@ struct test_driver_ioctl_arg {
 	unsigned long val;
 	unsigned long addr_ext;
 	int cpu;
+	int fake_os;
+	int fake_cpu;
 };
 
 static int dev_open(struct inode *inode, struct file *file)
@@ -46,18 +48,32 @@ static long dev_ioctl(struct file *file, unsigned int request, unsigned long _ar
 	struct ihk_os_cpu_register desc;
 	ihk_os_t os;
 	struct timespec start, stop;
+	int old_cpu;
 
 	if (copy_from_user(&arg, uarg, sizeof(struct test_driver_ioctl_arg))) {
 		ret = -EFAULT;
 		goto out;
 	}
 
+	pr_err("%s: addr: %lx, val: %lx, addr_ext: %lx, cpu: %d, fake_os: %d, fake_cpu: %d\n",
+	       __func__, arg.addr, arg.val, arg.addr_ext, arg.cpu,
+	       arg.fake_os, arg.fake_cpu);
 	desc.addr = arg.addr;
 	desc.val = arg.val;
 	desc.addr_ext = arg.addr_ext;
 	atomic_set(&desc.sync, 0);
+	old_cpu = arg.cpu;
 
 	ret = ihk_get_request_os_cpu(&os, &arg.cpu);
+
+	if (arg.fake_os) {
+		os = NULL;
+	}
+
+	if (arg.fake_cpu) {
+		arg.cpu = old_cpu;
+	}
+
 	if (ret) {
 		pr_err("%s:%d: error: "
 		       "ihk_get_request_os_cpu returned%d\n",
@@ -72,7 +88,7 @@ static long dev_ioctl(struct file *file, unsigned int request, unsigned long _ar
 
 		if (ret) {
 			pr_err("%s:%d: error: "
-			       "ihk_os_read_cpu_register returned%d\n",
+			       "ihk_os_read_cpu_register returned %d\n",
 			       __FILE__, __LINE__, ret);
 			goto out;
 		}
@@ -83,7 +99,7 @@ static long dev_ioctl(struct file *file, unsigned int request, unsigned long _ar
 
 		if (ret) {
 			pr_err("%s:%d: error: "
-			       "ihk_os_write_cpu_register returned%d\n",
+			       "ihk_os_write_cpu_register returned %d\n",
 			       __FILE__, __LINE__, ret);
 			goto out;
 		}

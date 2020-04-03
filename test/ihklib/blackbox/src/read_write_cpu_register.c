@@ -11,7 +11,9 @@ struct test_driver_ioctl_arg {
 	unsigned long addr;
 	unsigned long val;
 	unsigned long addr_ext;
-	int cpu; /* id in McKernel */
+	int cpu;
+	int fake_os;
+	int fake_cpu;
 };
 
 int main(int argc, char **argv)
@@ -19,13 +21,15 @@ int main(int argc, char **argv)
 	int ret;
 	int fd;
 	int opt;
-	int cpu_expected = -1; /* */
+	int cpu_expected = -1;
 	int fail = 0;
+	int fake_os = 0, fake_cpu = 0;
+	int errno_expected = 0;
 
 	struct test_driver_ioctl_arg read_arg = { 0 };
 	struct test_driver_ioctl_arg write_arg = { 0 };
 
-	while ((opt = getopt(argc, argv, "a:c:")) != -1) {
+	while ((opt = getopt(argc, argv, "a:c:fF:e:")) != -1) {
 		switch (opt) {
 		case 'a':
 			read_arg.addr_ext = atol(optarg);
@@ -34,12 +38,29 @@ int main(int argc, char **argv)
 		case 'c':
 			cpu_expected = atoi(optarg);
 			break;
+		case 'f':
+			fake_os = 1;
+			read_arg.fake_os = 1;
+			break;
+		case 'F':
+			fake_cpu = 1;
+			read_arg.fake_cpu = 1;
+			read_arg.cpu = atoi(optarg);
+			break;
+		case 'e':
+			errno_expected = atoi(optarg);
+			break;
 		default: /* '?' */
 			printf("unknown option %c\n", optopt);
 			ret = -EINVAL;
 			goto out;
 		}
 	}
+
+	printf("[ INFO ] addr_ext: %lx, cpu_expected: %d, "
+	       "fake_os: %d, fake_cpu: %d (disguise as %d), "
+	       "errno_expected: %d\n", read_arg.addr_ext, cpu_expected,
+	       fake_os, fake_cpu, read_arg.cpu, errno_expected);
 
 	fd = open("/dev/test_driver", O_RDWR);
 	if (fd == -1) {
@@ -50,6 +71,21 @@ int main(int argc, char **argv)
 	}
 
 	ret = ioctl(fd, 0, (unsigned long)&read_arg);
+
+	if (fake_os || fake_cpu) {
+		int errno_save = errno;
+
+		if (errno_save == errno_expected) {
+			printf("[  OK  ] ");
+		} else {
+			printf("[  NG  ] ");
+			fail++;
+		}
+		printf("ihk_get_request_os_cpu: returned: %d, expected: %d\n",
+		       errno_save, errno_expected);
+		goto skip_rmw;
+	}
+
 	if (ret) {
 		printf("[INTERR] ioctl 1st read returned %d\n",
 		       errno);
@@ -92,7 +128,7 @@ int main(int argc, char **argv)
 		fail++;
 	}
 	printf("read-modify-write\n");
-
+ skip_rmw:
 	ret = fail == 0 ? 0 : 1;
  out:
 	if (fd != -1) {
