@@ -55,9 +55,10 @@ static long dev_ioctl(struct file *file, unsigned int request, unsigned long _ar
 		goto out;
 	}
 
-	pr_err("%s: addr: %lx, val: %lx, addr_ext: %lx, cpu: %d, fake_os: %d, fake_cpu: %d\n",
-	       __func__, arg.addr, arg.val, arg.addr_ext, arg.cpu,
-	       arg.fake_os, arg.fake_cpu);
+	pr_info("%s: request: %d, addr: %lx, val: %lx, addr_ext: %lx, "
+		"cpu: %d, fake_os: %d, fake_cpu: %d\n",
+		__func__, request, arg.addr, arg.val, arg.addr_ext,
+		arg.cpu, arg.fake_os, arg.fake_cpu);
 	desc.addr = arg.addr;
 	desc.val = arg.val;
 	desc.addr_ext = arg.addr_ext;
@@ -65,15 +66,6 @@ static long dev_ioctl(struct file *file, unsigned int request, unsigned long _ar
 	old_cpu = arg.cpu;
 
 	ret = ihk_get_request_os_cpu(&os, &arg.cpu);
-
-	if (arg.fake_os) {
-		os = NULL;
-	}
-
-	if (arg.fake_cpu) {
-		arg.cpu = old_cpu;
-	}
-
 	if (ret) {
 		pr_err("%s:%d: error: "
 		       "ihk_get_request_os_cpu returned%d\n",
@@ -81,15 +73,36 @@ static long dev_ioctl(struct file *file, unsigned int request, unsigned long _ar
 		goto out;
 	}
 
+	pr_info("%s: original os: %lx, cpu: %d\n",
+		__func__, (unsigned long)os, arg.cpu);
+
+	if (arg.fake_os) {
+		switch (arg.fake_os) {
+		case 1:
+			os = NULL;
+			break;
+		case 2: /* next OS */
+			os = os + sizeof(void *);
+			break;
+		}
+	}
+
+	if (arg.fake_cpu) {
+		arg.cpu = old_cpu;
+	}
+
+	pr_info("%s: disguised os: %lx, cpu: %d\n",
+		__func__, (unsigned long)os, arg.cpu);
+
 	switch (request) {
 	case 0:
 		ret = ihk_os_read_cpu_register(os, arg.cpu,
 					       &desc);
 
 		if (ret) {
-			pr_err("%s:%d: error: "
+			pr_err("%s: error: "
 			       "ihk_os_read_cpu_register returned %d\n",
-			       __FILE__, __LINE__, ret);
+			       __func__, ret);
 			goto out;
 		}
 		break;
@@ -98,9 +111,9 @@ static long dev_ioctl(struct file *file, unsigned int request, unsigned long _ar
 						&desc);
 
 		if (ret) {
-			pr_err("%s:%d: error: "
+			pr_err("%s: error: "
 			       "ihk_os_write_cpu_register returned %d\n",
-			       __FILE__, __LINE__, ret);
+			       __func__, ret);
 			goto out;
 		}
 		break;
