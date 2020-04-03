@@ -16,6 +16,12 @@ struct test_driver_ioctl_arg {
 	int fake_cpu;
 };
 
+const char *fake_os_list[] = {
+	"valid one",
+	"NULL",
+	"non-existent one"
+};
+
 int main(int argc, char **argv)
 {
 	int ret;
@@ -29,7 +35,7 @@ int main(int argc, char **argv)
 	struct test_driver_ioctl_arg read_arg = { 0 };
 	struct test_driver_ioctl_arg write_arg = { 0 };
 
-	while ((opt = getopt(argc, argv, "a:c:fF:e:")) != -1) {
+	while ((opt = getopt(argc, argv, "a:c:f:F:e:")) != -1) {
 		switch (opt) {
 		case 'a':
 			read_arg.addr_ext = atol(optarg);
@@ -40,7 +46,7 @@ int main(int argc, char **argv)
 			break;
 		case 'f':
 			fake_os = 1;
-			read_arg.fake_os = 1;
+			read_arg.fake_os = atoi(optarg);
 			break;
 		case 'F':
 			fake_cpu = 1;
@@ -58,9 +64,13 @@ int main(int argc, char **argv)
 	}
 
 	printf("[ INFO ] addr_ext: %lx, cpu_expected: %d, "
-	       "fake_os: %d, fake_cpu: %d (disguise as %d), "
-	       "errno_expected: %d\n", read_arg.addr_ext, cpu_expected,
-	       fake_os, fake_cpu, read_arg.cpu, errno_expected);
+	       "fake_os: %d (%s), "
+	       "fake_cpu: %d (disguise as %d), "
+	       "errno_expected: %d\n",
+	       read_arg.addr_ext, cpu_expected,
+	       fake_os, fake_os_list[read_arg.fake_os],
+	       fake_cpu, read_arg.cpu,
+	       errno_expected);
 
 	fd = open("/dev/test_driver", O_RDWR);
 	if (fd == -1) {
