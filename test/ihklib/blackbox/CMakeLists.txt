@@ -8,11 +8,9 @@ execute_process(COMMAND bash -c "gawk '/CPU part/ { print \$4; exit; }' /proc/cp
   OUTPUT_VARIABLE CPU_PART OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 if(CPU_IMPLEMENTER STREQUAL "0x46" AND CPU_ARCH STREQUAL "8" AND
-    CPU_VARIANT STREQUAL "0x0" AND CPU_PART STREQUAL "0x001")
+    CPU_VARIANT STREQUAL "0x1" AND CPU_PART STREQUAL "0x001")
   message("A64FX detected")
-  execute_process(COMMAND module purge)
-  execute_process(COMMAND module load fjcompiler-native)
-  set(CMAKE_C_COMPILER "fcc")
+  set(CPU_MODEL "a64fx")
 endif()
 
 cmake_policy(SET CMP0005 NEW)
@@ -477,7 +475,6 @@ foreach(target IN ITEMS
     nop
     nop_ldr
     consume_cpu_time
-    #simd_sve_wfi_mem
     )
 
   # Add target
@@ -522,6 +519,22 @@ foreach(target IN ITEMS
 
   install(TARGETS ${target} DESTINATION bin)
 endforeach()
+
+# programs needing fcc and mckernel.h
+if(CPU_MODEL STREQUAL "a64fx")
+
+  foreach(target IN ITEMS
+      fp_sve_wfi_mem
+      )
+
+    add_custom_target(${target} COMMAND module purge && module load lang && fcc -I${CMAKE_CURRENT_SOURCE_DIR}/include -o ${target} ${target}.c && cp ${target} ${CMAKE_BINARY_DIR}
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
+      )
+
+    #install(PROGRAMS ${CMAKE_BINARY_DIR}/${target} DESTINATION bin)
+
+  endforeach()
+endif()
 
 # kernel module
 add_custom_target(test_driver ALL COMMAND cp ${WITH_MCK}/kmod/ihk/linux/core/Module.symvers ./ && make EXTRA_CFLAGS=-I/${WITH_MCK}/include && mv test_driver.ko ${CMAKE_BINARY_DIR} && make clean

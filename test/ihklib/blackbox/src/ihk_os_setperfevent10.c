@@ -15,7 +15,7 @@
 
 const char param[] = "event type";
 const char *values[] = {
-	"# of SIMD, FP, scalar operations",
+	"# of NEON and VFP operations",
 	"# of SVE operations",
 	"# of WFI/WFE wait cycles",
 	"# of read transactions from the CMG memory",
@@ -180,7 +180,7 @@ int main(int argc, char **argv)
 		ret = ihk_os_perfctl(0, PERF_EVENT_ENABLE);
 		INTERR(ret, "PERF_EVENT_ENABLE returned %d\n", ret);
 
-		ret = user_fork_exec("simd_sve_wfi_mem", &pid);
+		ret = user_fork_exec("vfp_sve_wfi_mem", &pid);
 		INTERR(ret < 0, "user_fork_exec returned %d\n", ret);
 
 		ret = waitpid(pid, &wstatus, 0);
