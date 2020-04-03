@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 			      mems.num_mem_chunks);
 	INTERR(ret, "ihk_reserve_mem returned %d\n", ret);
 
-	int size_input[] = { 256, 512 };
+	int size_input[] = { 256 << 20, 512 << 20 };
 	int node_input[2] = {
 		mems.mem_chunks[0].numa_node_number,
 		mems.mem_chunks[1].numa_node_number
@@ -127,7 +127,7 @@ int main(int argc, char **argv)
 		/* use mcexec -m <NUMA-node-id> because MPOL_MF_STRICT
 		 * isn't supported
 		 */
-		sprintf(cmd, "mmap_sync -i %s -o %s -s %d",
+		sprintf(cmd, "mmap %s %s -u %d",
 			fn_in, fn_out, size_input[i]);
 		sprintf(mcexecopt, "-m %d", node_input[i]);
 		ret = _user_fork_exec(cmd, &pid, mcexecopt);
@@ -179,10 +179,10 @@ int main(int argc, char **argv)
 			ru_input_after[i].memory_numa_stat[node_input[i]] -
 			ru_input_before[i].memory_numa_stat[node_input[i]];
 
-			OKNG(diff >= (size_input[i] << 20) &&
-			     diff <= (size_input[i] << 20) * 1.1,
+			OKNG(diff >= size_input[i] &&
+			     diff <= size_input[i] * 1.1,
 			     "memory_numa_stat[%d]: %d, expected: %d\n",
-			     node_input[i], diff, size_input[i] << 20);
+			     node_input[i], diff, size_input[i]);
 		}
 
 		ret = ihk_os_shutdown(0);
