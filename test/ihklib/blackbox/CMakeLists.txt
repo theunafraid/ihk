@@ -378,6 +378,13 @@ foreach(target IN ITEMS
     ihk_os_read_cpu_register08
     ihk_os_read_cpu_register02
     ihk_os_read_cpu_register01
+    ihk_os_release_cpu09
+    ihk_os_release_cpu10
+    ihk_reserve_mem_conf01
+    ihk_reserve_mem_conf05
+    ihk_reserve_mem_conf06
+    ihk_release_cpu07
+    ihk_reserve_cpu07
     )
 
   # Add target
