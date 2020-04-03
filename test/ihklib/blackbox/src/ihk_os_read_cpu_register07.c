@@ -17,7 +17,7 @@
 
 const char param[] = "addr_ext";
 const char *values[] = {
-	"IMP_PF_CTRL_EL1",
+	"IMP_FJ_TAG_ADDRESS_CTRL_EL1",
 };
 
 #define Op0_shift	19
@@ -36,7 +36,18 @@ const char *values[] = {
 	 ((crn) << CRn_shift) | ((crm) << CRm_shift) | \
 	 ((op2) << Op2_shift))
 
+#define IMP_FJ_TAG_ADDRESS_CTRL_EL1		sys_reg(3, 0, 11, 2, 0)
+#define IMP_SCCR_CTRL_EL1			sys_reg(3, 0, 11, 8, 0)
+#define IMP_SCCR_ASSIGN_EL1			sys_reg(3, 0, 11, 8, 1)
+#define IMP_SCCR_SET0_L2_EL1			sys_reg(3, 0, 15, 8, 2)
+#define IMP_SCCR_SET1_L2_EL1			sys_reg(3, 0, 15, 8, 3)
+#define IMP_SCCR_L1_EL0				sys_reg(3, 3, 11, 8, 2)
 #define IMP_PF_CTRL_EL1				sys_reg(3, 0, 11, 4, 0)
+#define IMP_PF_STREAM_DETECT_CTRL_EL0		sys_reg(3, 3, 11, 4, 0)
+#define IMP_PF_INJECTION_CTRL0_EL0		sys_reg(3, 3, 11, 6, 0)
+#define IMP_BARRIER_BST_BIT_EL1			sys_reg(3, 0, 11, 12, 4)
+
+#define ADDR_EXT IMP_FJ_TAG_ADDRESS_CTRL_EL1
 
 int main(int argc, char **argv)
 {
@@ -92,7 +103,7 @@ int main(int argc, char **argv)
 		sprintf(cmd, "%s/bin/mcexec "
 			"%s/bin/read_write_cpu_register -c 0 -a %d",
 			QUOTE(WITH_MCK), QUOTE(CMAKE_INSTALL_PREFIX),
-			IMP_PF_CTRL_EL1);
+			ADDR_EXT);
 		ret = system(cmd);
 		wstatus = WEXITSTATUS(ret);
 
@@ -102,8 +113,6 @@ int main(int argc, char **argv)
 
 		ret = linux_kill_mcexec();
 		INTERR(ret, "linux_kill_mcexec returned %d\n", ret);
-
-		system("/home/takagi/project/os/install/sbin/ihkosctl 0 kmsg");
 
 		ret = ihk_os_shutdown(0);
 		INTERR(ret, "ihk_os_shutdown returned %d\n", ret);
@@ -124,7 +133,6 @@ int main(int argc, char **argv)
 
 	ret = 0;
  out:
-	system("/home/takagi/project/os/install/sbin/ihkosctl 0 kmsg");
 
 	linux_kill_mcexec();
 
