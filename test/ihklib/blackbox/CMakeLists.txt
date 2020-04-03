@@ -375,6 +375,7 @@ foreach(target IN ITEMS
     ihk_os_set_ikc_map13
     ihk_os_assign_cpu08
     ihk_os_release_cpu08
+    ihk_os_read_cpu_register08
     )
 
   # Add target
