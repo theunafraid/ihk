@@ -25,6 +25,8 @@ cmake_minimum_required(VERSION 3.0)
 
 project(ihk_rmif_bbtest C)
 
+# CPPFLAGS
+
 set(UNAME_R ${CMAKE_SYSTEM_VERSION} CACHE STRING "Kernel version to build against")
 set(KERNEL_DIR "/lib/modules/${UNAME_R}/build" CACHE STRING "kernel build directory")
 execute_process(COMMAND awk -F= "$1 == \"CONFIG_ARM64_64K_PAGES\" { print $2; exit; }" "${KERNEL_DIR}/.config"
@@ -40,7 +42,6 @@ else()
 endif()
 message("PAGE_SIZE: ${PAGE_SIZE}")
 
-# CPPFLAGS
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
   add_definitions(-DBUILD_TARGET=smp-x86)
   add_definitions(-DKMOD_POSTFIX=smp_x86)
@@ -307,7 +308,6 @@ foreach(target IN ITEMS
     ihk_os_get_ikc_map05
     ihk_os_get_ikc_map06
     ihk_os_freeze08
-    ihk_os_setperfevent10
     ihk_os_setperfevent01
     ihk_os_setperfevent02
     ihk_os_setperfevent03
@@ -521,17 +521,52 @@ endforeach()
 
 # programs needing fcc and mckernel.h
 if(CPU_MODEL STREQUAL "a64fx")
+  foreach(target IN ITEMS
+      vfp_sve_wfi_mem
+      )
+
+    execute_process(COMMAND bash -c "module show lang 2>&1 | awk '/LD_LIBRARY_PATH/ { if (str != \"\") { str=str \":\" } str=str $3 } END { print str }'"
+      OUTPUT_VARIABLE FCC_LD_LIBRARY_PATH OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    message("FCC_LD_LIBRARY_PATH: ${FCC_LD_LIBRARY_PATH}")
+
+    add_custom_target(${target} ALL COMMAND module purge && module load lang && fcc -I${CMAKE_CURRENT_SOURCE_DIR}/include -o ${CMAKE_BINARY_DIR}/${target} ${CMAKE_CURRENT_SOURCE_DIR}/src/${target}.c -lpthread
+      )
+
+    install(PROGRAMS ${CMAKE_BINARY_DIR}/${target} DESTINATION bin)
+
+  endforeach()
 
   foreach(target IN ITEMS
-      fp_sve_wfi_mem
+      ihk_os_setperfevent10
       )
 
-    add_custom_target(${target} COMMAND module purge && module load lang && fcc -I${CMAKE_CURRENT_SOURCE_DIR}/include -o ${target} ${target}.c && cp ${target} ${CMAKE_BINARY_DIR}
-      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
+    # Add target
+    add_executable(${target} src/${target}.c)
+
+    # -D
+    target_compile_definitions(${target}
+      PRIVATE -DPAGE_SIZE=${PAGE_SIZE} -DFCC_LD_LIBRARY_PATH=${FCC_LD_LIBRARY_PATH}
       )
 
-    #install(PROGRAMS ${CMAKE_BINARY_DIR}/${target} DESTINATION bin)
+    # -I
+    target_include_directories(${target}
+      PRIVATE "${PROJECT_SOURCE_DIR}/include"
+      PRIVATE "${WITH_MCK}/include"
+      PRIVATE "${WITH_MCK_SRC}/ihk/linux/include"
+      )
 
+    # -l
+    target_link_libraries(${target}
+      PRIVATE params cpu mem os user linux numa
+      )
+
+    # String replacement
+    configure_file(src/${target}.sh.in ${target}.sh @ONLY)
+
+    # Install
+    install(TARGETS ${target} DESTINATION bin)
+    install(PROGRAMS ${CMAKE_BINARY_DIR}/${target}.sh DESTINATION bin)
   endforeach()
 endif()
 

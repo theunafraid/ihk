@@ -10,25 +10,28 @@
 #include "okng.h"
 #include "user.h"
 
-int _user_fork_exec(char *filename, pid_t *pid, char *opt)
+int __user_fork_exec(char *cmd, pid_t *pid)
 {
 	int ret;
-	char cmd[4096];
 	char *argv[2] = { 0 };
-	int status;
 
 	ret = fork();
 	if (ret == 0) {
-		sprintf(cmd, "%s/bin/mcexec %s %s/bin/%s",
-			QUOTE(WITH_MCK),
-			opt,
-			QUOTE(CMAKE_INSTALL_PREFIX),
-			filename);
 		ret = system(cmd);
-		status = WEXITSTATUS(ret);
-		INFO("%s: child exited with status of %d\n",
-		     __func__, status);
-		exit(status);
+		if (WIFEXITED(ret)) {
+			int status = WEXITSTATUS(ret);
+
+			INFO("%s: child exited with status of %d\n",
+			     __func__, status);
+			exit(status);
+		}
+		if (WIFSIGNALED(ret)) {
+			int signum = WTERMSIG(ret);
+
+			INFO("%s: child killed by %d\n",
+			     __func__, signum);
+			exit(signum);
+		}
 #if 0
 		argv[0] = cmd;
 		ret = execve(argv[0], argv, environ);
@@ -43,6 +46,19 @@ int _user_fork_exec(char *filename, pid_t *pid, char *opt)
 	*pid = ret;
  out:
 	return ret;
+}
+
+int _user_fork_exec(char *filename, pid_t *pid, char *opt)
+{
+	char cmd[4096];
+
+	sprintf(cmd, "%s/bin/mcexec %s %s/bin/%s",
+		QUOTE(WITH_MCK),
+		opt,
+		QUOTE(CMAKE_INSTALL_PREFIX),
+		filename);
+
+	return __user_fork_exec(cmd, pid);
 }
 
 int user_fork_exec(char *filename, pid_t *pid)

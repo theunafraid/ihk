@@ -1,7 +1,9 @@
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <errno.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 #include <ihklib.h>
 #include "util.h"
 #include "okng.h"
@@ -24,10 +26,12 @@ const char *values[] = {
 
 /* See the following for the explanation of the following config values.
  * https://github.com/fujitsu/A64FX/blob/master/doc/A64FX_PMU_v1.1.pdf
+ * "ARM Architecture Reference Manual Supplement - The Scalable Vector
+ * Extension (SVE), for ARMv8-A"
  */
 
 #define FP_FIXED_OPS_SPEC 0x80c1
-/* Counts architecturally executed NEON and FP operations.  The
+/* Counts architecturally executed NEON and VFP operations.  The
  * event counter is incremented by the specified number of elements for
  * NEON operations or by 1 for FP operations, and by twice
  * those amounts for operations that would also be counted by
@@ -36,8 +40,12 @@ const char *values[] = {
 
 #define FP_SCALE_OPS_SPEC 0x80c0
 /* Counts architecturally executed SVE arithmetic operations. This
- * event counter is incremented by (128 / CSIZE) and by twice that amount
- * for operations that would also be counted by SVE_FP_FMA_SPEC.
+ * event counter is incremented by 128 / (vector length by bits)
+ * and by twice that amount for operations that would also be counted
+ * by SVE_FP_FMA_SPEC.
+ * Total number of individual floating-point operations performed by SVE
+ * instruction is:
+ * FP_SCALE_OPS_SPEC * VL / 128
  */
 
 #define WFE_WFI_CYCLE 0x018e
@@ -56,23 +64,43 @@ const char *values[] = {
  * all events caused in the measured CMG regardless of measured PE.
  */
 
+#define NEVENTS 5
+
 int main(int argc, char **argv)
 {
 	int ret;
-	int i;
-	FILE *fp = NULL;
+	int i, j;
+	int fd_in, fd_out;
+	char *fn_in, *fn_out;
+	int opt;
 	int excess;
+	pid_t pid = -1;
 
 	params_getopt(argc, argv);
+
+	while ((opt = getopt(argc, argv, "i:o:")) != -1) {
+		switch (opt) {
+		case 'i':
+			fn_in = optarg;
+			break;
+		case 'o':
+			fn_out = optarg;
+			break;
+		default: /* '?' */
+			printf("unknown option %c\n", optopt);
+			ret = -EINVAL;
+			goto out;
+		}
+	}
 
 	/* Precondition */
 	ret = linux_insmod(0);
 	INTERR(ret, "linux_insmod returned %d\n", ret);
 
-	ret = cpus_reserve();
+	/* Use only th 1st NUMA node */
+	ret = _cpus_reserve(4, 2);
 	INTERR(ret, "cpus_reserve returned %d\n", ret);
 
-	/* First application NUMA-node */
 	struct mems mems = { 0 };
 
 	ret = mems_ls(&mems, "MemFree", 0.9);
@@ -139,17 +167,33 @@ int main(int argc, char **argv)
 		}
 	};
 
-	int ret_expected[1] = { 1 };
+	int ret_expected[1] = { NEVENTS };
 
-	unsigned long count_expected[2] = { 1000000 };
+	unsigned long count_expected[1][NEVENTS] = {
+			     {
+			      4000000, /* vfp */
 
-	pid_t pid = -1;
+			      /* sve, see the above comment */
+			      (1UL << 10) * 2 * (128 / (double)512),
+
+			      (2 * 1000 * 1000 * 1000), /* wfi */
+
+			      /* read tx
+			       * - str also fetches data
+			       * - guessing one data packet brings 256 byte
+			       */
+			      ((1UL << 30) + (1UL << 10) * 8 * 4) / 256,
+
+			      /* write tx */
+			      ((1UL << 30) + (1UL << 10) * 8) / 256,
+			     }
+	};
+
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
-		int errno_save;
-		int ncpu;
+		int message = 1;
 		char cmd[4096];
-		unsigned long counts[1];
+		unsigned long counts[NEVENTS];
 		int wstatus;
 
 		START("test-case: %s: %s\n", param, values[i]);
@@ -173,19 +217,45 @@ int main(int argc, char **argv)
 		INTERR(ret, "ihk_os_boot returned %d\n", ret);
 
 		ret = ihk_os_setperfevent(0, attr_input, 5);
-		OKNG(ret == ret_expected[i],
+		OKNG(1||ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
+
+		fd_in = open(fn_in, O_RDWR);
+		INTERR(fd_in == -1, "open returned %d\n", errno);
+
+		fd_out = open(fn_out, O_RDWR);
+		INTERR(fd_out == -1, "open returned %d\n", errno);
+
+		sprintf(cmd, "LD_LIBRARY_PATH=%s:$LD_LIBRARY_PATH "
+			"%s/bin/mcexec %s/bin/vfp_sve_wfi_mem -i %s -o %s",
+			QUOTE(FCC_LD_LIBRARY_PATH),
+			QUOTE(WITH_MCK),
+			QUOTE(CMAKE_INSTALL_PREFIX),
+			fn_in, fn_out);
+		INFO("cmd: %s\n", cmd);
+
+		ret = __user_fork_exec(cmd, &pid);
+		INTERR(ret < 0, "user_fork_exec returned %d\n", ret);
+
+		/* Wait until child is ready */
+		INFO("waiting for child finishing initialization...\n");
+		ret = read(fd_out, &message, sizeof(int));
+		INTERR(ret <= 0, "read returned %d, errno: %d\n",
+		       ret, errno);
 
 		ret = ihk_os_perfctl(0, PERF_EVENT_ENABLE);
 		INTERR(ret, "PERF_EVENT_ENABLE returned %d\n", ret);
 
-		ret = user_fork_exec("vfp_sve_wfi_mem", &pid);
-		INTERR(ret < 0, "user_fork_exec returned %d\n", ret);
+		INFO("letting child perfom tests...\n");
+		ret = write(fd_in, &message, sizeof(int));
+		INTERR(ret != sizeof(int),
+		       "write returned %d\n", errno);
 
-		ret = waitpid(pid, &wstatus, 0);
-		INTERR(ret < 0, "waitpid returned %d\n", errno);
-		pid = -1;
+		INFO("waiting for child finishing tests...\n");
+		ret = read(fd_out, &message, sizeof(int));
+		INTERR(ret <= 0, "read returned %d, errno: %d\n",
+		       ret, errno);
 
 		ret = ihk_os_perfctl(0, PERF_EVENT_DISABLE);
 		INTERR(ret, "PERF_EVENT_DISABLE returned %d\n", ret);
@@ -194,13 +264,30 @@ int main(int argc, char **argv)
 		INTERR(ret, "ihk_os_getperfevent returned %d\n",
 		       ret);
 
-		OKNG(counts[0] >= count_expected[i] &&
-		     counts[0] < count_expected[i] * 1.1,
-		     "event count (%ld) is within expected range\n",
-		     counts[0]);
+		ret = ihk_os_perfctl(0, PERF_EVENT_DESTROY);
+		INTERR(ret, "PERF_EVENT_DESTROY returned %d\n", ret);
 
-		ret = ihk_os_perfctl(0, PERF_EVENT_DISABLE);
-		INTERR(ret, "PERF_EVENT_DISABLE returned %d\n", ret);
+		for (j = 0; j < NEVENTS; j++) {
+			OKNG(1||counts[j] > count_expected[i][j] * 0.9 &&
+			     counts[j] < count_expected[i][j] * 1.1,
+			     "count: %ld, expected: %ld\n",
+			     counts[j], count_expected[i][j]);
+		}
+#if 1
+		INFO("letting child exit...\n");
+		ret = write(fd_in, &message, sizeof(int));
+		INTERR(ret != sizeof(int), "write returned %d\n", errno);
+
+		ret = waitpid(pid, &wstatus, 0);
+		INTERR(ret < 0, "waitpid returned %d\n", errno);
+		pid = -1;
+#endif
+
+		close(fd_in);
+		close(fd_out);
+
+		ret = linux_kill_mcexec();
+		INTERR(ret, "linux_kill_mcexec returned %d\n", ret);
 
 		ret = ihk_os_shutdown(0);
 		INTERR(ret, "ihk_os_shutdown returned %d\n", ret);

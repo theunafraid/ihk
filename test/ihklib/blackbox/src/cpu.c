@@ -375,7 +375,7 @@ int cpus_check_assigned(struct cpus *expected)
 	return ret;
 }
 
-int cpus_reserve(void)
+int _cpus_reserve(int nlinux, int nmck)
 {
 	int ret;
 	struct cpus cpus = { 0 };
@@ -383,8 +383,13 @@ int cpus_reserve(void)
 	ret = cpus_ls(&cpus);
 	INTERR(ret, "cpus_ls returned %d\n", ret);
 
-	ret = cpus_shift(&cpus, 2);
+	ret = cpus_shift(&cpus, nlinux);
 	INTERR(ret, "cpus_shift returned %d\n", ret);
+
+	if (nmck != -1) {
+		ret = cpus_pop(&cpus, cpus.ncpus - nmck);
+		INTERR(ret, "cpus_pop returned %d\n", ret);
+	}
 
 	ret = ihk_reserve_cpu(0, cpus.cpus, cpus.ncpus);
 	INTERR(ret, "ihk_reserve_cpu returned %d\n", ret);
@@ -392,6 +397,11 @@ int cpus_reserve(void)
 	ret = 0;
  out:
 	return ret;
+}
+
+int cpus_reserve(void)
+{
+	return _cpus_reserve(2, -1);
 }
 
 int cpus_release(void)
