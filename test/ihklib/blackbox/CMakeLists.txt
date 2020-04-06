@@ -440,7 +440,6 @@ foreach(target IN ITEMS
     consume_cpu_time
     delay_with_interrupt_disabled_mckernel
     str
-    wfe
     )
   install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/src/${target}.patch DESTINATION bin)
 endforeach()

@@ -17,11 +17,12 @@
 
 const char param[] = "event type";
 const char *values[] = {
-	"# of NEON and VFP operations",
-	"# of SVE operations",
-	"# of WFI/WFE wait cycles",
-	"# of read transactions from the CMG memory",
-	"# of write transactions to the CMG memory",
+	"\n\tA64FX specific events:\n"
+	"\t(1) # of VFP operations\n"
+	"\t(2) # of SVE operations / 4\n"
+	"\t(3) # of WFI/WFE wait cycles\n"
+	"\t(4) # of read transactions from the CMG memory\n"
+	"\t(5) # of write transactions to the CMG memory",
 };
 
 /* See the following for the explanation of the following config values.

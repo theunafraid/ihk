@@ -102,9 +102,8 @@ static void ihk_mc_spinlock_init(ihk_spinlock_t *lock)
 
 static void __ihk_mc_spinlock_lock_noirq(ihk_spinlock_t *lock)
 {
-	unsigned int tmp;
+	uint32_t tmp;
 	uint32_t lockval, newval;
-	uint32_t ticket;
 
 	asm volatile(
 	/* Atomically increment the next ticket. */
@@ -139,11 +138,18 @@ static void __ihk_mc_spinlock_lock_noirq(ihk_spinlock_t *lock)
 	: "=&r" (lockval), "=&r" (newval), "=&r" (tmp), "+Q" (*lock)
 	: "Q" (lock->owner)
 	: "memory");
+
+	/* Suppress "not used" warning */
+	if ((int)tmp < 0 || (int16_t)lockval < 0 ||
+	    (int16_t)newval < 0) {
+		printf("%s: warning: ticket # has wrapped around\n",
+		       __func__);
+	}
 }
 
 static void __ihk_mc_spinlock_unlock_noirq(ihk_spinlock_t *lock)
 {
-	unsigned long tmp;
+	uint32_t tmp;
 
 	asm volatile(ARM64_LSE_ATOMIC_INSN(
 	/* LL/SC */
@@ -158,6 +164,11 @@ static void __ihk_mc_spinlock_unlock_noirq(ihk_spinlock_t *lock)
 	:
 	: "memory");
 
+	/* Suppress "not used" warning */
+	if ((long)tmp < 0) {
+		printf("%s: warning: ticket # has wrapped around\n",
+		       __func__);
+	}
 }
 
 ihk_spinlock_t lock;
