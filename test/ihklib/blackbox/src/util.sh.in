@@ -58,7 +58,7 @@ function detect_cpu_model()
     part=$(gawk '/CPU part/ { print $4; exit; }' /proc/cpuinfo)
 
     if [[ "$implementer" == "0x46" ]] && [[ "$arch" == "8" ]] &&
-	[[ "$var" == "0x0" ]] && [[ "$part" == "0x001" ]]; then
+	[[ "$var" == "0x1" ]] && [[ "$part" == "0x001" ]]; then
 	cpu_model="a64fx"
     elif [[ "$implementer" == "0x43" ]] && [[ "$arch" == "8" ]] &&
 	[[ "$var" == "0x1" ]] && [[ "$part" == "0x0a1" ]]; then
