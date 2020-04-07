@@ -26,7 +26,6 @@ int main(int argc, char **argv)
 
 	struct cpus cpus_input_reserve_cpu[7] = { 0 };
 
-	/* Both Linux and McKernel cpus */
 	for (i = 0; i < 7; i++) {
 		ret = cpus_ls(&cpus_input_reserve_cpu[i]);
 		INTERR(ret, "cpus_ls returned %d\n", ret);
@@ -36,6 +35,8 @@ int main(int argc, char **argv)
 		INTERR(ret, "cpus_shift returned %d\n", ret);
 	}
 
+	int ret_expected_reserve_cpu[7] = { 0 };
+
 	struct cpus cpus_input[] = {
 		 { .ncpus = INT_MIN },
 		 { .ncpus = -1 },
@@ -44,16 +45,12 @@ int main(int argc, char **argv)
 		 { .ncpus = cpus_input_reserve_cpu[4].ncpus + 1 },
 		 { .ncpus = cpus_input_reserve_cpu[5].ncpus - 1 },
 		 { .ncpus = INT_MAX },
-		};
+	};
 
-	for (i = 3; i < 6; i++) {
-		ret = cpus_init(&cpus_input[1],
-				cpus_input_reserve_cpu[1].ncpus);
-		INTERR(ret, "cpus_init returned %d\n", ret);
-	}
+	ret = cpus_copy(&cpus_input[3],
+			&cpus_input_reserve_cpu[3]);
+	INTERR(ret, "cpus_copy returned %d\n", ret);
 
-	int ret_expected_reserve_cpu[7] = { 0 };
-	int ret_expected_get_num_reserved_cpus[7] = { 0 };
 	int ret_expected[] = {
 		 -EINVAL,
 		 -EINVAL,
@@ -63,6 +60,8 @@ int main(int argc, char **argv)
 		 -EINVAL,
 		 -EINVAL,
 		};
+
+	struct cpus cpus_after_reserve[7] = { 0 };
 
 	struct cpus *cpus_expected[] = {
 		  NULL, /* don't care */
@@ -86,10 +85,6 @@ int main(int argc, char **argv)
 				      cpus_input_reserve_cpu[i].ncpus);
 		INTERR(ret != ret_expected_reserve_cpu[i],
 		     "ihk_reserve_cpu returned %d\n", ret);
-
-		ret = ihk_get_num_reserved_cpus(0);
-		INTERR(ret != ret_expected_get_num_reserved_cpus[i],
-		     "ihk_get_num_reserved_cpus returned %d\n", ret);
 
 		ret = ihk_query_cpu(0, cpus_input[i].cpus,
 				    cpus_input[i].ncpus);
