@@ -75,7 +75,8 @@ int main(int argc, char **argv)
 
 		if (cpus_expected[i]) {
 			ret = cpus_check_reserved(cpus_expected[i]);
-			OKNG(ret == 0, "reserved as expected\n");
+			OKNG(ret == 0, "query result is the same as "
+			     "actual reservation\n");
 
 			/* Clean up */
 			ret = ihk_release_cpu(0, cpus_input_reserve_cpu[i].cpus,
