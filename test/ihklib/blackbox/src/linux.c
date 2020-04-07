@@ -33,7 +33,7 @@ static int linux_lsmod(char *_fn)
 		ext[0] = 0;
 	}
 
-	while(delim = strchr(name, '-')) {
+	while ((delim = strchr(name, '-'))) {
 		delim[0] = '_';
 	}
 
@@ -106,7 +106,7 @@ int _linux_insmod(char *fn)
 int linux_insmod(int verbose)
 {
 	int ret;
-	char cmd[1024];
+	char cmd[2048];
 	char fn[1024];
 
 	sprintf(fn, "%s/kmod/ihk.ko", QUOTE(WITH_MCK));
@@ -229,7 +229,6 @@ int _linux_rmmod(char *fn)
 int linux_rmmod(int verbose)
 {
 	int ret;
-	char cmd[1024];
 	char fn[1024];
 
 	sprintf(fn, "%s/kmod/mcctrl.ko", QUOTE(WITH_MCK));

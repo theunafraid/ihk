@@ -43,7 +43,6 @@ int main(int argc, char **argv)
 	/* Parse additional options */
 	int opt;
 	unsigned long counts = 0UL;
-	int wstatus;
 	pid_t pid = -1;
 
 	while ((opt = getopt(argc, argv, "ir")) != -1) {
@@ -157,7 +156,6 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 	}
 
-usrout:
 	ret = 0;
 	return ret;
 

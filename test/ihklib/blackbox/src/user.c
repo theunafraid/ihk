@@ -13,7 +13,7 @@
 int __user_fork_exec(char *cmd, pid_t *pid)
 {
 	int ret;
-	char *argv[2] = { 0 };
+//	char *argv[2] = { 0 };
 
 	ret = fork();
 	if (ret == 0) {
@@ -44,7 +44,7 @@ int __user_fork_exec(char *cmd, pid_t *pid)
 	}
 
 	*pid = ret;
- out:
+
 	return ret;
 }
 
@@ -76,7 +76,7 @@ int user_wait(pid_t *pid)
 		ret = waitpid(*pid, &wstatus, WNOHANG);
 		if (ret > 0) {
 			if (ret != *pid) {
-				printf("%s:%s waitpid returned %d\n",
+				printf("%s:%d waitpid returned %d\n",
 				       __FILE__, __LINE__, ret);
 				ret = -EINVAL;
 				goto out;
@@ -96,7 +96,7 @@ int user_wait(pid_t *pid)
 		if (ret < 0) {
 			int errno_save = errno;
 
-			printf("%s:%s waitpid: errno: %d\n",
+			printf("%s:%d waitpid: errno: %d\n",
 			       __FILE__, __LINE__, errno_save);
 			ret = -errno_save;
 			goto out;
@@ -109,9 +109,7 @@ int user_wait(pid_t *pid)
 int user_poll_fifo(int fd_fifo, int max_count)
 {
 	int ret;
-	pid_t pid;
 	int fd_poll = -1;
-	int fd_event = -1;
 	struct epoll_event event = { 0 };
 	struct epoll_event events[1];
 	int nfd;

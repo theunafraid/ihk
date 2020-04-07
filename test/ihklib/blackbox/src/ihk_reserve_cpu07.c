@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 {
 	int ret;
 	int i;
-	int offlined_cpu;
+	int offlined_cpu = -1;
 
 	params_getopt(argc, argv);
 

@@ -147,7 +147,6 @@ int main(int argc, char **argv)
 		     "event not counted\n");
 	}
 
-usrout:
 	ret = 0;
 	return ret;
 

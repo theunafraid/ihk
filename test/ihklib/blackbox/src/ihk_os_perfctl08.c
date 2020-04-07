@@ -67,9 +67,6 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 2; i++) {
-		int errno_save;
-		int ncpu;
-		char cmd[4096];
 		unsigned long counts[1];
 		int wstatus;
 

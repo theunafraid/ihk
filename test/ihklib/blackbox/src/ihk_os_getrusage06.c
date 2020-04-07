@@ -26,8 +26,8 @@ int main(int argc, char **argv)
 {
 	int ret;
 	int i;
-	int fd_in, fd_out;
-	char *fn_in, *fn_out;
+	int fd_in = -1, fd_out = -1;
+	char *fn_in = NULL, *fn_out = NULL;
 	int opt;
 
 	params_getopt(argc, argv);
@@ -129,7 +129,7 @@ int main(int argc, char **argv)
 		OKNG(ret == ret_expected[i], "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		INFO("rss: %ld\n",
+		INFO("rss: %lu\n",
 		     ru_input_before[i].memory_stat_rss[page_size_index[i]]);
 
 		ret = write(fd_in, &message, sizeof(int));
@@ -145,7 +145,7 @@ int main(int argc, char **argv)
 		OKNG(ret == ret_expected[i], "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		INFO("rss: %ld\n",
+		INFO("rss: %lu\n",
 			ru_input_after[i].memory_stat_rss[page_size_index[i]]);
 
 		ret = write(fd_in, &message, sizeof(int));
@@ -168,7 +168,7 @@ int main(int argc, char **argv)
 				ru_expected[i].memory_stat_rss[page_size_index[i]];
 
 			OKNG(rss >= rss_expected && rss <= rss_expected * 1.1,
-				"rss: %d, expected: %d\n", rss, rss_expected);
+				"rss: %lu, expected: %lu\n", rss, rss_expected);
 		}
 
 		ret = ihk_os_shutdown(0);

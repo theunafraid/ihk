@@ -54,14 +54,9 @@ int main(int argc, char **argv)
 	};
 
 	struct ihk_os_rusage ru_result[2][2] = { 0 };
-	struct ihk_os_rusage ru_expected[2] = {
-		{ 0 },
-		{
-		 .memory_stat_rss = {
-				[IHK_OS_PGSIZE_64KB] = PAGE_SIZE * 1024
-			}
-		}
-	};
+	struct ihk_os_rusage ru_expected[2] = { 0 };
+
+	ru_expected[1].memory_stat_rss[IHK_OS_PGSIZE_64KB] = PAGE_SIZE * 1024;
 
 	pid_t pid = -1;
 
@@ -126,7 +121,7 @@ int main(int argc, char **argv)
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		INFO("rss64k: %ld\n",
+		INFO("rss64k: %lu\n",
 		     ru_result[i][0].memory_stat_rss[IHK_OS_PGSIZE_64KB]);
 
 		if (i == 1) {
@@ -146,7 +141,7 @@ int main(int argc, char **argv)
 			     "return value: %d, expected: %d\n",
 			     ret, ret_expected[i]);
 
-			INFO("rss64k: %ld\n",
+			INFO("rss64k: %lu\n",
 			     ru_result[i][1].memory_stat_rss[IHK_OS_PGSIZE_64KB]);
 
 			/* Let child exit */
@@ -172,7 +167,7 @@ int main(int argc, char **argv)
 				ru_expected[i].memory_stat_rss[IHK_OS_PGSIZE_64KB];
 			OKNG(rss64k >= rss64k_expected &&
 			     rss64k <= rss64k_expected * 1.1,
-			     "rss[64K]: %d, expected: %d\n",
+			     "rss[64K]: %lu, expected: %lu\n",
 			     rss64k, rss64k_expected);
 		} else {
 			OKNG(!memcmp(&ru_result[i][0], &ru_expected[i],

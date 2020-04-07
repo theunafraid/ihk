@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 	threads = malloc(sizeof(pthread_t) * num_threads);
 	if (!threads) {
 		ret = -errno;
-		printf("%s: malloc failed with error %d\n", ret);
+		printf("%s: malloc failed with error %d\n", __FILE__, ret);
 		goto out;
 	}
 

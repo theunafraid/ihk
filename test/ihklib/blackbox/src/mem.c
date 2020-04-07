@@ -80,7 +80,7 @@ int mems_ls(struct mems *mems, char *type, double ratio)
 	char cmd[4096];
 	unsigned long memfree;
 	int numa_node_number = 0;
-	char keyword[4096];
+	char keyword[1024];
 
 	if (strcmp(type, "MemTotal") == 0) {
 		sprintf(keyword, "%s", "present");
@@ -132,7 +132,7 @@ int mems_ls(struct mems *mems, char *type, double ratio)
 		int errno_save = errno;
 
 		printf("%s: mremap returned %d\n", __func__, errno);
-		ret = -errno;
+		ret = -errno_save;
 		goto out;
 	}
 
@@ -206,7 +206,7 @@ int mems_free(struct mems *mems)
 		int errno_save = errno;
 
 		printf("%s: mremap returned %d\n", __func__, errno);
-		ret = -errno;
+		ret = -errno_save;
 		goto out;
 	}
 

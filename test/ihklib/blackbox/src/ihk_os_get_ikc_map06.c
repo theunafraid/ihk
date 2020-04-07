@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 {
 	int ret;
 	int i;
-	int num_cpus;
+	int num_cpus = 0;
 
 	params_getopt(argc, argv);
 

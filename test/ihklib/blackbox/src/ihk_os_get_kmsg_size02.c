@@ -26,7 +26,7 @@ int main(int argc, char **argv)
 
 	/* Precondition */
 	ret = linux_insmod(0);
-	INTERR(ret, "linux_insmod returned %d\n", ret);
+	INTERR(ret, "linux_insmod returned %zd\n", ret);
 
 	int os_index_input[] = {
 		INT_MIN,
@@ -48,15 +48,15 @@ int main(int argc, char **argv)
 		START("test-case: %s: %s\n", param, values[i]);
 
 		ret = ihk_create_os(0);
-		INTERR(ret, "ihk_create_os returned %d\n", ret);
+		INTERR(ret, "ihk_create_os returned %zd\n", ret);
 
 		ret = ihk_os_get_kmsg_size(os_index_input[i]);
 		OKNG(ret == ret_expected[i],
-		     "return value: %d, expected: %d\n",
+		     "return value: %zd, expected: %zd\n",
 		     ret, ret_expected[i]);
 
 		ret = ihk_destroy_os(0, 0);
-		INTERR(ret, "ihk_destroy_os returned %d\n", ret);
+		INTERR(ret, "ihk_destroy_os returned %zd\n", ret);
 	}
 
 out:

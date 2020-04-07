@@ -61,8 +61,6 @@ int main(int argc, char **argv)
 		 -EINVAL,
 		};
 
-	struct cpus cpus_after_reserve[7] = { 0 };
-
 	struct cpus *cpus_expected[] = {
 		  NULL, /* don't care */
 		  NULL, /* don't care */

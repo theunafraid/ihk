@@ -25,8 +25,8 @@ int main(int argc, char **argv)
 {
 	int ret;
 	int i;
-	int fd_in, fd_out;
-	char *fn_in, *fn_out;
+	int fd_in = -1, fd_out = -1;
+	char *fn_in = NULL, *fn_out = NULL;
 	int opt;
 	long user_hz;
 
@@ -175,11 +175,11 @@ int main(int argc, char **argv)
 
 			OKNG(user_ticks >= user_expected &&
 				user_ticks <= user_expected * 1.1,
-				"user: %d, expected: %d\n",
+				"user: %lu, expected: %lu\n",
 				user_ticks, user_expected);
 			OKNG(kernel_ticks >= kernel_expected &&
 				kernel_ticks <= kernel_expected * 1.1,
-				"kernel: %d, expected: %d\n",
+				"kernel: %lu, expected: %lu\n",
 				kernel_ticks, kernel_expected);
 		}
 

@@ -26,14 +26,14 @@ const char *values[] = {
 
 int main(int argc, char **argv)
 {
-	int ret;
+	int ret = 0;
 	int i;
 	char *fn = NULL;
-	int fd_fifo;
+	int fd_fifo = -1;
 	int opt;
 	unsigned long os_set[2][1] = {
-		1,
-		1,
+		{ 1 },
+		{ 1 },
 	};
 	int pid = -1;
 

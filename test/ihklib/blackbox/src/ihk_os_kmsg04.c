@@ -36,10 +36,7 @@ int main(int argc, char **argv)
 	ret = mems_reserve();
 	INTERR(ret, "mems_reserve returned %d\n", ret);
 
-	char *kmsg_input[2] = {
-		NULL,
-		NULL,
-	};
+	char *kmsg_input[2] = { 0 };
 
 	int ret_expected[2] = {
 		-EFAULT,

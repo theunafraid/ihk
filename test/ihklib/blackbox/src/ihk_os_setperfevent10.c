@@ -71,8 +71,8 @@ int main(int argc, char **argv)
 {
 	int ret;
 	int i, j;
-	int fd_in, fd_out;
-	char *fn_in, *fn_out;
+	int fd_in = -1, fd_out = -1;
+	char *fn_in = NULL, *fn_out = NULL;
 	int opt;
 	int excess;
 	pid_t pid = -1;

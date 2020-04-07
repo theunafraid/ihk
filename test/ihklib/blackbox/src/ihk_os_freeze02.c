@@ -32,8 +32,8 @@ int main(int argc, char **argv)
 	int fd_fifo;
 	int opt;
 	unsigned long os_set[2][1] = {
-		1,
-		2,
+		{ 1 },
+		{ 2 },
 	};
 	int pid = -1;
 

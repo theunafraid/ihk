@@ -105,7 +105,7 @@ int main(int argc, char **argv)
 		INTERR(ret, "ihk_os_getperfevent returned %d\n", ret);
 
 		OKNG(counts == count_expected[i][0],
-		     "event count: %d, expected: %d\n",
+		     "event count: %lu, expected: %lu\n",
 		     counts, count_expected[i][0]);
 
 		/* Check if event is not counted */
@@ -121,7 +121,7 @@ int main(int argc, char **argv)
 		INTERR(ret, "ihk_os_getperfevent returned %d\n", ret);
 
 		OKNG(counts == count_expected[i][1],
-		     "event count: %d, expected: %d\n",
+		     "event count: %lu, expected: %lu\n",
 		     counts, count_expected[i][1]);
 
 		ret = ihk_os_perfctl(0, PERF_EVENT_DISABLE);

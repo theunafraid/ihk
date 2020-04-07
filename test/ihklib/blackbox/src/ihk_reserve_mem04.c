@@ -31,7 +31,6 @@ int main(int argc, char **argv)
 	struct mems mems_input[6] = { 0 };
 	struct mems mems_after_reserve[6] = { 0 };
 	struct mems mems_margin[6] = { 0 };
-	int num_nodes;
 
 	/* Both Linux and McKernel cpus */
 	for (i = 0; i < 6; i++) {

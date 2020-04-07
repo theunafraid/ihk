@@ -39,10 +39,10 @@ int main(int argc, char **argv)
 		goto out;
 	}
 
-	printf("[ INFO ] count: start sending messages...\n", i);
+	printf("[ INFO ] count: start sending messages...\n");
 
 	for (i = 0; i < MAX_COUNT; i++) {
-		long j, sum;
+		long j, sum = 0;
 		struct timeval start, end;
 
 		printf("[ INFO ] count: sending message #%d\n", i);

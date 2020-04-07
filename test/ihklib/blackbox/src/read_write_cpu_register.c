@@ -25,7 +25,7 @@ const char *fake_os_list[] = {
 int main(int argc, char **argv)
 {
 	int ret;
-	int fd;
+	int fd = -1;
 	int opt;
 	int cpu_expected = -1;
 	int fail = 0;

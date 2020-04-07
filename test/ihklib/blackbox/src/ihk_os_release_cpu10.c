@@ -20,10 +20,9 @@ const char *values[] = {
 
 int main(int argc, char **argv)
 {
-	int ret;
+	int ret = 0;
 	int i;
-	int offlined_cpu;
-	int unreserved_cpu;
+	int offlined_cpu = -1;
 
 	params_getopt(argc, argv);
 
@@ -31,7 +30,6 @@ int main(int argc, char **argv)
 	ret = linux_insmod(0);
 	INTERR(ret, "linux_insmod returned %d\n", ret);
 
-	struct cpus cpu_unreserved = { 0 };
 	struct cpus cpu_last = { 0 };
 	struct cpus cpus_input[4] = { 0 };
 

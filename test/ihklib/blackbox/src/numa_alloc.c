@@ -17,7 +17,7 @@ struct pernode_mem {
 
 static int parse_unit(char *args, int *node_id, unsigned long *memory_size)
 {
-	int ret;
+	int ret = 0;
 	char *ps = strdup(args);
 
 	if (!ps) {
@@ -82,17 +82,17 @@ out:
 
 static int parse_args(char *args, struct pernode_mem **nodes)
 {
-	int ret, i = 0, count = 1;
+	int ret = 0, i = 0, count = 1;
 	char *_args = NULL;
 	char *c = NULL;
 	char *tok;
 
 	_args = strdup(args);
 	if (!_args) {
-		int errno_save = errno;
+		int errno_save = -errno;
 
 		printf("%s: strdup returned %d\n", __func__, errno);
-		ret = -errno;
+		ret = errno_save;
 		goto out;
 	}
 
@@ -106,17 +106,17 @@ static int parse_args(char *args, struct pernode_mem **nodes)
 
 	*nodes = malloc(sizeof(struct pernode_mem) * count);
 	if (!(*nodes)) {
-		int errno_save = errno;
+		int errno_save = -errno;
 
 		printf("%s: malloc returned %d\n", __func__, errno);
-		ret = -errno;
+		ret = errno_save;
 		goto out;
 	}
 
 	tok = strtok(_args, ",");
 	while (tok) {
-		int node_id;
-		unsigned long memory_size;
+		int node_id = 0;
+		unsigned long memory_size = 0;
 
 		ret = parse_unit(tok, &node_id, &memory_size);
 		if (ret) {

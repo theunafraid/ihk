@@ -26,8 +26,8 @@ int main(int argc, char **argv)
 {
 	int ret;
 	int i;
-	int fd_in, fd_out;
-	char *fn_in, *fn_out;
+	int fd_in = -1, fd_out = -1;
+	char *fn_in = NULL, *fn_out = NULL;
 	int opt;
 
 	params_getopt(argc, argv);
@@ -53,10 +53,9 @@ int main(int argc, char **argv)
 
 	struct ihk_os_rusage ru_input_before[2] = { 0 };
 	struct ihk_os_rusage ru_input_after[2] = { 0 };
-	struct ihk_os_rusage ru_expected[2] = {
-		{ 0 },
-		{ .memory_stat_rss[IHK_OS_PGSIZE_64KB] = PAGE_SIZE * 1024 },
-	};
+	struct ihk_os_rusage ru_expected[2] = { 0 };
+
+	ru_expected[1].memory_stat_rss[IHK_OS_PGSIZE_64KB] = PAGE_SIZE * 1024;
 
 	/* Precondition */
 	ret = linux_insmod(0);
@@ -124,7 +123,7 @@ int main(int argc, char **argv)
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		INFO("rss64k: %ld\n",
+		INFO("rss64k: %lu\n",
 		ru_input_before[i].memory_stat_rss[IHK_OS_PGSIZE_64KB]);
 
 		if (ihk_os_get_status(0) == IHK_STATUS_RUNNING) {
@@ -142,8 +141,8 @@ int main(int argc, char **argv)
 			     "return value: %d, expected: %d\n",
 			     ret, ret_expected[i]);
 
-			INFO("rss64k: %ld\n",
-			     ru_input_after[i].memory_stat_rss[IHK_OS_PGSIZE_64KB]);
+			INFO("rss64k: %lu\n",
+			ru_input_after[i].memory_stat_rss[IHK_OS_PGSIZE_64KB]);
 
 			ret = write(fd_in, &message, sizeof(int));
 			INTERR(ret != sizeof(int),
@@ -167,7 +166,7 @@ int main(int argc, char **argv)
 
 			OKNG(rss64k >= rss64k_expected &&
 			     rss64k <= rss64k_expected * 1.1,
-			     "rss[64K]: %d, expected: %d\n",
+			     "rss[64K]: %lu, expected: %lu\n",
 			     rss64k, rss64k_expected);
 		}
 		else {

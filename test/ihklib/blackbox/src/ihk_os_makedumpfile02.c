@@ -25,7 +25,7 @@ int main(int argc, char **argv)
 	int ret;
 	int i;
 	int opt;
-	char *fn;
+	char *fn = NULL;
 
 	params_getopt(argc, argv);
 

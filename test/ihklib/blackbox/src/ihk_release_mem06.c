@@ -46,8 +46,8 @@ int main(int argc, char **argv)
 			INTERR(ret, "linux_insmod returned %d\n", ret);
 
 			ret = ihk_reserve_mem(0,
-					      mems_input_reserve_mem[i].mem_chunks,
-					      mems_input_reserve_mem[i].num_mem_chunks);
+				      mems_input_reserve_mem[0].mem_chunks,
+				      mems_input_reserve_mem[0].num_mem_chunks);
 			INTERR(ret, "ihk_reserve_mem returned %d\n", ret);
 
 			exit(0);
@@ -73,8 +73,6 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
-		int num_mem_chunks = 0;
-
 		START("test-case: %s: %s\n", param, values[i]);
 
 		ret = mems_push(&mems_input[i], -1, 0);

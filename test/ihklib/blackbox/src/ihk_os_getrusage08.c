@@ -25,8 +25,8 @@ int main(int argc, char **argv)
 {
 	int ret;
 	int i;
-	int fd_in, fd_out;
-	char *fn_in, *fn_out;
+	int fd_in = -1, fd_out = -1;
+	char *fn_in = NULL, *fn_out = NULL;
 	int opt;
 
 	params_getopt(argc, argv);
@@ -174,11 +174,11 @@ int main(int argc, char **argv)
 
 			OKNG(user_mem >= user_expected &&
 				user_mem <= user_expected * 1.1,
-				"user: %d, expected: %d\n",
+				"user: %lu, expected: %lu\n",
 				user_mem, user_expected);
 			OKNG(kernel_mem >= kernel_expected &&
 				kernel_mem <= kernel_expected * 1.1,
-				"kernel: %d, expected: %d\n",
+				"kernel: %lu, expected: %lu\n",
 				kernel_mem, kernel_expected);
 		}
 

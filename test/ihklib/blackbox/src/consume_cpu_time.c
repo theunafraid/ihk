@@ -128,7 +128,7 @@ static int parse_args(char *args, struct percpu_time **cpus)
 		int errno_save = errno;
 
 		printf("%s: strdup returned %d\n", __func__, errno);
-		ret = -errno;
+		ret = -errno_save;
 		goto out;
 	}
 
@@ -145,7 +145,7 @@ static int parse_args(char *args, struct percpu_time **cpus)
 		int errno_save = errno;
 
 		printf("%s: malloc returned %d\n", __func__, errno);
-		ret = -errno;
+		ret = -errno_save;
 		goto out;
 	}
 

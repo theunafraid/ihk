@@ -25,8 +25,8 @@ int main(int argc, char **argv)
 {
 	int ret;
 	int i;
-	int fd_in, fd_out;
-	char *fn_in, *fn_out, *map_file;
+	int fd_in = -1, fd_out = -1;
+	char *fn_in = NULL, *fn_out = NULL, *map_file = NULL;
 	int opt;
 
 	params_getopt(argc, argv);
@@ -126,7 +126,7 @@ int main(int argc, char **argv)
 		OKNG(ret == ret_expected[i], "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		INFO("mapped_file: %ld\n",
+		INFO("mapped_file: %lu\n",
 		     ru_input_before[i].memory_stat_mapped_file[pg[i]]);
 
 		ret = write(fd_in, &message, sizeof(int));
@@ -142,7 +142,7 @@ int main(int argc, char **argv)
 		OKNG(ret == ret_expected[i], "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		INFO("mapped_file: %ld\n",
+		INFO("mapped_file: %lu\n",
 		     ru_input_after[i].memory_stat_mapped_file[pg[i]]);
 
 		ret = write(fd_in, &message, sizeof(int));
@@ -166,7 +166,7 @@ int main(int argc, char **argv)
 
 			OKNG(mapped_file >= mapped_file_expected &&
 			     mapped_file <= mapped_file_expected * 1.1,
-			     "mapped_file: %d, expected: %d\n",
+			     "mapped_file: %lu, expected: %lu\n",
 			     mapped_file, mapped_file_expected);
 		}
 

@@ -57,7 +57,7 @@ set(CFLAGS_WARNING "-Wall" "-Wextra" "-Wno-unused-parameter" "-Wno-sign-compare"
 add_compile_options(
   -O2
   -g
-  #${CFLAGS_WARNING}
+  ${CFLAGS_WARNING}
   )
 
 

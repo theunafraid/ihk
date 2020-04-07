@@ -22,10 +22,9 @@ const char *values[] = {
 int main(int argc, char **argv)
 {
 	int ret;
-	int i;
-	char *fn;
+	char *fn = NULL;
 	int opt;
-	int index;
+	int index = 0;
 
 	params_getopt(argc, argv);
 

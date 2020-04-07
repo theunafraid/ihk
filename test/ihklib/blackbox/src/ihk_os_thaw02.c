@@ -32,12 +32,12 @@ int main(int argc, char **argv)
 	int fd_fifo;
 	int opt;
 	unsigned long os_set[2][1] = {
-		1,
-		2,
+		{ 1 },
+		{ 2 },
 	};
 	unsigned long os_set_freeze[2][1] = {
-		1,
-		1,
+		{ 1 },
+		{ 1 },
 	};
 	int n = 8 * sizeof(unsigned long);
 	int pid = -1;
@@ -58,11 +58,6 @@ int main(int argc, char **argv)
 	int ret_expected[] = {
 		0,
 		-ENOENT,
-	};
-
-	int ret_expected_wait_status[2] = {
-		0,
-		-ETIMEDOUT
 	};
 
 	/* Precondition */

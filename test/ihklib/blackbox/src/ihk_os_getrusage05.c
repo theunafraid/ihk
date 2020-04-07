@@ -34,8 +34,8 @@ int main(int argc, char **argv)
 	int ret;
 	int i;
 	int opt;
-	int fd_in, fd_out;
-	char *fn_in, *fn_out;
+	int fd_in = -1, fd_out = -1;
+	char *fn_in = NULL, *fn_out = NULL;
 
 	params_getopt(argc, argv);
 
@@ -66,16 +66,9 @@ int main(int argc, char **argv)
 
 	struct ihk_os_rusage ru_input_before[8] = { 0 };
 	struct ihk_os_rusage ru_input_after[8] = { 0 };
-	struct ihk_os_rusage ru_expected[8] = {
-		{ 0 },
-		{ 0 },
-		{ 0 },
-		{ 0 },
-		{ .memory_stat_rss[IHK_OS_PGSIZE_64KB] = PAGE_SIZE * 1024 },
-		{ 0 },
-		{ 0 },
-		{ 0 },
-	};
+	struct ihk_os_rusage ru_expected[8] = { 0 };
+
+	ru_expected[4].memory_stat_rss[IHK_OS_PGSIZE_64KB] = PAGE_SIZE * 1024;
 
 	size_t ru_size_input[8] = {
 		LONG_MIN,
@@ -192,7 +185,7 @@ int main(int argc, char **argv)
 
 			OKNG(rss64k >= rss64k_expected &&
 			     rss64k <= rss64k_expected * 1.1,
-			     "rss[64K]: %d, expected: %d\n",
+			     "rss[64K]: %lu, expected: %lu\n",
 			     rss64k, rss64k_expected);
 		}
 		else {

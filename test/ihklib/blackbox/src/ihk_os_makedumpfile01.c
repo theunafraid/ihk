@@ -18,10 +18,10 @@ const char *values[] = {
 
 int main(int argc, char **argv)
 {
-	int ret;
+	int ret = 0;
 	int i;
 	int opt;
-	char *fn;
+	char *fn = NULL;
 
 	params_getopt(argc, argv);
 
@@ -38,11 +38,6 @@ int main(int argc, char **argv)
 
 	int ret_expected[2] = {
 		-ENOENT,
-		0
-	};
-
-	int ret_access_expected[2] = {
-		-1,
 		0
 	};
 

@@ -62,11 +62,6 @@ int main(int argc, char **argv)
 		0,
 	};
 
-	int ret_expected_wait_status[2] = {
-		-ETIMEDOUT,
-		0,
-	};
-
 	/* Precondition */
 	ret = linux_insmod(0);
 	INTERR(ret, "linux_insmod returned %d\n", ret);

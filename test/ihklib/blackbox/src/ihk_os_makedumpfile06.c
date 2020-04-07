@@ -18,11 +18,10 @@ const char *values[] = {
 
 int main(int argc, char **argv)
 {
-	int ret;
-	int i;
+	int ret = 0;
 	int opt;
-	char *fn;
-	int index;
+	char *fn = NULL;
+	int index = 0;
 
 	params_getopt(argc, argv);
 

@@ -33,8 +33,6 @@ int main(int argc, char **argv)
 
 	int ret_expected[] = { 0, 0 };
 
-	int num_os_instances_after_shutdown[] = { 0, 0 };
-
 	/* Activate and check */
 	for (i = 0; i < 2; i++) {
 		START("test-case: : %s\n", messages[i]);

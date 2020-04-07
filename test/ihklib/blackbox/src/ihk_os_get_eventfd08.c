@@ -24,7 +24,7 @@ const char *messages[] = {
 
 static pid_t watch_event(int i)
 {
-	int ret;
+	int ret = 0;
 	pid_t pid;
 	int fd_poll = -1;
 	int fd_event = -1;
@@ -100,7 +100,7 @@ static pid_t watch_event(int i)
 int main(int argc, char **argv)
 {
 	int ret;
-	int i, j;
+	int i;
 	pid_t pid = -1;
 
 	params_getopt(argc, argv);
@@ -122,7 +122,6 @@ int main(int argc, char **argv)
 	INTERR(ret, "mems_reserve returned %d\n", ret);
 
 	int fd;
-	unsigned long os_set[1] = { 1 };
 
 	/* Activate and check */
 	for (i = 0; i < 3; i++) {
@@ -158,22 +157,21 @@ int main(int argc, char **argv)
 		switch (target_status[i]) {
 		case IHK_STATUS_RUNNING:
 			ret = user_fork_exec("oom", &pid);
-			INTERR(ret < 0, "user_fork_exec returned %d\n");
+			INTERR(ret < 0, "user_fork_exec returned %d\n", ret);
 			break;
 		case IHK_STATUS_PANIC:
 			ret = user_fork_exec("panic", &pid);
-			INTERR(ret < 0, "user_fork_exec returned %d\n");
+			INTERR(ret < 0, "user_fork_exec returned %d\n", ret);
 			break;
 		case IHK_STATUS_HUNGUP:
 			ret = user_fork_exec("hungup", &pid);
-			INTERR(ret < 0, "user_fork_exec returned %d\n");
+			INTERR(ret < 0, "user_fork_exec returned %d\n", ret);
 
 			/* wait until McKernel start ihk_mc_delay_us() */
 			usleep(0.25 * 1000000);
 
 			fd = ihklib_os_open(0);
-			INTERR(fd < 0, "ihklib_os_open returned %d\n",
-			       fd);
+			INTERR(fd < 0, "ihklib_os_open returned %d\n", fd);
 
 			ioctl(fd, IHK_OS_DETECT_HUNGUP);
 			usleep(0.25 * 1000000);

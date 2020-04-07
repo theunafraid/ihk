@@ -34,7 +34,7 @@ int main(int argc, char **argv)
 	char **mem[IHK_MAX_NUM_PGSIZES] = { 0 };
 	int message;
 	int fd_in = -1, fd_out = -1;
-	int num_pages;
+	int num_pages = 0;
 	int kernel_mode = 0;
 	size_t kernel_mem_size = 0;
 	intptr_t kernel_addr = 0;

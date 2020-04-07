@@ -35,8 +35,6 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
-		int num_mem_chunks;
-
 		START("test-case: %s: %s\n", param, messages[i]);
 
 		ret = ihk_create_os(0);

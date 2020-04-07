@@ -58,8 +58,6 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
-		int ncpus;
-
 		START("test-case: user privilege: %s\n", messages[i]);
 
 		ret = ihk_reserve_cpu(0, cpus_input[i].cpus,

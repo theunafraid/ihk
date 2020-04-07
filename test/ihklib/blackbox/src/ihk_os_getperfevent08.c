@@ -28,7 +28,6 @@ int main(int argc, char **argv)
 {
 	int ret;
 	int i;
-	FILE *fp = NULL;
 
 	params_getopt(argc, argv);
 
@@ -70,9 +69,6 @@ int main(int argc, char **argv)
 	pid_t pid = -1;
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
-		int errno_save;
-		int ncpu;
-		char cmd[4096];
 		unsigned long counts[NEVENTS];
 		int wstatus;
 		int j;

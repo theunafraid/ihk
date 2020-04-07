@@ -78,10 +78,6 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 2; i++) {
-		int j;
-		unsigned long len;
-		void *mem_taken;
-
 		START("test-case: %s: %s\n", param, values[i]);
 
 		ret = ihk_reserve_mem_conf(0,
@@ -98,8 +94,8 @@ int main(int argc, char **argv)
 
 		if (i == 0) {
 			ret = mems_check_total(sum_expected);
-			OKNG(ret == 0, "total amount reserved\n",
-			     sum_expected);
+			OKNG(ret == 0, "total amount reserved %lu\n",
+				sum_expected);
 
 			ret = mems_check_var(allowed_var / (double)100);
 			OKNG(ret == 0,

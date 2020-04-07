@@ -28,7 +28,7 @@
 
 #define INTERR(cond, fmt, args...) do {	 \
 	if (cond) {			 \
-		char msg[1024];			 \
+		char msg[4096];			 \
 		sprintf(msg, fmt, ##args);		 \
 		printf("[INTERR] %s:%d %s", __FILE__, __LINE__, msg);	\
 		ret = 1;					\

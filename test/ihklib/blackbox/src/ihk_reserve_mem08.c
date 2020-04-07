@@ -84,8 +84,7 @@ int main(int argc, char **argv)
 
 #define LOWER_BOUND 30782652416UL
 		ret = mems_check_total(LOWER_BOUND);
-		OKNG(ret == 0, "total amount reserved\n",
-		     LOWER_BOUND);
+		OKNG(ret == 0, "total amount reserved\n");
 
 		/* Clean up */
 		ret = mems_release();

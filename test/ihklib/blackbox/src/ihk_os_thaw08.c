@@ -33,12 +33,12 @@ const char *messages[] = {
 int main(int argc, char **argv)
 {
 	int ret;
-	int i, j;
+	int i;
 	pid_t pid_status = -1;
 	pid_t pid_count = -1;
-	int fd_fifo;
-	int fd;
-	char *fn;
+	int fd_fifo = -1;
+	int fd = -1;
+	char *fn = NULL;
 
 	params_getopt(argc, argv);
 
@@ -143,18 +143,17 @@ int main(int argc, char **argv)
 			break;
 		case IHK_STATUS_PANIC:
 			ret = user_fork_exec("panic", &pid_status);
-			INTERR(ret < 0, "user_fork_exec returned %d\n");
+			INTERR(ret < 0, "user_fork_exec returned %d\n", ret);
 			break;
 		case IHK_STATUS_HUNGUP:
 			ret = user_fork_exec("hungup", &pid_status);
-			INTERR(ret < 0, "user_fork_exec returned %d\n");
+			INTERR(ret < 0, "user_fork_exec returned %d\n", ret);
 
 			/* wait until McKernel start ihk_mc_delay_us() */
 			usleep(0.25 * 1000000);
 
 			fd = ihklib_os_open(0);
-			INTERR(fd < 0, "ihklib_os_open returned %d\n",
-			       fd);
+			INTERR(fd < 0, "ihklib_os_open returned %d\n", fd);
 
 			ioctl(fd, IHK_OS_DETECT_HUNGUP);
 			usleep(0.25 * 1000000);

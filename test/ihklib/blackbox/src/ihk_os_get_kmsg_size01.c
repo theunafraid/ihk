@@ -21,7 +21,7 @@ int main(int argc, char **argv)
 	params_getopt(argc, argv);
 
 	ret = linux_insmod(0);
-	INTERR(ret, "linux_insmod returned %d\n", ret);
+	INTERR(ret, "linux_insmod returned %zd\n", ret);
 
 	ssize_t ret_expected[2] = {
 		-ENOENT,
@@ -34,12 +34,12 @@ int main(int argc, char **argv)
 		/* Precondition */
 		if (i == 1) {
 			ret = ihk_create_os(0);
-			INTERR(ret, "ihk_create_os returned %d\n", ret);
+			INTERR(ret, "ihk_create_os returned %zd\n", ret);
 		}
 
 		ret = ihk_os_get_kmsg_size(0);
 		OKNG(ret == ret_expected[i],
-		     "return value: %d, expected: %d\n",
+		     "return value: %zd, expected: %zd\n",
 		     ret, ret_expected[i]);
 	}
 

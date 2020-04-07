@@ -506,7 +506,7 @@ int cpus_toggle(int cpu_id, char *toggle)
 {
 	int ret;
 	int on_off = 0;
-	char cmd[4096];
+	char cmd[1024];
 
 	if (cpu_id < 0) {
 		printf("%s: invalid cpu_id (%d)\n", __func__, cpu_id);
@@ -595,7 +595,6 @@ int ikc_cpu_map_cat(struct ikc_cpu_map *a, struct ikc_cpu_map *b,
 		    struct ikc_cpu_map *c)
 {
 	int ret;
-	int i;
 
 	if (b->ncpus + c->ncpus == 0) {
 		ret = 0;
@@ -751,7 +750,7 @@ void ikc_cpu_map_max_src_cpu(struct ikc_cpu_map *map, int *src_cpu,
 			    int *dst_cpu)
 {
 	int i;
-	int src = INT_MIN, dst;
+	int src = INT_MIN, dst = 0;
 
 	for (i = 0; i < map->ncpus; i++) {
 		if (map->map[i].src_cpu > src) {
@@ -855,7 +854,7 @@ int ikc_cpu_map_check_channels(int nchannels)
 
 		printf("%s: popen returned %d\n",
 		       __func__, errno);
-		ret = -errno;
+		ret = -errno_save;
 		goto out;
 	}
 

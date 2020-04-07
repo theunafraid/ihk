@@ -21,7 +21,7 @@ const char *messages[] = {
 int main(int argc, char **argv)
 {
 	int ret;
-	int i, j;
+	int i;
 	pid_t pid = -1;
 
 	params_getopt(argc, argv);
@@ -71,7 +71,7 @@ int main(int argc, char **argv)
 		if (i == 1) {
 			ret = user_fork_exec("delay_with_interrupt_disabled",
 					     &pid);
-			INTERR(ret < 0, "user_fork_exec returned %d\n");
+			INTERR(ret < 0, "user_fork_exec returned %d\n", ret);
 		}
 
 		/* wait until McKernel waits with interrupt disabled */

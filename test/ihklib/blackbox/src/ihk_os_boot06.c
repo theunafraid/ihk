@@ -111,8 +111,6 @@ int main(int argc, char **argv)
 
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
-		int j;
-
 		START("test-case: %s: %s\n", param, messages[i]);
 
 		ret = ihk_os_boot(0);
