@@ -38,6 +38,12 @@ int main(int argc, char **argv)
 	for (i = 0; i < 2; i++) {
 		START("test-case: %s: %s\n", param, messages[i]);
 
+		/* Precondition */
+		if (i == 1) {
+			ret = linux_insmod(0);
+			INTERR(ret, "linux_insmod returned %d\n", ret);
+		}
+
 		ret = ihk_reserve_cpu(0, cpus_input[i].cpus,
 				      cpus_input[i].ncpus);
 		INTERR(ret != ret_expected_reserve_cpu[i],
@@ -56,12 +62,6 @@ int main(int argc, char **argv)
 			ret = ihk_release_cpu(0, cpus_input[i].cpus,
 					      cpus_input[i].ncpus);
 			INTERR(ret, "ihk_release_cpu returned %d\n", ret);
-		}
-
-		/* Precondition */
-		if (i == 0) {
-			ret = linux_insmod(0);
-			INTERR(ret == 0, "linux_insmod returned %d\n", ret);
 		}
 	}
 
