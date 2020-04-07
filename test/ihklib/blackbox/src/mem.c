@@ -103,11 +103,13 @@ int mems_ls(struct mems *mems, char *type, double ratio)
 
 	while (fscanf(fp, "id: %d, nr_free_pages: %ld\n",
 		      &numa_node_number, &memfree) == 2) {
+#if 0
 		printf("%s: id: %d, %s: # of pages: %ld, "
 		       "size: %ld (%ld MiB)\n",
 		       __func__, numa_node_number, keyword,
 		       memfree, memfree * PAGE_SIZE,
 		       (memfree * PAGE_SIZE) >> 20);
+#endif
 		memfree *= PAGE_SIZE;
 
 #define RESERVE_MEM_GRANULE (1024UL * 1024 * 4)
