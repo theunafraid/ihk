@@ -25,6 +25,7 @@ int main(int argc, char **argv)
 
 	struct mems mems_input[1] = { 0 };
 	struct mems mems_after_reserve[1] = { 0 };
+	struct mems mems_margin[6] = { 0 };
 
 	/* Both Linux and McKernel cpus */
 	for (i = 0; i < 1; i++) {
@@ -41,6 +42,10 @@ int main(int argc, char **argv)
 
 		ret = mems_copy(&mems_after_reserve[i], &mems_input[i]);
 		INTERR(ret, "mems_copy returned %d\n", ret);
+
+		ret = mems_copy(&mems_margin[i], &mems_input[i]);
+		INTERR(ret, "mems_copy returned %d\n", ret);
+		mems_fill(&mems_margin[i], 4UL << 20);
 	}
 
 	int ret_expected[] = { 0 };
@@ -59,7 +64,8 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 
 		if (mems_expected[i]) {
-			ret = mems_check_reserved(mems_expected[i], NULL);
+			ret = mems_check_reserved(mems_expected[i],
+						  &mems_margin[i]);
 			OKNG(ret == 0, "reserved as expected\n");
 
 			/* Clean up */

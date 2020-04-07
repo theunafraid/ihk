@@ -19,8 +19,6 @@ if [ "$cpu_model" == "a64fx" ]; then
     limit_in_bytes=$(cat memory.limit_in_bytes)
     sudo bash -c "cat memory.soft_limit_in_bytes > memory.memsw.limit_in_bytes"
     sudo bash -c "cat memory.soft_limit_in_bytes > memory.limit_in_bytes"
-#    sudo bash -c "echo $((8*1024*1024*1024)) > memory.memsw.limit_in_bytes"
-#    sudo bash -c "echo $((8*1024*1024*1024)) > memory.limit_in_bytes"
     popd > /dev/null
 fi
 

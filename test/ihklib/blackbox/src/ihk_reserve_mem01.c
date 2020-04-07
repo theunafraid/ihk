@@ -58,6 +58,12 @@ int main(int argc, char **argv)
 	for (i = 0; i < 2; i++) {
 		START("test-case: %s: %s\n", param, values[i]);
 
+		/* Precondition */
+		if (i == 1) {
+			ret = linux_insmod(0);
+			INTERR(ret, "linux_insmod returned %d\n", ret);
+		}
+
 		ret = ihk_reserve_mem(0, mems_input[i].mem_chunks,
 				      mems_input[i].num_mem_chunks);
 		OKNG(ret == ret_expected[i],
@@ -74,11 +80,6 @@ int main(int argc, char **argv)
 			INTERR(ret, "mems_release returned %d\n", ret);
 		}
 
-		/* Precondition */
-		if (i == 0) {
-			ret = linux_insmod(0);
-			INTERR(ret == 0, "linux_insmod returned %d\n", ret);
-		}
 	}
 
 	ret = 0;

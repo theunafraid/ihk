@@ -17,36 +17,6 @@ const char *values[] = {
 	"INT_MAX",
 };
 
-int mems_num_nodes(void)
-{
-	int ret;
-	int num_nodes = 0;
-
-	char *cmd = "lscpu | grep \"NUMA node(s)\" | awk '{print $3}'";
-	FILE *fp = NULL;
-
-	fp = popen(cmd, "r");
-	if (!fp) {
-		ret = -errno;
-		goto out;
-	}
-
-	ret = fscanf(fp, "%d", &num_nodes);
-	if (ret == EOF) {
-		ret = -errno;
-		goto out;
-	}
-
-	ret = num_nodes;
-out:
-	if (fp) {
-		pclose(fp);
-	}
-	fp = NULL;
-
-	return ret;
-}
-
 int main(int argc, char **argv)
 {
 	int ret;
@@ -60,6 +30,7 @@ int main(int argc, char **argv)
 
 	struct mems mems_input[6] = { 0 };
 	struct mems mems_after_reserve[6] = { 0 };
+	struct mems mems_margin[6] = { 0 };
 	int num_nodes;
 
 	/* Both Linux and McKernel cpus */
@@ -108,6 +79,16 @@ int main(int argc, char **argv)
 		default:
 			break;
 		}
+
+		switch (i) {
+		case 2:
+		case 3:
+		case 4:
+			ret = mems_copy(&mems_margin[i], &mems_input[i]);
+			INTERR(ret, "mems_copy returned %d\n", ret);
+			mems_fill(&mems_margin[i], 4UL << 20);
+			break;
+		}
 	}
 
 	int ret_expected[] = {
@@ -140,7 +121,8 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 
 		if (mems_expected[i]) {
-			ret = mems_check_reserved(mems_expected[i], NULL);
+			ret = mems_check_reserved(mems_expected[i],
+						  &mems_margin[i]);
 			OKNG(ret == 0, "reserved as expected\n");
 
 			ret = mems_release();
