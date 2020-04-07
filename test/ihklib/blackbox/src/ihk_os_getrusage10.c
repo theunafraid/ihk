@@ -31,7 +31,7 @@ int main(int argc, char **argv)
 	long user_hz;
 
 	ret = sysconf(_SC_CLK_TCK);
-	INTERR(ret == -1, "linux_insmod returned %d\n", ret);
+	INTERR(ret == -1, "sysconf returned %d\n", ret);
 	user_hz = ret;
 
 	params_getopt(argc, argv);
