@@ -39,8 +39,13 @@ int main(int argc, char **argv)
 
 	/* Reference for # of memory chunks */
 	struct mems mems_expected_num_mem_chunks[2] = { 0 };
-
 	struct mems *mems_expected[] = { NULL, &mems_input_reserve[1] };
+	struct mems mems_margin[2] = { 0 };
+
+	ret = mems_copy(&mems_margin[1], &mems_input_reserve[1]);
+	INTERR(ret, "mems_copy returned %d\n", ret);
+
+	mems_fill(&mems_margin[1], 4UL << 20);
 
 	int ret_expected_get_num[] = {
 		-ENOENT,
@@ -87,7 +92,7 @@ int main(int argc, char **argv)
 		if (mems_expected[i]) {
 			/* Note that only per-NUMA-node-sum is compared */
 			ret = mems_compare(&mems_input[i], mems_expected[i],
-					   NULL);
+					   &mems_margin[i]);
 			OKNG(ret == 0, "query result matches reserved\n");
 		}
 

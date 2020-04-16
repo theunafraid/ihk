@@ -158,8 +158,6 @@ int linux_chmod(int dev_index)
 	int num_os_instances;
 	int *os_indices = NULL;
 
-	mode_t os_mode = S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
-
 	ret = ihk_get_num_os_instances(dev_index);
 	INTERR(ret < 0,
 		"ihk_get_num_os_instances failed with errno %d\n", errno);
@@ -180,18 +178,8 @@ int linux_chmod(int dev_index)
 		ret = stat(os_filename, &os_stat);
 		INTERR(ret, "stat failed with errno; %d\n", errno);
 
-		while ((os_stat.st_mode & 0x3F) != 0x36) {
-			ret = chmod(os_filename, os_mode);
-			INTERR(ret, "chmod failed with errno; %d\n", errno);
-
-			ret = stat(os_filename, &os_stat);
-			INTERR(ret, "stat failed with errno; %d\n", errno);
-
-			if (++tries > 20) {
-				ret = -ETIME;
-				goto out;
-			}
-		}
+		ret = chmod(os_filename, 0666);
+		INTERR(ret, "chmod failed with errno; %d\n", errno);
 	}
 
 	ret = 0;
@@ -199,6 +187,35 @@ out:
 	return ret;
 }
 
+int linux_wait_chmod(int dev_index)
+{
+	int ret;
+	int i;
+	char fn[4096];
+	struct stat os_stat;
+
+	sprintf(fn, "/dev/mcos0");
+	ret = stat(fn, &os_stat);
+	INTERR(ret, "stat failed with errno; %d\n", errno);
+
+	for (i = 0; i < 100; i++) {
+		if ((os_stat.st_mode & 0777) == 0666) {
+			ret = 0;
+			goto out;
+		}
+
+		usleep(100000);
+
+		ret = stat(fn, &os_stat);
+		INTERR(ret, "stat failed with errno; %d\n", errno);
+	}
+
+	ret = -ETIME;
+	goto out;
+
+out:
+	return ret;
+}
 
 int _linux_rmmod(char *fn)
 {

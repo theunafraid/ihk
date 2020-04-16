@@ -34,8 +34,21 @@ int main(int argc, char **argv)
 	ret = cpus_reserve();
 	INTERR(ret, "cpus_reserve returned %d\n", ret);
 
-	ret = mems_reserve();
-	INTERR(ret, "mems_reserve returned %d\n", ret);
+	struct mems mems = { 0 };
+	int excess;
+
+	ret = mems_ls(&mems, "MemFree", 0.9);
+	INTERR(ret, "mems_ls returned %d\n", ret);
+
+	excess = mems.num_mem_chunks - 4;
+	if (excess > 0) {
+		ret = mems_shift(&mems, excess);
+		INTERR(ret, "mems_shift returned %d\n", ret);
+	}
+
+	ret = ihk_reserve_mem(0, mems.mem_chunks,
+			      mems.num_mem_chunks);
+	INTERR(ret, "ihk_reserve_mem returned %d\n", ret);
 
 	int os_index_input[] = {
 		INT_MIN,
@@ -48,7 +61,7 @@ int main(int argc, char **argv)
 	int ret_expected[5] = {
 		-ENOENT,
 		-ENOENT,
-		mems_get_num_numa_nodes(),
+		mems.num_mem_chunks,
 		-ENOENT,
 		-ENOENT,
 	};

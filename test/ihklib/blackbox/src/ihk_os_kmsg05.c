@@ -88,8 +88,10 @@ int main(int argc, char **argv)
 		INTERR(ret, "ihk_os_boot returned %d\n", ret);
 
 		ret = ihk_os_kmsg(0, kmsg_input[i], kmsg_size_input[i]);
-		OKNG(ret == ret_expected[i],
-		     "return value: %d, expected: %d\n",
+		OKNG(i == 4 ?
+		     ret > ret_expected[i] :
+		     ret == ret_expected[i],
+		     "return value: %d, expected or lower limit: %d\n",
 		     ret, ret_expected[i]);
 
 		if (ret == 0) {

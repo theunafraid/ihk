@@ -41,19 +41,28 @@ int main(int argc, char **argv)
 	ncpus = ihk_get_num_reserved_cpus(0);
 	INTERR(ncpus < 0, "ihk_get_num_reserved_cpus returned %d\n", ret);
 
-	struct cpus cpus_input[8] = {
-		 { .ncpus = INT_MIN },
-		 { .ncpus = -1 },
-		 { .ncpus = 0 },
-		 { .ncpus = 1 },
-		 { .ncpus = ncpus }, /* reserved */
-		 { .ncpus = ncpus - 1 }, /* reserved - 1 */
-		 { .ncpus = ncpus + 1 }, /* reserved + 1 */
-		 { .ncpus = INT_MAX },
+	int ncpus_input[8] = {
+		 INT_MIN,
+		 -1,
+		 0,
+		 1,
+		 ncpus, /* reserved */
+		 ncpus - 1, /* reserved - 1 */
+		 ncpus + 1, /* reserved + 1 */
+		 INT_MAX,
 	};
 
-	ret = cpus_init(&cpus_input[4], ncpus);
-	INTERR(ret, "cpus_init returned %d\n", ret);
+	struct cpus cpus_input[8] = { 0 };
+
+	for (i = 0; i < 8; i++) {
+		if (i == 0 || i == 1 || i == 2 || i == 7) {
+			cpus_input[i].ncpus = ncpus_input[i];
+		} else {
+			ret = cpus_init(&cpus_input[i],
+					ncpus_input[i]);
+			INTERR(ret, "cpus_init returned %d\n", ret);
+		}
+	}
 
 	struct cpus cpus_assigned[8] = { 0 };
 

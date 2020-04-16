@@ -46,6 +46,11 @@ int main(int argc, char **argv)
 		&mems_expected_size[1]
 	};
 
+	struct mems mems_margin[2] = { 0 };
+
+	ret = mems_copy(&mems_margin[1], &mems_expected_size[1]);
+	INTERR(ret, "mems_copy returned %d\n", ret);
+
 	/* Activate and check */
 	for (i = 0; i < 2; i++) {
 		int num_mem_chunks;
@@ -76,7 +81,8 @@ int main(int argc, char **argv)
 		if (mems_expected[i]) {
 
 			ret = mems_compare(&mems_input[i],
-					mems_expected[i], NULL);
+					   mems_expected[i],
+					   &mems_margin[i]);
 			OKNG(ret == 0,
 			     "total size of query result matches reserved\n");
 		}

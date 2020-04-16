@@ -438,7 +438,8 @@ int mems_compare(struct mems *result, struct mems *expected,
 	for (i = 0; i < MAX_NUM_MEM_CHUNKS; i++) {
 		if (sum_result[i] > 0) {
 			INFO("actual: %ld MiB, expected: %ld MiB\n",
-			     sum_result[i], sum_expected[i]);
+			     sum_result[i] >> 20,
+			     sum_expected[i] >> 20);
 		}
 
 		if (sum_result[i] < sum_expected[i] ||
@@ -809,35 +810,5 @@ int mems_os_release(void)
 
 	ret = 0;
  out:
-	return ret;
-}
-
-int mems_get_num_numa_nodes(void)
-{
-	int ret;
-	int num_nodes = 0;
-
-	char *cmd = "lscpu | grep \"NUMA node(s)\" | awk '{print $3}'";
-	FILE *fp = NULL;
-
-	fp = popen(cmd, "r");
-	if (!fp) {
-		ret = -errno;
-		goto out;
-	}
-
-	ret = fscanf(fp, "%d\n", &num_nodes);
-	if (ret == EOF) {
-		ret = -errno;
-		goto out;
-	}
-
-	ret = num_nodes;
-out:
-	if (fp) {
-		pclose(fp);
-	}
-	fp = NULL;
-
 	return ret;
 }

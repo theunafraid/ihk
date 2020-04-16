@@ -54,9 +54,12 @@ int main(int argc, char **argv)
 		INTERR(ret, "cpus_ls returned %d\n", ret);
 	}
 
-	ret = cpus_push(&cpus_input[5], cpus_input[5].ncpus);
+	/* Plus one out-of-range */
+	ret = cpus_push(&cpus_input[5],
+			cpus_input[5].cpus[cpus_input[5].ncpus - 1] + 1);
 	INTERR(ret, "cpus_push returned %d\n", ret);
 
+	/* Minus one */
 	ret = cpus_pop(&cpus_input[6], 1);
 	INTERR(ret, "cpus_pop returned %d\n", ret);
 
