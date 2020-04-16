@@ -72,7 +72,7 @@ int main(int argc, char **argv)
 	INTERR(ret, "ihk_reserve_mem returned %d\n", ret);
 
 	/* Activate and check */
-	for (i = 1; i < 2; i++) {
+	for (i = 0; i < 2; i++) {
 		START("test-case: %s: %s\n", param, values[i]);
 
 		/* Precondition */

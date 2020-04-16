@@ -68,6 +68,13 @@ int main(int argc, char **argv)
 		  NULL, /* don't care */
 	};
 
+	struct mems mems_margin[5] = { 0 };
+
+	ret = mems_copy(&mems_margin[2], &mems_input_reserve[2]);
+	INTERR(ret, "mems_copy returned %d\n", ret);
+
+	mems_fill(&mems_margin[2], 4UL << 20);
+
 	/* Activate and check */
 	for (i = 0; i < 5; i++) {
 		int num_mem_chunks;
@@ -95,7 +102,8 @@ int main(int argc, char **argv)
 
 		if (mems_expected[i]) {
 			ret = mems_compare(&mems_input[i],
-					mems_expected[i], NULL);
+					   mems_expected[i],
+					   &mems_margin[i]);
 			OKNG(ret == 0, "query result matches reserved\n");
 		}
 

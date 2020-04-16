@@ -79,8 +79,10 @@ int main(int argc, char **argv)
 
 		ret = ihk_os_kmsg(os_index_input[i], kmsg_input[i],
 				(ssize_t)IHK_KMSG_SIZE);
-		OKNG(ret == ret_expected[i],
-		     "return value: %d, expected: %d\n",
+		OKNG(i == 2 ?
+		     ret > ret_expected[i] :
+		     ret == ret_expected[i],
+		     "return value: %d, expected or lower limit: %d\n",
 		     ret, ret_expected[i]);
 
 		if (ret == 0) {

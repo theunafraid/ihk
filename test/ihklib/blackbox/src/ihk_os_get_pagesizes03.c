@@ -44,11 +44,15 @@ int main(int argc, char **argv)
 	};
 	long *pagesizes_input[4] = { 0 };
 
-	for (i = 1; i < 4; i++) {
-		pagesizes_input[i] = malloc(sizeof(long) * num_entries[i]);
+	for (i = 0; i < 4; i++) {
+		pagesizes_input[i] =
+			calloc(IHK_MAX_NUM_PGSIZES + 1,
+			       sizeof(long));
 		INTERR(pagesizes_input[i] == NULL,
-			"malloc returned %d\n", errno);
+		       "malloc returned %d\n", errno);
 	}
+
+	pagesizes_input[0] = NULL;
 
 	int ret_expected[4] = {
 		-EFAULT,
@@ -57,7 +61,7 @@ int main(int argc, char **argv)
 		-EINVAL,
 	};
 
-	long pagesizes_expected[4][IHK_MAX_NUM_PGSIZES] = {
+	long pagesizes_expected[4][IHK_MAX_NUM_PGSIZES + 1] = {
 		{ 0 },
 		{
 		 1UL << 12,
@@ -100,9 +104,12 @@ int main(int argc, char **argv)
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		ret = memcmp(pagesizes_input[i], pagesizes_expected[i],
-			     IHK_MAX_NUM_PGSIZES * sizeof(long));
-		OKNG(ret == 0, "get pagesizes as expected\n");
+		if (pagesizes_input[i]) {
+			ret = memcmp(pagesizes_input[i], pagesizes_expected[i],
+				     (IHK_MAX_NUM_PGSIZES + 1) * sizeof(long));
+			OKNG(ret == 0, "output written / untouched "
+			     "as expected\n");
+		}
 
 		ret = ihk_os_shutdown(0);
 		INTERR(ret, "ihk_os_shutdown returned %d\n", ret);

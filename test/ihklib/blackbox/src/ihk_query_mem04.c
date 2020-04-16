@@ -50,7 +50,7 @@ int main(int argc, char **argv)
 	int ret_expected[8] = {
 		 -EINVAL,
 		 -EINVAL,
-		 0,
+		 -EINVAL,
 		 -EINVAL,
 		 0,
 		 -EINVAL,
@@ -69,6 +69,12 @@ int main(int argc, char **argv)
 		  NULL, /* don't care */
 	};
 
+	struct mems mems_margin[8] = { 0 };
+
+	ret = mems_copy(&mems_margin[4], &mems_input_reserve[4]);
+	INTERR(ret, "mems_copy returned %d\n", ret);
+
+	mems_fill(&mems_margin[4], 4UL << 20);
 
 	/* Activate and check */
 	for (i = 0; i < 8; i++) {
@@ -124,7 +130,8 @@ int main(int argc, char **argv)
 
 		if (mems_expected[i]) {
 			ret = mems_compare(&mems_input[i],
-					mems_expected[i], NULL);
+					   mems_expected[i],
+					   &mems_margin[i]);
 			OKNG(ret == 0, "query result matches reserved\n");
 		}
 

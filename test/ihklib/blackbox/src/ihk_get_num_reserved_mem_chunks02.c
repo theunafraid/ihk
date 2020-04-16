@@ -45,6 +45,12 @@ int main(int argc, char **argv)
 	int ret_expected[2] = { 0 };
 	struct mems mems_query[2] = { 0 };
 	struct mems *mems_expected[] = { NULL, &mems_expected_size[1] };
+	struct mems mems_margin[2] = { 0 };
+
+	ret = mems_copy(&mems_margin[1], &mems_expected_size[1]);
+	INTERR(ret, "mems_copy returned %d\n", ret);
+
+	mems_fill(&mems_margin[1], 4UL << 20);
 
 	/* Activate and check */
 	for (i = 0; i < 2; i++) {
@@ -79,7 +85,7 @@ int main(int argc, char **argv)
 			INTERR(ret, "ihk_query_mem returned %d\n", ret);
 
 			ret = mems_compare(&mems_query[i], mems_expected[i],
-					   NULL);
+					   &mems_margin[i]);
 			OKNG(ret == 0,
 			     "total size of query result matches reserved\n");
 		}

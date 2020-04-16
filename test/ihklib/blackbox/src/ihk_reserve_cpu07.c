@@ -95,7 +95,7 @@ int main(int argc, char **argv)
 	};
 
 	/* Activate and check */
-	for (i = 0; i < 1; i++) {
+	for (i = 0; i < 4; i++) {
 		START("test-case: %s: %s\n", param, values[i]);
 
 		ret = ihk_reserve_cpu(0, cpus_input[i].cpus,
@@ -106,7 +106,7 @@ int main(int argc, char **argv)
 
 		if (cpus_expected[i]) {
 			ret = cpus_check_reserved(cpus_expected[i]);
-			OKNG(ret == 0, "reserve worked as expected\n");
+			OKNG(ret == 0, "reserved (or not) as expected\n");
 		}
 
 		if (ret_expected == 0) {

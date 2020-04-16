@@ -1,6 +1,7 @@
 #include <limits.h>
 #include <errno.h>
 #include <ihklib.h>
+#include <stdlib.h>
 #include "util.h"
 #include "okng.h"
 #include "mem.h"

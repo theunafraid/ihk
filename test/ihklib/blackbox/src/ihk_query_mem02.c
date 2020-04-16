@@ -67,6 +67,13 @@ int main(int argc, char **argv)
 		  NULL,
 	};
 
+	struct mems mems_margin[4] = { 0 };
+
+	ret = mems_copy(&mems_margin[1], &mems_after_reserved[1]);
+	INTERR(ret, "mems_copy returned %d\n", ret);
+
+	mems_fill(&mems_margin[1], 4UL << 20);
+
 	/* Activate and check */
 	for (i = 0; i < 4; i++) {
 		START("test-case: %s: %s\n", param, values[i]);
@@ -80,7 +87,7 @@ int main(int argc, char **argv)
 		if (mems_expected[i]) {
 			ret = mems_compare(&mems_input[i],
 					mems_expected[i],
-					NULL);
+					&mems_margin[i]);
 			OKNG(ret == 0, "query result matches input\n");
 		}
 	}

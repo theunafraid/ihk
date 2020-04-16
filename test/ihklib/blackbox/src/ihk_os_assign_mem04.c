@@ -60,6 +60,7 @@ int main(int argc, char **argv)
 	mems_input[6].num_mem_chunks = INT_MAX;
 
 	struct mems mems_after_assign[7] = { 0 };
+	struct mems mems_margin[7] = { 0 };
 
 	/* All */
 	ret = mems_reserved(&mems_after_assign[3]);
@@ -70,6 +71,13 @@ int main(int argc, char **argv)
 	INTERR(ret, "mems_reserved returned %d\n", ret);
 	ret = mems_pop(&mems_after_assign[5], 1);
 	INTERR(ret, "mems_pop returned %d\n", ret);
+
+	for (i = 0; i < 7; i++) {
+		ret = mems_copy(&mems_margin[i], &mems_after_assign[i]);
+		INTERR(ret, "mems_copy returned %d\n", ret);
+
+		mems_fill(&mems_margin[i], 4UL << 20);
+	}
 
 	int ret_expected[] = {
 		  -EINVAL,
@@ -102,7 +110,8 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 
 		if (mems_expected[i]) {
-			ret = mems_check_assigned(mems_expected[i]);
+			ret = mems_check_assigned(mems_expected[i],
+						  &mems_margin[i]);
 			OKNG(ret == 0, "assigned as expected\n");
 
 			/* Clean up */

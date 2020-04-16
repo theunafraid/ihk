@@ -36,10 +36,6 @@ int main(int argc, char **argv)
 			ret = ihk_create_os(0);
 			INTERR(ret, "ihk_create_os returned %d\n", ret);
 
-			/* make /dev/mcos0 accessible to non-root */
-			ret = linux_chmod(0);
-			INTERR(ret, "linux_chmod returned %d\n", ret);
-
 			ret = cpus_os_assign();
 			INTERR(ret, "cpus_os_assign returned %d\n", ret);
 
@@ -73,6 +69,9 @@ int main(int argc, char **argv)
 		/* cpus are dummy because we can't query */
 		ret = cpus_push(&cpus_input[i], 0);
 		INTERR(ret, "cpus_push returned %d\n", ret);
+
+		ret = linux_wait_chmod(0);
+		INTERR(ret, "mode didn't changed to 0666\n");
 
 		ret = ihk_os_release_cpu(0, cpus_input[i].cpus,
 				      cpus_input[i].ncpus);

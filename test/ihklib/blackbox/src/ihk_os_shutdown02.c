@@ -58,9 +58,10 @@ int main(int argc, char **argv)
 		  0,
 		  -EINVAL,
 		  0,
-		};
+	};
 
 	struct mems mems_after_release[4] = { 0 };
+	struct mems mems_margin[4] = { 0 };
 
 	/* all */
 	for (i = 0; i < 4; i++) {
@@ -78,11 +79,18 @@ int main(int argc, char **argv)
 			 mems_after_release[3].num_mem_chunks - 1);
 	INTERR(ret, "mems_shift returned %d\n", ret);
 
+	for (i = 0; i < 4; i++) {
+		ret = mems_copy(&mems_margin[i], &mems_after_release[i]);
+		INTERR(ret, "mems_copy returned %d\n", ret);
+
+		mems_fill(&mems_margin[i], 4UL << 20);
+	}
+
 	struct mems *mems_expected[] = {
-		  &mems_after_release[0],
-		  &mems_after_release[1],
-		  &mems_after_release[2],
-		  &mems_after_release[3],
+		&mems_after_release[0],
+		&mems_after_release[1],
+		&mems_after_release[2],
+		&mems_after_release[3],
 	};
 
 	/* Activate and check */
@@ -98,7 +106,8 @@ int main(int argc, char **argv)
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
 
-		ret = mems_check_assigned(mems_expected[i]);
+		ret = mems_check_assigned(mems_expected[i],
+					  &mems_margin[i]);
 		OKNG(ret == 0, "released as expected\n");
 
 		ret = mems_os_release();

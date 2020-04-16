@@ -61,7 +61,7 @@ int main(int argc, char **argv)
 
 	struct ihk_perf_event_attr attr_input[2] = {
 		{
-		 .config = ARMV8_PMUV3_PERFCTR_ST_RETIRED,
+		 .config = ST_SPEC,
 		 .disabled = 1,
 		 .pinned = 0,
 		 .exclude_user = 0,
@@ -70,7 +70,7 @@ int main(int argc, char **argv)
 		 .exclude_idle = 0
 		},
 		{
-		 .config = ARMV8_PMUV3_PERFCTR_ST_RETIRED,
+		 .config = ST_SPEC,
 		 .disabled = 1,
 		 .pinned = 0,
 		 .exclude_user = 1,

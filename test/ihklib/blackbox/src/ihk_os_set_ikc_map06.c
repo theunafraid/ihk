@@ -64,9 +64,6 @@ int main(int argc, char **argv)
 			ret = os_kargs();
 			INTERR(ret, "os_kargs returned %d\n", ret);
 
-			ret = linux_chmod(0);
-			INTERR(ret, "linux_chmod returned %d\n", ret);
-
 			ret = ihk_os_get_num_assigned_cpus(0);
 			INTERR(ret < 0,
 			"ihk_os_get_num_assigned_cpus returned %d\n", ret);
@@ -92,14 +89,26 @@ int main(int argc, char **argv)
 				 * called
 				 */
 				int j;
+				int ncpus_assigned;
 
 				ret = cpus_ls(&cpus_linux);
 				INTERR(ret, "cpus_ls returned %d\n",
 				       ret);
 
-				ret = _cpus_ls(&cpus_mckernel,
-					       "offline");
-				INTERR(ret, "_cpus_ls returned %d\n",
+				ret = ihk_os_get_num_assigned_cpus(0);
+				INTERR(ret <= 0,
+				       "ihk_os_get_num_assigned_cpus returned %d\n",
+				       ret);
+				INFO("# of assigned cpus: %d\n", ret);
+				ncpus_assigned = ret;
+				
+				ret = cpus_init(&cpus_mckernel, ncpus_assigned);
+				INTERR(ret, "cpus_init returned %d\n", ret);
+					
+				ret = ihk_os_query_cpu(0,
+						       cpus_mckernel.cpus,
+						       cpus_mckernel.ncpus);
+				INTERR(ret < 0, "ihk_os_query_cpu returned %d\n",
 				       ret);
 
 				ret = ikc_cpu_map_init(&map_after_set[0],
@@ -157,6 +166,9 @@ int main(int argc, char **argv)
 
 		ret = ikc_cpu_map_init(&map_input[i], num_assigned_cpu);
 		INTERR(ret, "ikc_cpu_map_init returned %d\n", ret);
+
+		ret = linux_wait_chmod(0);
+		INTERR(ret, "device file mode didn't change to 0666\n");
 
 		ret = ihk_os_set_ikc_map(0, map_input[i].map,
 				map_input[i].ncpus);

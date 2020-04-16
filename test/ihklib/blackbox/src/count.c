@@ -42,7 +42,7 @@ int main(int argc, char **argv)
 	printf("[ INFO ] count: start sending messages...\n", i);
 
 	for (i = 0; i < MAX_COUNT; i++) {
-		long j, sum;
+		long j;
 		struct timeval start, end;
 
 		printf("[ INFO ] count: sending message #%d\n", i);
@@ -58,7 +58,7 @@ int main(int argc, char **argv)
 
 		gettimeofday(&start, NULL);
 		while (1) {
-			long sec, usec;
+			long sec, usec, sum = 0;
 
 			for (j = 0; j < (1UL << 20); j++) {
 				sum += j;

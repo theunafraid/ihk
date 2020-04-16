@@ -77,7 +77,7 @@ static int linux_lsmod(char *_fn)
 	return ret;
 }
 
-int _linux_insmod(char *fn)
+int _linux_insmod(char *fn, char *opts)
 {
 	int ret;
 	char cmd[1024];
@@ -93,7 +93,10 @@ int _linux_insmod(char *fn)
 		goto out;
 	}
 
-	sprintf(cmd, "insmod %s", fn);
+	sprintf(cmd, "insmod %s ", fn);
+	if (opts) {
+		strcat(cmd, opts);
+	}
 	ret = system(cmd);
 	ret = WEXITSTATUS(ret);
 	INTERR(ret, "%s returned %d\n", cmd, ret);
@@ -110,37 +113,24 @@ int linux_insmod(int verbose)
 	char fn[1024];
 
 	sprintf(fn, "%s/kmod/ihk.ko", QUOTE(WITH_MCK));
-	ret = _linux_insmod(fn);
+	ret = _linux_insmod(fn, NULL);
 	if (ret) {
-		printf("%s: error: linux_insmod %s returned %d\n",
+		printf("%s: error: _linux_insmod %s returned %d\n",
 		       __func__, fn, ret);
 		goto out;
 	}
 
 	sprintf(fn, "%s/kmod/ihk-%s.ko",
 		QUOTE(WITH_MCK), QUOTE(BUILD_TARGET));
-	ret = linux_lsmod(fn);
-	if (ret < 0) {
-		printf("%s: error: linux_lsmod %s returned %d\n",
+	ret = _linux_insmod(fn, "ihk_start_irq=240 ihk_ikc_irq_core=0");
+	if (ret) {
+		printf("%s: error: _linux_insod %s %s returned %d\n",
 		       __func__, fn, ret);
-		goto out;
-	} else if (ret > 0) {
-		INFO("warning: %s is already loaded\n", fn);
-		ret = 0;
 		goto out;
 	}
 
-	sprintf(cmd,
-		"insmod %s ihk_start_irq=240 ihk_ikc_irq_core=0",
-		fn);
-	if (verbose)
-		INFO("%s\n", cmd);
-	ret = system(cmd);
-	ret = WEXITSTATUS(ret);
-	INTERR(ret, "%s returned %d\n", cmd, ret);
-
 	sprintf(fn, "%s/kmod/mcctrl.ko", QUOTE(WITH_MCK));
-	ret = _linux_insmod(fn);
+	ret = _linux_insmod(fn, NULL);
 	if (ret) {
 		printf("%s: error: linux_insmod %s returned %d\n",
 		       __func__, fn, ret);
@@ -157,8 +147,6 @@ int linux_chmod(int dev_index)
 	int i, ret = 0;
 	int num_os_instances;
 	int *os_indices = NULL;
-
-	mode_t os_mode = S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
 
 	ret = ihk_get_num_os_instances(dev_index);
 	INTERR(ret < 0,
@@ -180,18 +168,8 @@ int linux_chmod(int dev_index)
 		ret = stat(os_filename, &os_stat);
 		INTERR(ret, "stat failed with errno; %d\n", errno);
 
-		while ((os_stat.st_mode & 0x3F) != 0x36) {
-			ret = chmod(os_filename, os_mode);
-			INTERR(ret, "chmod failed with errno; %d\n", errno);
-
-			ret = stat(os_filename, &os_stat);
-			INTERR(ret, "stat failed with errno; %d\n", errno);
-
-			if (++tries > 20) {
-				ret = -ETIME;
-				goto out;
-			}
-		}
+		ret = chmod(os_filename, 0666);
+		INTERR(ret, "chmod failed with errno; %d\n", errno);
 	}
 
 	ret = 0;
@@ -199,6 +177,37 @@ out:
 	return ret;
 }
 
+int linux_wait_chmod(int dev_index)
+{
+	int ret;
+	int i;
+	char fn[4096];
+	struct stat os_stat;
+
+	sprintf(fn, "/dev/mcos0");
+	ret = stat(fn, &os_stat);
+	INTERR(ret, "stat failed with errno; %d\n", errno);
+
+	for (i = 0; i < 60; i++) {
+		if ((os_stat.st_mode & 0777) == 0666) {
+			ret = 0;
+			goto out;
+		}
+
+		usleep(1000000);
+
+		ret = stat(fn, &os_stat);
+		INTERR(ret, "stat failed with errno; %d\n", errno);
+	}
+
+	system("ls -l /dev/mcos0");
+
+	ret = -ETIME;
+	goto out;
+
+out:
+	return ret;
+}
 
 int _linux_rmmod(char *fn)
 {

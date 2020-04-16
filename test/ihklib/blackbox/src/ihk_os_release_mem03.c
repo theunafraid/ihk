@@ -43,6 +43,8 @@ int main(int argc, char **argv)
 
 	struct mems mems_input[5] = { 0 };
 	struct mems mems_after_release[5] = { 0 };
+	struct mems mems_margin[5] = { 0 };
+
 	/* All */
 	for (i = 0; i < 5; i++) {
 		ret = mems_reserved(&mems_input[i]);
@@ -55,6 +57,13 @@ int main(int argc, char **argv)
 	ret = mems_shift(&mems_after_release[2],
 			 mems_after_release[2].num_mem_chunks);
 	INTERR(ret, "mems_shift returned %d\n", ret);
+
+	for (i = 0; i < 5; i++) {
+		ret = mems_copy(&mems_margin[i], &mems_after_release[i]);
+		INTERR(ret, "mems_copy returned %d\n", ret);
+
+		mems_fill(&mems_margin[i], 4UL << 20);
+	}
 
 	int ret_expected[] = {
 		-ENOENT,
@@ -87,7 +96,8 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 
 		if (mems_expected[i]) {
-			ret = mems_check_assigned(mems_expected[i]);
+			ret = mems_check_assigned(mems_expected[i],
+						  &mems_margin[i]);
 			OKNG(ret == 0, "released as expected\n");
 
 			/* Clean up */

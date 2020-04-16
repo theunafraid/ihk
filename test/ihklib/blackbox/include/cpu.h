@@ -26,6 +26,7 @@ void cpus_dump(struct cpus *cpus);
 int cpus_compare(struct cpus *cpus_result, struct cpus *cpus_expected);
 int cpus_check_reserved(struct cpus *expected);
 
+int cpus_ncpus_offline(void);
 int _cpus_reserve(int nlinux, int nmck);
 int cpus_reserve(void);
 int cpus_release(void);

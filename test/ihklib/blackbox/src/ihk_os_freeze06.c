@@ -63,10 +63,6 @@ int main(int argc, char **argv)
 			ret = ihk_os_boot(0);
 			INTERR(ret, "ihk_os_boot returned %d\n", ret);
 
-			/* make /dev/mcos0 accessible to non-root */
-			ret = linux_chmod(0);
-			INTERR(ret, "linux_chmod returned %d\n", ret);
-
 			ret = os_wait_for_status(IHK_STATUS_RUNNING);
 			INTERR(ret, "os_wait_for_status timeout %d\n", ret);
 
@@ -123,6 +119,9 @@ int main(int argc, char **argv)
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
 		START("test-case: %s: %s\n", param, values[i]);
+
+		ret = linux_wait_chmod(0);
+		INTERR(ret, "device file mode didn't change to 0666\n");
 
 		INFO("trying to freeze os\n");
 		ret = ihk_os_freeze(os_set, 8 * sizeof(unsigned long));
