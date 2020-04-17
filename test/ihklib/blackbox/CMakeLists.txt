@@ -11,6 +11,7 @@ if(CPU_IMPLEMENTER STREQUAL "0x46" AND CPU_ARCH STREQUAL "8" AND
     CPU_VARIANT STREQUAL "0x1" AND CPU_PART STREQUAL "0x001")
   message("A64FX detected")
   set(CPU_MODEL "a64fx")
+  add_definitions(-D__a64fx__)
 endif()
 
 cmake_policy(SET CMP0005 NEW)

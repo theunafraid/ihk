@@ -77,7 +77,7 @@ static int linux_lsmod(char *_fn)
 	return ret;
 }
 
-int _linux_insmod(char *fn)
+int _linux_insmod(char *fn, char *opts)
 {
 	int ret;
 	char cmd[1024];
@@ -93,7 +93,10 @@ int _linux_insmod(char *fn)
 		goto out;
 	}
 
-	sprintf(cmd, "insmod %s", fn);
+	sprintf(cmd, "insmod %s ", fn);
+	if (opts) {
+		strcat(cmd, opts);
+	}
 	ret = system(cmd);
 	ret = WEXITSTATUS(ret);
 	INTERR(ret, "%s returned %d\n", cmd, ret);
@@ -110,37 +113,24 @@ int linux_insmod(int verbose)
 	char fn[1024];
 
 	sprintf(fn, "%s/kmod/ihk.ko", QUOTE(WITH_MCK));
-	ret = _linux_insmod(fn);
+	ret = _linux_insmod(fn, NULL);
 	if (ret) {
-		printf("%s: error: linux_insmod %s returned %d\n",
+		printf("%s: error: _linux_insmod %s returned %d\n",
 		       __func__, fn, ret);
 		goto out;
 	}
 
 	sprintf(fn, "%s/kmod/ihk-%s.ko",
 		QUOTE(WITH_MCK), QUOTE(BUILD_TARGET));
-	ret = linux_lsmod(fn);
-	if (ret < 0) {
-		printf("%s: error: linux_lsmod %s returned %d\n",
+	ret = _linux_insmod(fn, "ihk_start_irq=240 ihk_ikc_irq_core=0");
+	if (ret) {
+		printf("%s: error: _linux_insod %s %s returned %d\n",
 		       __func__, fn, ret);
-		goto out;
-	} else if (ret > 0) {
-		INFO("warning: %s is already loaded\n", fn);
-		ret = 0;
 		goto out;
 	}
 
-	sprintf(cmd,
-		"insmod %s ihk_start_irq=240 ihk_ikc_irq_core=0",
-		fn);
-	if (verbose)
-		INFO("%s\n", cmd);
-	ret = system(cmd);
-	ret = WEXITSTATUS(ret);
-	INTERR(ret, "%s returned %d\n", cmd, ret);
-
 	sprintf(fn, "%s/kmod/mcctrl.ko", QUOTE(WITH_MCK));
-	ret = _linux_insmod(fn);
+	ret = _linux_insmod(fn, NULL);
 	if (ret) {
 		printf("%s: error: linux_insmod %s returned %d\n",
 		       __func__, fn, ret);

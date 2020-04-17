@@ -1,7 +1,7 @@
 #ifndef __LINUX_H_INCLUDED__
 #define __LINUX_H_INCLUDED__
 
-int _linux_insmod(char *fn);
+int _linux_insmod(char *fn, char *opts);
 int linux_insmod(int verbose);
 int linux_chmod(int dev_index);
 int linux_wait_chmod(int dev_index);

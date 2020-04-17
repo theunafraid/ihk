@@ -16,9 +16,9 @@
 #include "linux.h"
 #include "user.h"
 
-const char param[] = "user mode and kernel mode";
+const char param[] = "memory usage of user / kernel mode";
 const char *values[] = {
-	"user-mode 256MB && kernel-mode 512MB"
+	"user: 256MB, kernel: 512MB"
 };
 
 int main(int argc, char **argv)
@@ -46,11 +46,11 @@ int main(int argc, char **argv)
 	}
 
 	size_t usermode_size[1] = {
-		256 * 1024 * 1024,
+		256UL << 20,
 	};
 
 	size_t kernelmode_size[1] = {
-		512 * 1024 * 1024,
+		512UL << 20,
 	};
 
 	int ret_expected[1] = { 0 };
@@ -60,8 +60,8 @@ int main(int argc, char **argv)
 
 	struct ihk_os_rusage ru_expected[1] = {
 		{
-			.memory_max_usage = 256 * 1024 * 1024,
-			.memory_kmem_usage = 512 * 1024 * 1024
+			.memory_max_usage = 256UL << 20,
+			.memory_kmem_usage = 512UL << 20
 		},
 	};
 
@@ -172,7 +172,10 @@ int main(int argc, char **argv)
 			unsigned long kernel_expected =
 				ru_expected[i].memory_kmem_usage;
 
-			OKNG(user_mem >= user_expected &&
+			/* sometimes child frees few pages
+			 * when exiting the first synchronization
+			 */
+			OKNG(user_mem >= user_expected - 3 * PAGE_SIZE &&
 				user_mem <= user_expected * 1.1,
 				"user: %d, expected: %d\n",
 				user_mem, user_expected);

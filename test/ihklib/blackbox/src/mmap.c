@@ -109,6 +109,9 @@ int main(int argc, char **argv)
 	}
 	num_pages = user_mem_size / page_size;
 
+	printf("[ INFO ] num_pages: %d, page_size: %d\n",
+	       num_pages, page_size);
+
 	mem[page_size_index] = malloc(sizeof(char *) * num_pages);
 	if (!mem[page_size_index]) {
 		int errno_save = -errno;
@@ -140,8 +143,6 @@ int main(int argc, char **argv)
 		goto sync_out;
 	}
 
-	printf("[ INFO ] num_pages: %d, page_size: %d\n",
-	       num_pages, page_size);
 	for (i = 0; i < num_pages; i++) {
 		mem[page_size_index][i] = mmap(0, page_size,
 					       PROT_READ | PROT_WRITE,

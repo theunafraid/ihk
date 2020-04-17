@@ -53,7 +53,7 @@ int main(int argc, char **argv)
 		 .exclude_idle = 0
 		},
 		{
-		 .config = ARMV8_PMUV3_PERFCTR_LD_RETIRED,
+		 .config = LD_SPEC,
 		 .disabled = 1,
 		 .pinned = 0,
 		 .exclude_user = 0,

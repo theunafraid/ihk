@@ -7,4 +7,13 @@
 #define ARMV8_PMUV3_PERFCTR_LD_RETIRED				0x06
 #define ARMV8_PMUV3_PERFCTR_ST_RETIRED				0x07
 
+/* See A64FX(R) PMU Events */
+#ifdef __a64fx__
+#define LD_SPEC 0x0070
+#define ST_SPEC 0x0071
+#else
+#define LD_SPEC ARMV8_PMUV3_PERFCTR_LD_RETIRED
+#define ST_SPEC ARMV8_PMUV3_PERFCTR_ST_RETIRED
+#endif
+
 #endif

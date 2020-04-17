@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 	INTERR(ret, "linux_insmod returned %d\n", ret);
 
 	sprintf(fn, "%s/kmod/test_driver.ko", QUOTE(CMAKE_INSTALL_PREFIX));
-	ret = _linux_insmod(fn);
+	ret = _linux_insmod(fn, NULL);
 	INTERR(ret, "linux_insmod_test_driver returned %d\n", ret);
 
 	struct cpus cpus = { 0 };
