@@ -77,7 +77,6 @@ int main(int argc, char **argv)
 		INTERR(ret, "mems_shift returned %d\n", ret);
 	}
 
-
 	ret = ihk_reserve_mem(0, mems.mem_chunks,
 			      mems.num_mem_chunks);
 	INTERR(ret, "ihk_reserve_mem returned %d\n", ret);

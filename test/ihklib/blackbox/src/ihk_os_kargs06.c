@@ -48,10 +48,6 @@ int main(int argc, char **argv)
 			ret = ihk_create_os(0);
 			INTERR(ret, "ihk_create_os returned %d\n", ret);
 
-			/* make /dev/mcos0 accessible to non-root */
-			ret = linux_chmod(0);
-			INTERR(ret, "linux_chmod returned %d\n", ret);
-
 			ret = cpus_os_assign();
 			INTERR(ret, "cpus_os_assign returned %d\n", ret);
 
@@ -93,6 +89,9 @@ int main(int argc, char **argv)
 	/* Activate and check */
 	for (i = 0; i < 1; i++) {
 		START("test-case: %s: %s\n", param, messages[i]);
+
+		ret = linux_wait_chmod(0);
+		INTERR(ret, "device file mode didn't change to 0666\n");
 
 		ret = ihk_os_kargs(0, kargs);
 		OKNG(ret == ret_expected[i],

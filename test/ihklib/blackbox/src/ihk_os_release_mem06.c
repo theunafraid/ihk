@@ -36,10 +36,6 @@ int main(int argc, char **argv)
 			ret = ihk_create_os(0);
 			INTERR(ret, "ihk_create_os returned %d\n", ret);
 
-			/* make /dev/mcos0 accessible to non-root */
-			ret = linux_chmod(0);
-			INTERR(ret, "linux_chmod returned %d\n", ret);
-
 			ret = mems_os_assign();
 			INTERR(ret, "mems_os_assign returned %d\n", ret);
 			exit(0);
@@ -71,6 +67,9 @@ int main(int argc, char **argv)
 
 		ret = mems_push(&mems_input[i], -1, 0);
 		INTERR(ret, "mems_push returned %d\n", ret);
+
+		ret = linux_wait_chmod(0);
+		INTERR(ret, "device file mode didn't change to 0666\n");
 
 		ret = ihk_os_release_mem(0, mems_input[i].mem_chunks,
 				      mems_input[i].num_mem_chunks);

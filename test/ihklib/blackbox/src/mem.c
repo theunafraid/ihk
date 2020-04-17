@@ -734,7 +734,7 @@ int mems_reserved(struct mems *mems)
 	return ret;
 }
 
-int mems_check_assigned(struct mems *expected)
+int mems_check_assigned(struct mems *expected, struct mems *margin)
 {
 	int ret;
 	struct mems mems = { 0 };
@@ -751,7 +751,7 @@ int mems_check_assigned(struct mems *expected)
 		INTERR(ret, "ihk_query_mem returned %d\n", ret);
 	}
 
-	ret = mems_compare(&mems, expected, NULL);
+	ret = mems_compare(&mems, expected, margin);
 
 	INFO("actual assignment:\n");
 	mems_dump_sum(&mems);

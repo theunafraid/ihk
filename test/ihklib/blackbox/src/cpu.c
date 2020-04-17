@@ -399,6 +399,28 @@ int _cpus_reserve(int nlinux, int nmck)
 	return ret;
 }
 
+int cpus_ncpus_offline(void)
+{
+	int ret;
+	FILE* fp = NULL;
+
+	fp = popen("lscpu --offline --parse | "
+		   "awk -F ',' '/^[0-9]+/ { print $1 }' | wc -l",
+		   "r");
+	if (fp == NULL) {
+		ret = -errno;
+		goto out;
+	}
+
+	fscanf(fp, "%d\n", &ret);
+	INFO("# of offline cpus: %d\n", ret);
+ out:
+	if (fp) {
+		pclose(fp);
+	}
+	return ret;
+}
+
 int cpus_reserve(void)
 {
 	return _cpus_reserve(2, -1);

@@ -74,10 +74,6 @@ int main(int argc, char **argv)
 			ret = os_kargs();
 			INTERR(ret, "os_kargs returned %d\n", ret);
 
-			/* make /dev/mcos0 accessible to non-root */
-			ret = linux_chmod(0);
-			INTERR(ret, "linux_chmod returned %d\n", ret);
-
 			ret = ihk_os_boot(0);
 			INTERR(ret, "ihk_os_boot returned %d\n", ret);
 
@@ -133,11 +129,14 @@ int main(int argc, char **argv)
 	for (i = 0; i < 1; i++) {
 		START("test-case: %s: %s\n", param, values[i]);
 
+		ret = linux_wait_chmod(0);
+		INTERR(ret, "device file mode didn't change to 0666\n");
+
 		ret = ihk_os_perfctl(0, PERF_EVENT_ENABLE);
 		OKNG(ret == ret_expected[i],
 		     "PERF_EVENT_ENABLE return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
-#if 0
+
 		ret = user_fork_exec("nop", &pid);
 		if (ret < 0) {
 			fprintf(stderr, "user_fork_exec returned %d\n", ret);
@@ -150,7 +149,7 @@ int main(int argc, char **argv)
 			goto usrout;
 		}
 		pid = -1;
-#endif
+
 		ret = ihk_os_perfctl(0, PERF_EVENT_DISABLE);
 		OKNG(ret == ret_expected[i],
 		     "PERF_EVENT_DISABLE return value: %d, expected: %d\n",

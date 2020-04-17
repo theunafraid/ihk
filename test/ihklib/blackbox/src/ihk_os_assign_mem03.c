@@ -51,10 +51,16 @@ int main(int argc, char **argv)
 
 
 	struct mems mems_after_assign[5] = { 0 };
+	struct mems mems_margin[5] = { 0 };
 
 	ret = mems_reserved(&mems_after_assign[2]);
 	INTERR(ret, "mems_reserved returned %d\n", ret);
 
+	ret = mems_copy(&mems_margin[2], &mems_after_assign[2]);
+	INTERR(ret, "mems_copy returned %d\n", ret);
+	
+	mems_fill(&mems_margin[2], 4UL << 20);
+	
 	int ret_expected[] = {
 		  -ENOENT,
 		  -ENOENT,
@@ -83,7 +89,8 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 
 		if (mems_expected[i]) {
-			ret = mems_check_assigned(mems_expected[i]);
+			ret = mems_check_assigned(mems_expected[i],
+						  &mems_margin[i]);
 			OKNG(ret == 0, "assigned as expected\n");
 
 			/* Clean up */

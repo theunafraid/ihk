@@ -69,8 +69,6 @@ int main(int argc, char **argv)
 	ret = cpus_toggle(max_id, "off");
 	INTERR(ret, "cpus_toggle returned %d\n", ret);
 
-	system("lscpu");
-
 	/* linux cpus */
 	ret = cpus_ls(&cpus_linux);
 	INTERR(ret, "cpus_ls returned %d\n", ret);
@@ -87,7 +85,6 @@ int main(int argc, char **argv)
 
 	ret = ihk_reserve_cpu(0, cpus_mckernel.cpus, cpus_mckernel.ncpus);
 	INTERR(ret, "ihk_reserve_cpu returned %d\n", ret);
-	system("lscpu");
 
 	ret = mems_reserve();
 	INTERR(ret, "mems_reserve returned %d\n", ret);

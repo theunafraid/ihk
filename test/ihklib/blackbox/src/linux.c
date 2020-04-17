@@ -198,17 +198,19 @@ int linux_wait_chmod(int dev_index)
 	ret = stat(fn, &os_stat);
 	INTERR(ret, "stat failed with errno; %d\n", errno);
 
-	for (i = 0; i < 100; i++) {
+	for (i = 0; i < 60; i++) {
 		if ((os_stat.st_mode & 0777) == 0666) {
 			ret = 0;
 			goto out;
 		}
 
-		usleep(100000);
+		usleep(1000000);
 
 		ret = stat(fn, &os_stat);
 		INTERR(ret, "stat failed with errno; %d\n", errno);
 	}
+
+	system("ls -l /dev/mcos0");
 
 	ret = -ETIME;
 	goto out;

@@ -29,6 +29,7 @@ int main(int argc, char **argv)
 	struct mems mems_input[2] = { 0 };
 	struct mems mems_input_reserve[2] = { 0 };
 	struct mems mems_after_assign[2] = { 0 };
+	struct mems mems_margin[2] = { 0 };
 
 	for (i = 0; i < 2; i++) {
 		int excess;
@@ -53,6 +54,11 @@ int main(int argc, char **argv)
 	for (i = 0; i < 2; i++) {
 		ret = mems_copy(&mems_after_assign[i], &mems_input_reserve[i]);
 		INTERR(ret, "mems_copy returned %d\n", ret);
+
+		ret = mems_copy(&mems_margin[i], &mems_after_assign[i]);
+		INTERR(ret, "mems_copy returned %d\n", ret);
+
+		mems_fill(&mems_margin[i], 4UL << 20);
 	}
 
 	int ret_expected[2] = { 0 };
@@ -80,7 +86,8 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 
 		if (mems_expected[i]) {
-			ret = mems_check_assigned(mems_expected[i]);
+			ret = mems_check_assigned(mems_expected[i],
+						  &mems_margin[i]);
 			OKNG(ret == 0, "assigned as expected\n");
 
 			/* Clean up */

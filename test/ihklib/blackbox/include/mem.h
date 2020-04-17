@@ -36,7 +36,7 @@ int mems_os_assign(void);
 int mems_os_release(void);
 
 int mems_reserved(struct mems *mems);
-int mems_check_assigned(struct mems *expected);
+int mems_check_assigned(struct mems *expected, struct mems *margin);
 
 int mems_get_num_numa_nodes(void);
 

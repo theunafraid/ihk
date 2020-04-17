@@ -38,6 +38,7 @@ int main(int argc, char **argv)
 
 	struct mems mems_input[8] = { 0 };
 	struct mems mems_after_release[8] = { 0 };
+	struct mems mems_margin[8] = { 0 };
 
 	for (i = 0; i < 8; i++) {
 		ret = mems_reserved(&mems_input[i]);
@@ -99,6 +100,11 @@ int main(int argc, char **argv)
 		default:
 			break;
 		}
+
+		ret = mems_copy(&mems_margin[i], &mems_after_release[i]);
+		INTERR(ret, "mems_copy returned %d\n", ret);
+
+		mems_fill(&mems_margin[i], 4UL << 20);
 	}
 
 	int ret_expected[] = {
@@ -138,7 +144,8 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 
 		if (mems_expected[i]) {
-			ret = mems_check_assigned(mems_expected[i]);
+			ret = mems_check_assigned(mems_expected[i],
+						  &mems_margin[i]);
 			OKNG(ret == 0, "released as expected\n");
 
 			/* Clean up */

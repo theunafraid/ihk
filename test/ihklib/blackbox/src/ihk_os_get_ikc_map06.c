@@ -68,9 +68,6 @@ int main(int argc, char **argv)
 			ret = os_kargs();
 			INTERR(ret, "os_kargs returned %d\n", ret);
 
-			ret = linux_chmod(0);
-			INTERR(ret, "linux_chmod returned %d\n", ret);
-
 			ret = ihk_os_boot(0);
 			INTERR(ret, "ihk_os_boot returned %d\n", ret);
 
@@ -117,6 +114,9 @@ int main(int argc, char **argv)
 
 		ret = ikc_cpu_map_init(&map_input[i], num_cpus);
 		INTERR(ret, "ikc_cpu_map_init returned %d\n", ret);
+
+		ret = linux_wait_chmod(0);
+		INTERR(ret, "device file mode didn't change to 0666\n");
 
 		ret = ihk_os_get_ikc_map(0, map_input[i].map,
 					 map_input[i].ncpus);

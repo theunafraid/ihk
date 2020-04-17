@@ -180,6 +180,17 @@ int main(int argc, char **argv)
 		INTERR(ret, "os status didn't change to %d\n",
 		       target_status[i]);
 
+		/* release device file */
+		switch (target_status[i]) {
+		case IHK_STATUS_HUNGUP:
+		case IHK_STATUS_PANIC:
+			user_wait(&pid);
+			linux_kill_mcexec();
+			break;
+		default:
+			break;
+		}
+
 		INFO("trying to destroy os\n");
 		ret = ihk_destroy_os(0, 0);
 		OKNG(ret == ret_expected[i],
@@ -202,16 +213,6 @@ int main(int argc, char **argv)
 		}
 
 		/* Clean up */
-		switch (target_status[i]) {
-		case IHK_STATUS_HUNGUP:
-		case IHK_STATUS_PANIC:
-			ret = user_wait(&pid);
-			INTERR(ret, "user_wait returned %d\n", ret);
-			break;
-		default:
-			break;
-		}
-
 		if (ihk_get_num_os_instances(0)) {
 			ret = ihk_destroy_os(0, 0);
 			INTERR(ret, "ihk_destroy_os returned %d\n", ret);
@@ -222,6 +223,7 @@ int main(int argc, char **argv)
  out:
 	if (pid > 0) {
 		user_wait(&pid);
+		linux_kill_mcexec();
 	}
 
 	if (ihk_get_num_os_instances(0)) {
