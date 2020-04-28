@@ -17,7 +17,4 @@ sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_get_num_os_instances06 -u $(id -u) -g $(id -
 ret=$?
 
 
-if [ "${AUTOTEST_HOME}" != "" ]; then
-    # Pass OK/NG to runtestlist.sh
-    echo $ret > $WORKDIR/result.log
-fi
+exit $ret

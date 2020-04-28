@@ -16,7 +16,4 @@ sudo chmod 666 /dev/mcos0
 sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_os_release_mem06 -u $(id -u) -g $(id -g) -r
 ret=$?
 
-if [ "${AUTOTEST_HOME}" != "" ]; then
-    # Pass OK/NG to runtestlist.sh
-    echo $ret > $WORKDIR/result.log
-fi
+exit $ret

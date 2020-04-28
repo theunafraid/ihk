@@ -15,7 +15,4 @@ sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_release_cpu06 -u $(id -u) -g $(id -g) -i
 sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_release_cpu06 -u $(id -u) -g $(id -g) -r
 ret=$?
 
-if [ "${AUTOTEST_HOME}" != "" ]; then
-    # Pass OK/NG to runtestlist.sh
-    echo $ret > $WORKDIR/result.log
-fi
+exit $ret

@@ -14,7 +14,4 @@ elif [ "$ret" == "0" ]; then
     echo "[  OK  ] reservation time"
 fi
 
-if [ "${AUTOTEST_HOME}" != "" ]; then
-    # Pass OK/NG to runtestlist.sh
-    echo $ret > $WORKDIR/result.log
-fi
+exit $ret

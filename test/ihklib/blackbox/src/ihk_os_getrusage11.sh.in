@@ -21,7 +21,4 @@ for i in {0..0}; do
     sudo rm -f ${WORKDIR}/fifo_out
 done
 
-if [ "${AUTOTEST_HOME}" != "" ]; then
-    # Pass OK/NG to runtestlist.sh
-    echo $ret > $WORKDIR/result.log
-fi
+exit $ret

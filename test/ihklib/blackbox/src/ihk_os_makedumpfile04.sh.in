@@ -42,7 +42,4 @@ done
 sudo chattr -i ${WORKDIR}/inaccessible
 sudo rm -rf ${WORKDIR}/inaccessible
 
-if [ "${AUTOTEST_HOME}" != "" ]; then
-    # Pass OK/NG to runtestlist.sh
-    echo $ret > $WORKDIR/result.log
-fi
+exit $ret

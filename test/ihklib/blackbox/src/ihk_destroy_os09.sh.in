@@ -19,7 +19,4 @@ for i in {0..0}; do
     ret=$?
 done
 
-if [ "${AUTOTEST_HOME}" != "" ]; then
-    # Pass OK/NG to runtestlist.sh
-    echo $ret > $WORKDIR/result.log
-fi
+exit $ret

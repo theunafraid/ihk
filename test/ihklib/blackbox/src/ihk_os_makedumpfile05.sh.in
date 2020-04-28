@@ -25,7 +25,4 @@ for i in {0..1}; do
     sudo rm -f ${WORKDIR}/dump
 done
 
-if [ "${AUTOTEST_HOME}" != "" ]; then
-    # Pass OK/NG to runtestlist.sh
-    echo $ret > $WORKDIR/result.log
-fi
+exit $ret

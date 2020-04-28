@@ -16,7 +16,4 @@ num_mem_chunks=$?
 sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_get_num_reserved_mem_chunks06 -u $(id -u) -g $(id -g) -r
 ret=$?
 
-if [ "${AUTOTEST_HOME}" != "" ]; then
-    # Pass OK/NG to runtestlist.sh
-    echo $ret > $WORKDIR/result.log
-fi
+exit $ret
