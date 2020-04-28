@@ -98,6 +98,7 @@ int main(int argc, char **argv)
 		INTERR(ret, "ihk_destroy_os returned %d\n", ret);
 	}
 
+	ret = 0;
 out:
 	if (ihk_get_num_os_instances(0)) {
 		ihk_os_shutdown(0);

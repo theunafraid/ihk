@@ -54,6 +54,7 @@ int main(int argc, char **argv)
 		     "get os index as expected\n");
 	}
 
+	ret = 0;
 out:
 	linux_rmmod(0);
 	return ret;

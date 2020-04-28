@@ -101,6 +101,7 @@ int main(int argc, char **argv)
 		INTERR(ret, "ihk_destroy_os returned %d\n", ret);
 	}
 
+	ret = 0;
 out:
 	for (i = 0; i < 2; i++) {
 		if (kmsg_input[i]) {

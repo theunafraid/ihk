@@ -42,6 +42,7 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 	}
 
+	ret = 0;
 out:
 	if (ihk_get_num_os_instances(0)) {
 		ihk_destroy_os(0, 0);

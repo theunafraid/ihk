@@ -94,6 +94,7 @@ int main(int argc, char **argv)
 		}
 	}
 
+	ret = 0;
 out:
 	if (ihk_get_num_os_instances(0)) {
 		ihk_os_shutdown(0);

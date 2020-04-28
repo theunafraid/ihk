@@ -78,6 +78,7 @@ int main(int argc, char **argv)
 			"get os index as expected\n");
 	}
 
+	ret = 0;
 out:
 	return ret;
 }

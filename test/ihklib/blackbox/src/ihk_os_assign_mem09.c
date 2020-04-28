@@ -62,7 +62,6 @@ int mems_remove_chunk(struct mems *mems, int idx)
 
 	mems->num_mem_chunks -= 1;
 	ret = 0;
-
 out:
 	return ret;
 }
@@ -211,7 +210,6 @@ int main(int argc, char **argv)
 	}
 
 	ret = 0;
-
 out:
 	mems_release();
 	linux_rmmod(0);

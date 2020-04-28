@@ -149,6 +149,7 @@ int main(int argc, char **argv)
 	ret = 0;
 	return ret;
 
+	ret = 0;
 out:
 	if (pid != -1) {
 		user_wait(&pid);

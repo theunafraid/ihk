@@ -35,6 +35,7 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 	}
 
+	ret = 0;
 out:
 	linux_rmmod(0);
 	return ret;

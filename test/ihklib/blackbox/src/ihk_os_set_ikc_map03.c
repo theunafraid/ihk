@@ -128,7 +128,6 @@ int main(int argc, char **argv)
 	}
 
 	ret = 0;
-
  out:
 	linux_kill_mcexec();
 	if (ihk_get_num_os_instances(0)) {
