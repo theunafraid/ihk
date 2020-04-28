@@ -52,19 +52,28 @@ int main(int argc, char **argv)
 	};
 
 	for (i = 0; i < 5; i++) {
+		int os_index;
+
 		START("test-case: %s: %s\n", param, values[i]);
 
 		ret = ihk_create_os(dev_index_input[i]);
 		OKNG(ret == ret_expected[i],
 		     "return value (os index when positive): %d, expected: %d\n",
 		     ret, ret_expected[i]);
+		os_index = ret;
 
+		system("ls /dev/mcos*");
 		ret = ihk_get_num_os_instances(0);
 		OKNG(ret == ret_expected_os_instances[i],
 		     "# of os instances: %d, expected: %d\n",
 		     ret, ret_expected_os_instances[i]);
+
+		if (ihk_get_num_os_instances(0)) {
+			ret = ihk_destroy_os(dev_index_input[i], os_index);
+		}
 	}
 
+	ret = 0;
 out:
 	linux_rmmod(0);
 	return ret;

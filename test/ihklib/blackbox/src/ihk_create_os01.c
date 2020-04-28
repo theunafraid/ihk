@@ -44,6 +44,7 @@ int main(int argc, char **argv)
 		}
 	}
 
+	ret = 0;
 out:
 	linux_rmmod(0);
 	return ret;
