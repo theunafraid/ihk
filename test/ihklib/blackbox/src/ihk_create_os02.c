@@ -62,7 +62,6 @@ int main(int argc, char **argv)
 		     ret, ret_expected[i]);
 		os_index = ret;
 
-		system("ls /dev/mcos*");
 		ret = ihk_get_num_os_instances(0);
 		OKNG(ret == ret_expected_os_instances[i],
 		     "# of os instances: %d, expected: %d\n",
