@@ -3,21 +3,20 @@
 
 #include <stdio.h>
 
-#define _OKNG(verb, jump, cond, fmt, args...) do {	\
-	if (cond) {					\
-		if (verb)				\
+#define _OKNG(verb, jump, cond, fmt, args...) do {		\
+	if (cond) {						\
+		if (verb)					\
 			printf("[  OK  ] " fmt, ##args);	\
-	} else {					\
+	} else {						\
 		printf("[  NG  ] " fmt, ##args);		\
-		if (jump)				\
-			goto out;			\
-	}						\
+		if (jump) {					\
+			ret = 1;				\
+			goto out;				\
+		}						\
+	}							\
 } while (0)
 
 #define OKNG(args...) _OKNG(1, 1, ##args)
-#define NG(args...) _OKNG(0, 1, ##args)
-#define OKNGNOJUMP(args...) _OKNG(1, 0, ##args)
-
 #define INFO(fmt, args...) printf("[ INFO ] " fmt, ##args)
 #define START(fmt, args...) printf("[ START] " fmt, ##args)
 #define INTERR(cond, fmt, args...) do {	 \
