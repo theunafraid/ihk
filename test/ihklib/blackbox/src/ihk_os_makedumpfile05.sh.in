@@ -10,19 +10,11 @@ fi
 . @CMAKE_INSTALL_PREFIX@/bin/util.sh
 
 for i in {0..1}; do
-    sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_os_makedumpfile05 -u $(id -u) -g $(id -g) -i $i -f ${WORKDIR}/dump
-    ret=$?
+    sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_os_makedumpfile05 -u $(id -u) -g $(id -g) -i $i -f ${WORKDIR}/dump || exit $?
 
-    if [ $ret -ne 0 ]; then
-	break;
-    fi
-
-    check_dump ${WORKDIR}/dump 0
-    if [ $ret -ne 0 ]; then
-	break;
-    fi
+    check_dump ${WORKDIR}/dump 0 || exit $?
 
     sudo rm -f ${WORKDIR}/dump
 done
 
-exit $ret
+exit 0

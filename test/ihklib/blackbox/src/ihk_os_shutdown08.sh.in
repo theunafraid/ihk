@@ -7,12 +7,9 @@ if [ "${AUTOTEST_HOME}" != "" ]; then
     . ${AUTOTEST_HOME}/bin/config.sh
 fi
 
-patch_and_build status_mckernel status_ihk
-ret=$?
+patch_and_build status_mckernel status_ihk || exit $?
 
-if [ $ret -eq 0 ]; then
-    sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_os_shutdown08 -u $(id -u) -g $(id -g)
-    ret=$?
-fi
+sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_os_shutdown08 -u $(id -u) -g $(id -g)
+ret=$?
 
 exit $ret

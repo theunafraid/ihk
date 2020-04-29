@@ -6,15 +6,13 @@ if [ "${AUTOTEST_HOME}" != "" ]; then
 fi
 
 # insmod as root
-sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_get_os_instances06 -u $(id -u) -g $(id -g) -i
+sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_get_os_instances06 -u $(id -u) -g $(id -g) -i || exit $?
 num_os_instances=$?
 
 # try to reserve memory as non-root
-@CMAKE_INSTALL_PREFIX@/bin/ihk_get_os_instances06 -u $(id -u) -g $(id -g) -n ${num_os_instances}
+@CMAKE_INSTALL_PREFIX@/bin/ihk_get_os_instances06 -u $(id -u) -g $(id -g) -n ${num_os_instances} || exit $?
 
 # rmmod as root
-sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_get_os_instances06 -u $(id -u) -g $(id -g) -r
-ret=$?
+sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_get_os_instances06 -u $(id -u) -g $(id -g) -r || exit $?
 
-
-exit $ret
+exit 0

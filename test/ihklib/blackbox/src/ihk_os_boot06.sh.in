@@ -10,16 +10,15 @@ fi
 init_oom_killer
 
 # precondition as root
-sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_os_boot06 -u $(id -u) -g $(id -g) -i
+sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_os_boot06 -u $(id -u) -g $(id -g) -i || exit $?
 sudo chmod 666 /dev/mcos0
 
 # test as non-root
-@CMAKE_INSTALL_PREFIX@/bin/ihk_os_boot06 -u $(id -u) -g $(id -g)
+@CMAKE_INSTALL_PREFIX@/bin/ihk_os_boot06 -u $(id -u) -g $(id -g) || exit $?
 
 # check and clean-up as root
-sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_os_boot06 -u $(id -u) -g $(id -g) -r
-ret=$?
+sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_os_boot06 -u $(id -u) -g $(id -g) -r || exit $?
 
 fini_oom_killer
 
-exit $ret
+exit 0

@@ -6,14 +6,13 @@ if [ "${AUTOTEST_HOME}" != "" ]; then
 fi
 
 # insmod as root
-sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_os_load06 -u $(id -u) -g $(id -g) -i
+sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_os_load06 -u $(id -u) -g $(id -g) -i || exit $?
 sudo chmod 666 /dev/mcos0
 
 # try to reserve memory as non-root
-@CMAKE_INSTALL_PREFIX@/bin/ihk_os_load06 -u $(id -u) -g $(id -g)
+@CMAKE_INSTALL_PREFIX@/bin/ihk_os_load06 -u $(id -u) -g $(id -g) || exit $?
 
 # rmmod as root
-sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_os_load06 -u $(id -u) -g $(id -g) -r
-ret=$?
+sudo @CMAKE_INSTALL_PREFIX@/bin/ihk_os_load06 -u $(id -u) -g $(id -g) -r || exit $?
 
-exit $ret
+exit 0
