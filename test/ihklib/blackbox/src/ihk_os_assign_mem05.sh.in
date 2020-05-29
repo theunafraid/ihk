@@ -1,4 +1,4 @@
-#!/usr/usr/bin/bash
+#!/usr/bin/bash
 
 # define WORKDIR
 SCRIPT_PATH=$(readlink -m "${BASH_SOURCE[0]}")
