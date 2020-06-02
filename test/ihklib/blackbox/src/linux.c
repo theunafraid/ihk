@@ -243,6 +243,13 @@ int linux_rmmod(int verbose)
 	int ret;
 	char fn[1024];
 
+	ret = ihk_get_num_os_instances(0);
+	if (ret) {
+		printf("%s: error: os instance found\n",
+		       __func__, fn);
+		goto out;
+	}
+
 	sprintf(fn, "%s/kmod/mcctrl.ko", QUOTE(WITH_MCK));
 	ret = _linux_rmmod(fn);
 	if (ret) {
