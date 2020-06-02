@@ -27,12 +27,15 @@ function patch_and_build()
 	popd
     fi
 
-    pushd /tmp
-        rm -rf build
-        mkdir build
-        cd build
-        cmake @WITH_MCK_SRC@ -DCMAKE_INSTALL_PREFIX=@WITH_MCK@
-        make -j install
+    BUILDDIR=$WORKDIR/build/$(uname -r)
+    if [ ! -f ${AUTOTEST_HOME}/bin/config.sh ]; then
+	pushd $BUILDDIR
+    else
+	rm -rf $BUILDDIR
+	pushd $BUILDDIR
+	cmake @WITH_MCK_SRC@ -DCMAKE_INSTALL_PREFIX=@WITH_MCK@
+    fi
+    make -j install
     popd
 
     if [ "$fn_mckernel" != "" ]; then
