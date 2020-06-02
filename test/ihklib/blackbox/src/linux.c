@@ -246,7 +246,7 @@ int linux_rmmod(int verbose)
 	ret = ihk_get_num_os_instances(0);
 	if (ret) {
 		printf("%s: error: os instance found\n",
-		       __func__, fn);
+		       __func__);
 		goto out;
 	}
 
