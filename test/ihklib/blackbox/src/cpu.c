@@ -59,7 +59,7 @@ int cpus_copy(struct cpus *dst, struct cpus *src)
 	return ret;
 }
 
-int _cpus_ls(struct cpus *cpus, char *online)
+int __cpus_ls(struct cpus *cpus, char *online)
 {
 	char cmd[1024];
 	FILE *fp;
@@ -112,9 +112,30 @@ int _cpus_ls(struct cpus *cpus, char *online)
 	return ret;
 }
 
+int _cpus_ls(struct cpus *cpus, int nlinux, int nmck)
+{
+	int ret;
+
+	ret = __cpus_ls(cpus, "online");
+	INTERR(ret, "cpus_ls returned %d\n", ret);
+
+	ret = cpus_shift(cpus, nlinux);
+	INTERR(ret, "cpus_shift returned %d\n", ret);
+
+	/* trim compute cpus */
+	if (nmck != -1 && cpus->ncpus > nmck) {
+		ret = cpus_pop(cpus, cpus->ncpus - nmck);
+		INTERR(ret, "cpus_pop returned %d\n", ret);
+	}
+
+	ret = 0;
+ out:
+	return ret;
+}
+
 int cpus_ls(struct cpus *cpus)
 {
-	return _cpus_ls(cpus, "online");
+	return _cpus_ls(cpus, 0, 8);
 }
 
 int cpus_max_id(struct cpus *cpus)
@@ -380,16 +401,8 @@ int _cpus_reserve(int nlinux, int nmck)
 	int ret;
 	struct cpus cpus = { 0 };
 
-	ret = cpus_ls(&cpus);
-	INTERR(ret, "cpus_ls returned %d\n", ret);
-
-	ret = cpus_shift(&cpus, nlinux);
-	INTERR(ret, "cpus_shift returned %d\n", ret);
-
-	if (nmck != -1) {
-		ret = cpus_pop(&cpus, cpus.ncpus - nmck);
-		INTERR(ret, "cpus_pop returned %d\n", ret);
-	}
+	ret = cpus_ls_online(&cpus, nlinux, nmck);
+	INTERR(ret, "_cpus_ls returned %d\n", ret);
 
 	ret = ihk_reserve_cpu(0, cpus.cpus, cpus.ncpus);
 	INTERR(ret, "ihk_reserve_cpu returned %d\n", ret);
@@ -397,6 +410,11 @@ int _cpus_reserve(int nlinux, int nmck)
 	ret = 0;
  out:
 	return ret;
+}
+
+int cpus_reserve(void)
+{
+	return _cpus_reserve(2, 8);
 }
 
 int cpus_ncpus_offline(void)
@@ -419,11 +437,6 @@ int cpus_ncpus_offline(void)
 		pclose(fp);
 	}
 	return ret;
-}
-
-int cpus_reserve(void)
-{
-	return _cpus_reserve(2, -1);
 }
 
 int cpus_release(void)

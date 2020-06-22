@@ -37,8 +37,8 @@ int main(int argc, char **argv)
 	struct cpus cpus_input[5] = {{ 0 }};
 	struct cpus cpus_reserve_input[5] = {{ 0 }};
 
-	ret = cpus_ls(&cpu_offlined);
-	INTERR(ret, "cpus_ls returned %d\n", ret);
+	ret = _cpus_ls(&cpu_offlined, 2, -1);
+	INTERR(ret, "_cpus_ls returned %d\n", ret);
 
 	ret = cpus_shift(&cpu_offlined, cpu_offlined.ncpus - 1);
 	INTERR(ret, "cpus_shift returned %d\n", ret);
@@ -49,8 +49,8 @@ int main(int argc, char **argv)
 	ret = cpus_toggle(offlined_cpu, "off");
 	INTERR(ret, "cpus_toggle returned %d\n", ret);
 
-	ret = cpus_ls(&cpu_unreserved);
-	INTERR(ret, "cpus_ls returned %d\n", ret);
+	ret = _cpus_ls(&cpu_unreserved, 2, -1);
+	INTERR(ret, "_cpus_ls returned %d\n", ret);
 
 	/* the 2nd last cpu */
 	ret = cpus_shift(&cpu_unreserved, cpu_unreserved.ncpus - 1);
@@ -60,11 +60,8 @@ int main(int argc, char **argv)
 	for (i = 0; i < 5; i++) {
 		int push_id;
 
-		ret = cpus_ls(&cpus_reserve_input[i]);
-		INTERR(ret, "cpus_ls returned %d\n", ret);
-
-		ret = cpus_shift(&cpus_reserve_input[i], 2);
-		INTERR(ret, "cpus_shift returned %d\n", ret);
+		ret = _cpus_ls(&cpus_reserve_input[i], 2, -1);
+		INTERR(ret, "_cpus_ls returned %d\n", ret);
 
 		ret = cpus_pop(&cpus_reserve_input[i], 1);
 		INTERR(ret, "cpus_shift returned %d\n", ret);

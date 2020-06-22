@@ -29,11 +29,8 @@ int main(int argc, char **argv)
 	struct cpus cpus_input[1] = {{ 0 }};
 	struct cpus cpus_after_release[1] = {{ 0 }};
 
-	ret = cpus_ls(&cpu_unreserve);
-	INTERR(ret, "cpus_ls returned %d\n", ret);
-
-	ret = cpus_shift(&cpu_unreserve, 2);
-	INTERR(ret, "cpus_shift returned %d\n", ret);
+	ret = _cpus_ls(&cpu_unreserve, 2, -1);
+	INTERR(ret, "_cpus_ls returned %d\n", ret);
 
 	ret = cpus_pop(&cpu_unreserve, cpu_unreserve.ncpus - 1);
 	INTERR(ret, "cpus_pop returned %d\n", ret);
@@ -42,11 +39,8 @@ int main(int argc, char **argv)
 
 	struct cpus cpus_reserve_input = { 0 };
 
-	ret = cpus_ls(&cpus_reserve_input);
-	INTERR(ret, "cpus_ls returned %d\n", ret);
-
-	ret = cpus_shift(&cpus_reserve_input, 3);
-	INTERR(ret, "cpus_shift returned %d\n", ret);
+	ret = _cpus_ls(&cpus_reserve_input, 3, -1);
+	INTERR(ret, "_cpus_ls returned %d\n", ret);
 
 	ret = ihk_reserve_cpu(0, cpus_reserve_input.cpus,
 			cpus_reserve_input.ncpus);
