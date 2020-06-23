@@ -77,6 +77,12 @@ int main(int argc, char **argv)
 
 			mems_fill(&mems_after_assign, 1UL << 30);
 
+			excess = mems_after_assign.num_mem_chunks - 4;
+			if (excess > 0) {
+				ret = mems_shift(&mems_after_assign, excess);
+				INTERR(ret, "mems_shift returned %d\n", ret);
+			}
+
 			ret = mems_copy(&margin, &mems_after_assign);
 			INTERR(ret, "mems_copy returned %d\n", ret);
 
