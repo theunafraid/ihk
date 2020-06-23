@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 	struct cpus cpu_last = { 0 };
 	struct cpus cpus_input[4] = {{ 0 }};
 
-	ret = _cpus_ls(&cpu_last, 2, -1);
+	ret = _cpus_ls(&cpu_last, "online", 2, -1);
 	INTERR(ret, "_cpus_ls returned %d\n", ret);
 
 	ret = cpus_shift(&cpu_last, cpu_last.ncpus - 1);
