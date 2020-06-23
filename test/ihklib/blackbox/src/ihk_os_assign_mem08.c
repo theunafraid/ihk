@@ -12,6 +12,11 @@ const char *values[] = {
 	"All the nodes",
 };
 
+struct mems mems_reserve[2];
+struct mems mems_assign[2];
+struct mems mems_after_assign[2];
+struct mems mems_margin[2];
+
 int main(int argc, char **argv)
 {
 	int ret;
@@ -26,33 +31,28 @@ int main(int argc, char **argv)
 	ret = ihk_create_os(0);
 	INTERR(ret, "ihk_create_os returned %d\n", ret);
 
-	struct mems mems_input[2] = {{ 0 }};
-	struct mems mems_input_reserve[2] = {{ 0 }};
-	struct mems mems_after_assign[2] = {{ 0 }};
-	struct mems mems_margin[2] = {{ 0 }};
-
 	for (i = 0; i < 2; i++) {
 		int excess;
 
-		ret = mems_ls(&mems_input_reserve[i]);
+		ret = mems_ls(&mems_reserve[i]);
 		INTERR(ret, "mems_ls returned %d\n", ret);
 
-		excess = mems_input[i].num_mem_chunks - 4;
+		excess = mems_reserve[i].num_mem_chunks - 4;
 		if (excess > 0) {
-			ret = mems_shift(&mems_input[i], excess);
+			ret = mems_shift(&mems_reserve[i], excess);
 			INTERR(ret, "mems_shift returned %d\n", ret);
 		}
 	}
 
 	/* first node */
-	if (mems_input_reserve[0].num_mem_chunks > 1) {
-		ret = mems_pop(&mems_input_reserve[0],
-				mems_input_reserve[0].num_mem_chunks - 1);
+	if (mems_reserve[0].num_mem_chunks > 1) {
+		ret = mems_pop(&mems_reserve[0],
+				mems_reserve[0].num_mem_chunks - 1);
 		INTERR(ret, "mems_pop returned %d\n", ret);
 	}
 
 	for (i = 0; i < 2; i++) {
-		ret = mems_copy(&mems_after_assign[i], &mems_input_reserve[i]);
+		ret = mems_copy(&mems_after_assign[i], &mems_reserve[i]);
 		INTERR(ret, "mems_copy returned %d\n", ret);
 
 		ret = mems_copy(&mems_margin[i], &mems_after_assign[i]);
@@ -72,15 +72,15 @@ int main(int argc, char **argv)
 	for (i = 0; i < 2; i++) {
 		START("test-case: %s: %s\n", param, values[i]);
 
-		ret = ihk_reserve_mem(0, mems_input_reserve[i].mem_chunks,
-				mems_input_reserve[i].num_mem_chunks);
+		ret = ihk_reserve_mem(0, mems_reserve[i].mem_chunks,
+				mems_reserve[i].num_mem_chunks);
 		INTERR(ret, "ihk_reserve_mem returned %d\n", ret);
 
-		ret = mems_reserved(&mems_input[i]);
+		ret = mems_reserved(&mems_assign[i]);
 		INTERR(ret, "mems_reserved returned %d\n", ret);
 
-		ret = ihk_os_assign_mem(0, mems_input[i].mem_chunks,
-				      mems_input[i].num_mem_chunks);
+		ret = ihk_os_assign_mem(0, mems_assign[i].mem_chunks,
+				      mems_assign[i].num_mem_chunks);
 		OKNG(ret == ret_expected[i],
 		     "return value: %d, expected: %d\n",
 		     ret, ret_expected[i]);
