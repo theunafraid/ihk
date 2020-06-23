@@ -36,7 +36,7 @@ int main(int argc, char **argv)
 			struct mems mems = { 0 };
 			int excess;
 
-			ret = mems_ls(&mems, "MemFree", 0.9);
+			ret = mems_ls(&mems, "MemFree");
 			INTERR(ret, "mems_ls returned %d\n", ret);
 
 			excess = mems.num_mem_chunks - 4;
@@ -66,7 +66,7 @@ int main(int argc, char **argv)
 			struct mems margin = { 0 };
 			int excess;
 
-			ret = mems_ls(&mems_after_assign, "MemFree", 0.9);
+			ret = mems_ls(&mems_after_assign, "MemFree");
 			INTERR(ret, "mems_ls returned %d\n", ret);
 
 			excess = mems_after_assign.num_mem_chunks - 4;
