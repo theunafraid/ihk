@@ -59,7 +59,7 @@ int cpus_copy(struct cpus *dst, struct cpus *src)
 	return ret;
 }
 
-int __cpus_ls(struct cpus *cpus, char *online)
+int _cpus_ls(struct cpus *cpus, char *online, int nlinux, int nmck)
 {
 	char cmd[1024];
 	FILE *fp;
@@ -104,21 +104,7 @@ int __cpus_ls(struct cpus *cpus, char *online)
 
 	cpus->ncpus = ncpus;
 
-	ret = 0;
- out:
-	if (fp) {
-		pclose(fp);
-	}
-	return ret;
-}
-
-int _cpus_ls(struct cpus *cpus, int nlinux, int nmck)
-{
-	int ret;
-
-	ret = __cpus_ls(cpus, "online");
-	INTERR(ret, "cpus_ls returned %d\n", ret);
-
+	/* spare system service cpus */
 	ret = cpus_shift(cpus, nlinux);
 	INTERR(ret, "cpus_shift returned %d\n", ret);
 
@@ -130,12 +116,15 @@ int _cpus_ls(struct cpus *cpus, int nlinux, int nmck)
 
 	ret = 0;
  out:
+	if (fp) {
+		pclose(fp);
+	}
 	return ret;
 }
 
 int cpus_ls(struct cpus *cpus)
 {
-	return _cpus_ls(cpus, 0, 8);
+	return _cpus_ls(cpus, "online", 0, 8);
 }
 
 int cpus_max_id(struct cpus *cpus)
@@ -401,7 +390,7 @@ int _cpus_reserve(int nlinux, int nmck)
 	int ret;
 	struct cpus cpus = { 0 };
 
-	ret = cpus_ls_online(&cpus, nlinux, nmck);
+	ret = _cpus_ls(&cpus, "online", nlinux, nmck);
 	INTERR(ret, "_cpus_ls returned %d\n", ret);
 
 	ret = ihk_reserve_cpu(0, cpus.cpus, cpus.ncpus);
@@ -748,7 +737,7 @@ int ikc_cpu_map_2toN(struct ikc_cpu_map *map)
 	struct cpus cpus_linux_2nd = { 0 };
 
 	/* array of first cpu */
-	ret = cpus_ls(&cpus_linux_1st);
+	ret = _cpus_ls(&cpus_linux_1st, "online", 0, -1);
 	INTERR(ret, "cpus_reserved returned %d\n", ret);
 	ret = cpus_at(&cpus_linux_1st, 0);
 	INTERR(ret, "cpus_at returned %d\n", ret);
@@ -756,7 +745,7 @@ int ikc_cpu_map_2toN(struct ikc_cpu_map *map)
 	INTERR(ret, "cpus_broadcast returned %d\n", ret);
 
 	/* array of second cpu */
-	ret = cpus_ls(&cpus_linux_2nd);
+	ret = _cpus_ls(&cpus_linux_2nd, "online", 0, -1);
 	INTERR(ret, "cpus_reserved returned %d\n", ret);
 	ret = cpus_at(&cpus_linux_2nd, 1);
 	INTERR(ret, "cpus_at returned %d\n", ret);
