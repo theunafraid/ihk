@@ -36,7 +36,7 @@ int main(int argc, char **argv)
 	struct cpus cpu_last = { 0 };
 	struct cpus cpus_input[5] = {{ 0 }};
 
-	ret = _cpus_ls(&cpu_last, 2, -1);
+	ret = _cpus_ls(&cpu_last, "online", 2, -1);
 	INTERR(ret, "_cpus_ls returned %d\n", ret);
 
 	ret = cpus_shift(&cpu_last, cpu_last.ncpus - 1);
@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 
 	struct cpus cpus = { 0 };
 
-	ret = _cpus_ls(&cpu_unreserved, 2, -1);
+	ret = _cpus_ls(&cpu_unreserved, "online", 2, -1);
 	INTERR(ret, "_cpus_ls returned %d\n", ret);
 
 	/* the 2nd last cpu */
@@ -57,7 +57,7 @@ int main(int argc, char **argv)
 	INTERR(ret, "cpus_shift returned %d\n", ret);
 	unreserved_cpu = cpu_unreserved.cpus[0];
 
-	ret = _cpus_ls(&cpus, 2, -1);
+	ret = _cpus_ls(&cpus, "online", 2, -1);
 	INTERR(ret, "_cpus_ls returned %d\n", ret);
 
 	ret = cpus_pop(&cpus, 1);
