@@ -12,7 +12,7 @@ const char *values[] = {
 	"All the nodes",
 };
 
-struct mems mems_reserve[2];
+struct mems mems_to_reserve[2];
 struct mems mems_assign[2];
 struct mems mems_after_assign[2];
 struct mems mems_margin[2];
@@ -34,25 +34,25 @@ int main(int argc, char **argv)
 	for (i = 0; i < 2; i++) {
 		int excess;
 
-		ret = mems_ls(&mems_reserve[i]);
+		ret = mems_ls(&mems_to_reserve[i]);
 		INTERR(ret, "mems_ls returned %d\n", ret);
 
-		excess = mems_reserve[i].num_mem_chunks - 4;
+		excess = mems_to_reserve[i].num_mem_chunks - 4;
 		if (excess > 0) {
-			ret = mems_shift(&mems_reserve[i], excess);
+			ret = mems_shift(&mems_to_reserve[i], excess);
 			INTERR(ret, "mems_shift returned %d\n", ret);
 		}
 	}
 
 	/* first node */
-	if (mems_reserve[0].num_mem_chunks > 1) {
-		ret = mems_pop(&mems_reserve[0],
-				mems_reserve[0].num_mem_chunks - 1);
+	if (mems_to_reserve[0].num_mem_chunks > 1) {
+		ret = mems_pop(&mems_to_reserve[0],
+				mems_to_reserve[0].num_mem_chunks - 1);
 		INTERR(ret, "mems_pop returned %d\n", ret);
 	}
 
 	for (i = 0; i < 2; i++) {
-		ret = mems_copy(&mems_after_assign[i], &mems_reserve[i]);
+		ret = mems_copy(&mems_after_assign[i], &mems_to_reserve[i]);
 		INTERR(ret, "mems_copy returned %d\n", ret);
 
 		ret = mems_copy(&mems_margin[i], &mems_after_assign[i]);
@@ -72,8 +72,8 @@ int main(int argc, char **argv)
 	for (i = 0; i < 2; i++) {
 		START("test-case: %s: %s\n", param, values[i]);
 
-		ret = ihk_reserve_mem(0, mems_reserve[i].mem_chunks,
-				mems_reserve[i].num_mem_chunks);
+		ret = ihk_reserve_mem(0, mems_to_reserve[i].mem_chunks,
+				mems_to_reserve[i].num_mem_chunks);
 		INTERR(ret, "ihk_reserve_mem returned %d\n", ret);
 
 		ret = mems_reserved(&mems_assign[i]);
